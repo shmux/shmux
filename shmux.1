@@ -1,4 +1,4 @@
-.TH SHMUX 8 "$Date: 2002-07-09 21:58:03 $
+.TH SHMUX 8 "$Date: 2002-07-10 23:57:07 $
 .DA July 4, 2002
 .SH NAME
 shmux - Shell Multiplexor
@@ -80,7 +80,8 @@ easy to identify.  The files must not already exist, so it is recommended
 that the directory be emtpy.  This also means that each target must be
 unique.
 .IP "\fB-p\fP"
-Ping targets to verify they are alive before doing anything.
+Ping targets to verify they are alive before doing anything.  The target
+names must be unique or bad things will happen.
 .IP "\fB-P \fItimeout\fP"
 Defines the initial target ping timeout in milliseconds, see
 \fIfping(8)\fP.  (Implies \fB-p\fP.)
