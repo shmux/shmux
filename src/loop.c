@@ -19,7 +19,7 @@
 #include "target.h"
 #include "term.h"
 
-static char const rcsid[] = "@(#)$Id: loop.c,v 1.3 2002-07-06 20:53:16 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: loop.c,v 1.4 2002-07-06 21:01:12 kalt Exp $";
 
 struct child
 {
@@ -445,7 +445,30 @@ int max, test;
 	    if (children[idx].pid <= 0)
 	      {
 		/* Available slot to spawn a new child */
-		if (idx > 0 && target_next(2) == 0)
+		if (idx > 0 && target_next(3) == 0)
+		  {
+		    done = 0;
+		    pfd[idx*3].fd = -1;
+		    target_getcmd(cargv, cmd);
+		    children[idx].pid = exec(NULL, &(pfd[idx*3+1].fd),
+					     &(pfd[idx*3+2].fd),
+					     target_getname(), cargv, 0);
+		    if (children[idx].pid == -1)
+			  {
+			    /* Error message was given by exec() */
+			    eprint("Fatal error for %s", target_getname());
+			    target_result(-1);
+			    continue;
+			  }
+		    init_child(&(children[idx]));
+		    dprint("%s, phase 3: pid = %d (idx=%d) %d/%d/%d",
+			   target_getname(), children[idx].pid, idx,
+			   pfd[idx*3].fd, pfd[idx*3+1].fd, pfd[idx*3+2].fd);
+		    idx += 1;
+		    continue;
+		  }
+
+		if (idx > 0 && children[idx].pid <= 0 && target_next(2) == 0)
 		  {
 		    done = 0;
 		    if (test != 0)
@@ -477,29 +500,6 @@ int max, test;
 			target_result(1);
 			dprint("%s skipped test", target_getname());
 		      }
-		  }
-
-		if (idx > 0 && children[idx].pid <= 0 && target_next(3) == 0)
-		  {
-		    done = 0;
-		    pfd[idx*3].fd = -1;
-		    target_getcmd(cargv, cmd);
-		    children[idx].pid = exec(NULL, &(pfd[idx*3+1].fd),
-					     &(pfd[idx*3+2].fd),
-					     target_getname(), cargv, 0);
-		    if (children[idx].pid == -1)
-			  {
-			    /* Error message was given by exec() */
-			    eprint("Fatal error for %s", target_getname());
-			    target_result(-1);
-			    continue;
-			  }
-		    init_child(&(children[idx]));
-		    dprint("%s, phase 3: pid = %d (idx=%d) %d/%d/%d",
-			   target_getname(), children[idx].pid, idx,
-			   pfd[idx*3].fd, pfd[idx*3+1].fd, pfd[idx*3+2].fd);
-		    idx += 1;
-		    continue;
 		  }
 
 		/* Nothing left to do! */
