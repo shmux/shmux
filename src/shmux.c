@@ -25,7 +25,7 @@
 #include "term.h"
 #include "units.h"
 
-static char const rcsid[] = "@(#)$Id: shmux.c,v 1.15 2003-01-05 19:43:30 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: shmux.c,v 1.16 2003-03-02 22:37:41 kalt Exp $";
 
 extern char *optarg;
 extern int optind, opterr;
@@ -62,8 +62,8 @@ int detailed;
     fprintf(stderr, "  -t            Send test command to verify target health.\n");
     fprintf(stderr, "  -T <seconds>  Time to wait for test answer (Default: %d).\n", DEFAULT_TESTTIMEOUT);
     fprintf(stderr, "\n");
-    fprintf(stderr, "  -e <range>    Exit codes to consider errors (Default: %s)\n", DEFAULT_ERRORCODES);
-    fprintf(stderr, "  -E <range>    Exit codes to always display (Default: %s)\n", DEFAULT_ERRORCODES);
+    fprintf(stderr, "  -e <range>    Exit codes to consider errors (Default: \"%s\")\n", DEFAULT_ERRORCODES);
+    fprintf(stderr, "  -E <range>    Exit codes to always display (Default: \"%s\")\n", DEFAULT_ERRORCODES);
     fprintf(stderr, "  -o <dir>      Send the output to files under the specified directory.\n");
     fprintf(stderr, "  -m            Don't mix target outputs.\n");
     fprintf(stderr, "  -b            Show bare output without target names.\n");
