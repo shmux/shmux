@@ -4,7 +4,7 @@
 ** This file is part of shmux
 ** see the LICENSE file for details on your rights.
 **
-** $Id: target.h,v 1.3 2003-04-13 15:25:27 kalt Exp $
+** $Id: target.h,v 1.4 2003-04-26 01:39:01 kalt Exp $
 */
 
 #if !defined(_TARGET_H_)
@@ -14,7 +14,7 @@ void target_default(char *);
 int target_add(char *);
 int target_getmax(void);
 int target_setbyname(char *);
-void target_setbynum(u_int);
+int target_setbynum(u_int);
 char *target_getname(void);
 int target_getnum(void);
 void target_getcmd(char **, char*);

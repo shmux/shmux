@@ -12,7 +12,7 @@
 
 #include "status.h"
 
-static char const rcsid[] = "@(#)$Id: target.c,v 1.9 2003-04-13 15:25:27 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: target.c,v 1.10 2003-04-26 01:39:00 kalt Exp $";
 
 extern char *myname;
 
@@ -161,13 +161,14 @@ char *name;
 ** target_setbynum
 **	Find a target by number, and set the current pointer.
 */
-void
+int
 target_setbynum(num)
 u_int num;
 {
     if (num > tmax)
-	abort();
+	return -1;
     tcur = num;
+    return 0;
 }
 
 /*
@@ -361,12 +362,14 @@ void
 target_status(status)
 int status;
 {
-    int i, any;
+    int i, any, tlen;
+    char buf[16];
 
     assert( status == STATUS_ALL     || status == STATUS_PENDING ||
 	    status == STATUS_ACTIVE  || status == STATUS_FAILED  ||
 	    status == STATUS_ERROR   || status == STATUS_SUCCESS );
 
+    tlen = sprintf(buf, "%u", tmax);
     any = 0;
     i = 0;
     while (i <= tmax)
@@ -375,7 +378,7 @@ int status;
 	  {
 	    assert( targets[i].result == CMD_FAILURE
 		    || targets[i].result == CMD_TIMEOUT );
-	    uprint("%s: %s",
+	    uprint(" [%*d] %s: %s", tlen, i,
 		   (targets[i].result == CMD_FAILURE) ?
 		   "            failed" : "         timed out",
 		   targets[i].name);
@@ -384,13 +387,13 @@ int status;
 	else if (targets[i].result == CMD_ERROR
 		 && (status & STATUS_ERROR) != 0)
 	  {
-	    uprint("             error: %s", targets[i].name);
+	    uprint(" [%*d]             error: %s", tlen, i, targets[i].name);
 	    any = 1;
 	  }
 	else if (targets[i].result == CMD_SUCCESS
 		 && (status & STATUS_SUCCESS) != 0)
 	  {
-	    uprint("           success: %s", targets[i].name);
+	    uprint(" [%*d]           success: %s", tlen, i, targets[i].name);
 	    any = 1;
 	  }
 	else if (targets[i].status != targets[i].phase
@@ -416,13 +419,13 @@ int status;
 		  abort();
 	      }
 
-	    uprint("%s: %s", what, targets[i].name);
+	    uprint(" [%*d]%s: %s", tlen, i, what, targets[i].name);
 	    any = 1;
 	  }
 	else if (targets[i].phase < 3
 		 && (status & STATUS_PENDING) != 0)
 	  {
-	    uprint("           pending: %s", targets[i].name);
+	    uprint(" [%*d]           pending: %s", tlen, i, targets[i].name);
 	    any = 1;
 	  }
 	i += 1;
