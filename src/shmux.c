@@ -35,7 +35,7 @@
 #include "term.h"
 #include "units.h"
 
-static char const rcsid[] = "@(#)$Id: shmux.c,v 1.29 2004-08-21 00:31:57 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: shmux.c,v 1.30 2004-09-07 01:54:38 kalt Exp $";
 
 extern char *optarg;
 extern int optind, opterr;
@@ -109,7 +109,10 @@ main(int argc, char **argv)
     opt_prefix = opt_status = 1;
     opt_quiet = opt_internal = opt_debug = 0;
     opt_outmode = OUT_MIXED;
-    opt_maxworkers = DEFAULT_MAXWORKERS;
+    if (getenv("SHMUX_MAX") != NULL)
+        opt_maxworkers = atoi(getenv("SHMUX_MAX"));
+    else
+        opt_maxworkers = DEFAULT_MAXWORKERS;
     opt_ctimeout = opt_test = opt_vtest = 0;
     opt_analyze = opt_outanalysis = opt_erranalysis = NULL;
     opt_command = opt_odir = opt_ping = NULL;

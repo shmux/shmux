@@ -1,4 +1,4 @@
-.TH SHMUX 8 "$Date: 2004-07-20 00:12:16 $"
+.TH SHMUX 8 "$Date: 2004-09-07 01:54:38 $"
 .DA November 7, 2003
 .SH NAME
 shmux - Shell Multiplexor
@@ -276,6 +276,9 @@ Allows sending a signal to a target.
 .SH ENVIRONMENT VARIABLES
 \fBshmux\fP will use the following environment variables if set:
 
+.IP SHMUX_MAX
+Specifies the maximum number of processes to spawn simultaneously.  If the
+\fB-M\fP option is specified, it overrides this variable.
 .IP SHMUX_RCMD
 Specifies the default command used to run a shell on targets.  If the
 \fB-r\fP option is specified, it overrides this variable.
@@ -302,7 +305,7 @@ the default, and or add options such as "-4", "-6", or even "-v".  It is
 recommended to avoid using these variables in favor of tuning the ssh
 configuration file(s).
 .IP SHMUX_SPAWNMODE
-Specified the default spawn mode.  If the \fB-S\fP option is specified, it
+specified the default spawn mode.  If the \fB-S\fP option is specified, it
 overrides this variable.
 .IP SHMUX_ERRORCODES
 Specifies the default list of exit codes to be considered errors.  If the
