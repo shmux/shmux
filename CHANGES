@@ -1,4 +1,10 @@
-$Id: CHANGES,v 1.15 2004-09-21 00:40:59 kalt Exp $
+$Id: CHANGES,v 1.16 2004-12-16 01:19:10 kalt Exp $
+
+Changes since 1.0b5 [2004/09/20]:
+
+- user@target now works with rsh.
+- Fixed miscellaneous assumptions/bugs related to fping.
+- user@target is no longer incompatible with -p.
 
 Changes since 1.0b4 [2004/08/07]:
 
