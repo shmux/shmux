@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2002 Christophe Kalt
+** Copyright (C) 2002, 2003 Christophe Kalt
 **
 ** This file is part of shmux,
 ** see the LICENSE file for details on your rights.
@@ -11,7 +11,7 @@
 
 #include "units.h"
 
-static char const rcsid[] = "@(#)$Id: units.c,v 1.1 2002-07-07 03:54:18 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: units.c,v 1.2 2003-11-08 01:17:28 kalt Exp $";
 
 extern char *myname;
 
@@ -43,9 +43,9 @@ char *timestr;
 	  return atoi(timestr);
       case '\0':
 	  fprintf(stderr, "%s: No unit specified for '%s'\n", myname, timestr);
-	  exit(1);
+	  exit(RC_ERROR);
       default:
 	  fprintf(stderr, "%s: Invalid time unit: %c\n", myname, *unit);
-	  exit(1);
+	  exit(RC_ERROR);
       }
 }

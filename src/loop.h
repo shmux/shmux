@@ -4,7 +4,7 @@
 ** This file is part of shmux
 ** see the LICENSE file for details on your rights.
 **
-** $Id: loop.h,v 1.10 2003-06-18 00:26:29 kalt Exp $
+** $Id: loop.h,v 1.11 2003-11-08 01:17:27 kalt Exp $
 */
 
 #if !defined(_LOOP_H_)
@@ -17,6 +17,6 @@
 #define OUT_IFERR 0x20	/* Output only displayed on error */
 #define OUT_ERR   0x40	/* Error found in output */
 
-void loop(char *, u_int, int, char *, int, char *, u_int, char *, int);
+int loop(char *, u_int, int, char *, int, char *, u_int, char *, int);
 
 #endif

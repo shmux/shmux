@@ -25,7 +25,7 @@
 #include "target.h"
 #include "term.h"
 
-static char const rcsid[] = "@(#)$Id: loop.c,v 1.41 2003-11-06 00:35:20 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: loop.c,v 1.42 2003-11-08 01:17:27 kalt Exp $";
 
 extern char *myname;
 
@@ -46,12 +46,14 @@ struct child
 };
 
 static int got_sigint;
-#define SPAWN_QUIT  0
-#define SPAWN_PAUSE 1
-#define SPAWN_CHECK 2
-#define SPAWN_NONE  3
-#define SPAWN_ONE   4
-#define SPAWN_MORE  5
+#define SPAWN_FATAL 0
+#define SPAWN_ABORT 1
+#define SPAWN_QUIT  2
+#define SPAWN_PAUSE 3
+#define SPAWN_CHECK 4
+#define SPAWN_NONE  5
+#define SPAWN_ONE   6
+#define SPAWN_MORE  7
 static int spawn_mode;
 
 static void shmux_sigint(int);
@@ -99,7 +101,7 @@ int fdfactor, max;
     if (getrlimit(RLIMIT_NOFILE, &fdlimit) == -1)
       {
 	eprint("getrlimit(RLIMIT_NOFILE): %s", strerror(errno));
-	exit(1);
+	exit(RC_ERROR);
       }
     if (fdlimit.rlim_cur < (max + 3) * fdfactor + 10)
       {
@@ -135,7 +137,7 @@ int fdfactor, max;
       if (fds == NULL)
 	{
 	  perror("malloc failed");
-	  exit(1);
+	  exit(RC_ERROR);
 	}
       i = -1;
       do
@@ -489,10 +491,8 @@ struct child *children;
 	      uprint("Waiting for existing children to terminate..");
 	  break;
       case 'Q':
-	  sprint("");
-	  nprint("");
-	  target_results(-1);
-	  exit(1);
+	  spawn_mode = SPAWN_ABORT;
+	  break;
       case ' ':
 	  if (spawn_mode != SPAWN_PAUSE)
 	      uprint("Pausing...");
@@ -643,7 +643,7 @@ char **fname, *dir, *name, *extension;
     if (*fname == NULL)
       {
 	perror("malloc failed");
-	exit(1);
+	exit(RC_FATAL);
       }
 
     sz = snprintf(*fname, PATH_MAX, "%s/%s.%s", dir, name, extension);
@@ -747,7 +747,7 @@ int result;
 **	Main loop.  Takes care of (optionally) pinging targets, testing
 **	targets with a simple echo command, and finally running a command.
 */
-void
+int
 loop(cmd, ctimeout, max, spawn, outmode, odir, utest, ping, test)
 char *cmd, *spawn, *ping, *odir;
 int max, outmode, test;
@@ -769,7 +769,7 @@ u_int ctimeout, utest;
     else
       {
 	fprintf(stderr, "%s: Invalid spawn strategy \"%s\"\n", myname, spawn);
-	exit(1);
+	return RC_ERROR;
       }
 
     /* review process fd limit */
@@ -780,7 +780,7 @@ u_int ctimeout, utest;
     if (pfd == NULL)
       {
 	perror("malloc failed");
-	exit(1);
+	return RC_ERROR;
       }
     memset((void *) pfd, 0, (max+2)*3 * sizeof(struct pollfd));
     idx = 0;
@@ -791,7 +791,8 @@ u_int ctimeout, utest;
     if (children == NULL)
       {
 	perror("malloc failed");
-	exit(1);
+	free(pfd);
+	return RC_ERROR;
       }
     memset((void *) children, 0, (max+1)*sizeof(struct child));
 
@@ -816,24 +817,27 @@ u_int ctimeout, utest;
 			       NULL, cargv, 0);
 	if (children[0].pid == -1)
 	    /* Error message was given by exec() */
-	    exit(1);
-	init_child(&(children[0]));
-
-	pfd[1].events = POLLIN;
-	pfd[2].events = POLLIN;
-
-	while (target_next(1) == 0)
+	    spawn_mode = SPAWN_FATAL;
+	else
 	  {
-	    target_start();
-	    count += 1;
-	    write(pfd[0].fd, target_getname(), strlen(target_getname()));
-	    write(pfd[0].fd, "\n", 1);
+	    init_child(&(children[0]));
+
+	    pfd[1].events = POLLIN;
+	    pfd[2].events = POLLIN;
+
+	    while (target_next(1) == 0)
+	      {
+		target_start();
+		count += 1;
+		write(pfd[0].fd, target_getname(), strlen(target_getname()));
+		write(pfd[0].fd, "\n", 1);
+	      }
+	    close(pfd[0].fd); pfd[0].fd = -1;
+	    iprint("Pinging %u targets...", count);
+	    dprint("fping pid = %d (idx=0) %d/%d/%d",
+		   children[0].pid, pfd[0].fd, pfd[1].fd, pfd[2].fd);
+	    ping = NULL;
 	  }
-	close(pfd[0].fd); pfd[0].fd = -1;
-	iprint("Pinging %u targets...", count);
-	dprint("fping pid = %d (idx=0) %d/%d/%d",
-	       children[0].pid, pfd[0].fd, pfd[1].fd, pfd[2].fd);
-	ping = NULL;
       }
     else
 	/* No fping, let's move on to the next phase then */
@@ -844,7 +848,7 @@ u_int ctimeout, utest;
 	  }
 
     /* From here on, it's one big loop. */
-    while (1)
+    while (spawn_mode != SPAWN_FATAL)
       {
 	int pollrc, done;
 	char *what;
@@ -867,7 +871,8 @@ u_int ctimeout, utest;
 	if (pollrc == -1 && errno != EINTR)
 	  {
 	    perror("poll");
-	    exit(1);
+	    spawn_mode = SPAWN_FATAL;
+	    break;
 	  }
 
 	/* Abort? */
@@ -883,10 +888,8 @@ u_int ctimeout, utest;
 	      spawn_mode = SPAWN_QUIT;
 	      break;
 	  default:
-	      sprint("");
-	      nprint("");
-	      target_results(-1);
-	      exit(1);
+	      spawn_mode = SPAWN_ABORT;
+	      break;
 	  }
 
 	/* read and process children output if any */
@@ -991,6 +994,10 @@ u_int ctimeout, utest;
 		idx += 1;
 	      }
 	  }
+
+	/* Shall we abort? */
+	if ( spawn_mode == SPAWN_ABORT )
+	    break;
 
 	/* Check on the status of children & spawn more as needed */
 	idx = 0; done = 1;
@@ -1536,8 +1543,16 @@ u_int ctimeout, utest;
     /* Restore saved SIGINT handler */
     sigaction(SIGINT, &saved_sa, NULL);
 
-    free(children);
+    free(children); /* XXX Leak */
     free(pfd);
 
     sprint("");
+
+    switch (spawn_mode)
+      {
+      case SPAWN_FATAL: return RC_FATAL;
+      case SPAWN_ABORT: return RC_ABORT;
+      case SPAWN_QUIT:  return RC_QUIT;
+      default:          return RC_OK;
+      }
 }

@@ -20,7 +20,7 @@
 #include "term.h"
 #include "units.h"
 
-static char const rcsid[] = "@(#)$Id: analyzer.c,v 1.10 2003-05-13 00:56:09 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: analyzer.c,v 1.11 2003-11-08 01:17:27 kalt Exp $";
 
 extern char *myname;
 
@@ -123,7 +123,7 @@ size_t len;
 	  {
 	    fprintf(stderr, "%s: munmap(%s) failed: %s\n",
 		    myname, name, strerror(errno));
-	    exit(1);
+	    exit(RC_ERROR);
 	  }
 	else
 	    eprint("munmap(%s) failed: %s", name, strerror(errno));
@@ -155,7 +155,7 @@ char *str;
 	    fprintf(stderr, "%s: Bad regular expression: %s\n", myname, buf);
 	else
 	    fprintf(stderr, "%s: Failed to compile regular expression and to obtain error code: %s\n", myname, str);
-	exit(1);
+	exit(RC_ERROR);
       }
 }
 
@@ -181,7 +181,7 @@ char *str;
       {
 	fprintf(stderr, "%s: Bad PCRE (offset %d): %s\n",
 		myname, erroffset, error);
-	exit(1);
+	exit(RC_ERROR);
       }
 }
 #endif
@@ -221,11 +221,11 @@ char *str;
 	      {
 		fprintf(stderr, "%s: open(%s) failed: %s\n",
 			myname, fname, strerror(errno));
-		exit(1);
+		exit(RC_ERROR);
 	      }
 	    str = mapfile(1, fd, fname, &len);
 	    if (str == NULL)
-		exit(1);
+		exit(RC_ERROR);
 	  }
       }
 
@@ -259,7 +259,7 @@ struct condition **list;
     if (*list == NULL)
       {
 	fprintf(stderr, "%s: malloc() failed: %s\n", myname, strerror(errno));
-	exit(1);
+	exit(RC_ERROR);
       }
     cond = 0;
 
@@ -270,11 +270,11 @@ struct condition **list;
       {
 	fprintf(stderr, "%s: open(%s) failed: %s\n", 
 		myname, file, strerror(errno));
-	exit(1);
+	exit(RC_ERROR);
       }
     str = mapfile(1, fd, file, &len);
     if (str == NULL)
-	exit(1);
+	exit(RC_ERROR);
 
     ln = str; nl = str;
     lineno = 1;
@@ -296,7 +296,7 @@ struct condition **list;
 	    {
 	      fprintf(stderr, "%s: realloc() failed: %s\n", myname,
 		      strerror(errno));
-	      exit(1);
+	      exit(RC_ERROR);
 	    }
 	}
 
@@ -316,7 +316,7 @@ struct condition **list;
 	  {
 	    fprintf(stderr, "%s: This binary was built without PCRE support.\n",
 		    myname);
-	    exit(1);
+	    exit(RC_ERROR);
 	  }
 #endif
 	  else
@@ -327,7 +327,7 @@ struct condition **list;
 	{
 	  fprintf(stderr, "Invalid configuration in \"%s\" line %d: %s\n",
 		  file, lineno, ln);
-	  exit(1);
+	  exit(RC_ERROR);
 	}
       ln = nl + 1;
       lineno += 1;
@@ -357,7 +357,7 @@ char *type, *outdef, *errdef;
 	if (outdef == NULL)
 	  {
 	    fprintf(stderr, "%s: No external analyzer supplied!\n", myname);
-	    exit(1);
+	    exit(RC_ERROR);
 	  }
 	run_cmd = outdef;
 	if (errdef == NULL)
@@ -372,14 +372,14 @@ char *type, *outdef, *errdef;
 	if (outdef == NULL)
 	  {
 	    fprintf(stderr, "%s: No analysis criteria defined!\n", myname);
-	    exit(1);
+	    exit(RC_ERROR);
 	  }
 	out = (struct condition *) malloc(sizeof(struct condition));
 	if (out == NULL)
 	  {
 	    fprintf(stderr, "%s: malloc() failed: %s\n",
 		    myname, strerror(errno));
-	    exit(1);
+	    exit(RC_ERROR);
 	  }
 	if (type[0] != 'p')
 	    restr_init((void *) &(out->val.re), compile_re,
@@ -392,7 +392,7 @@ char *type, *outdef, *errdef;
 	  {
 	    fprintf(stderr, "%s: This binary was built without PCRE support.\n",
 		    myname);
-	    exit(1);
+	    exit(RC_ERROR);
 	  }
 #endif
 
@@ -401,7 +401,7 @@ char *type, *outdef, *errdef;
 	  {
 	    fprintf(stderr, "%s: malloc() failed: %s\n",
 		    myname, strerror(errno));
-	    exit(1);
+	    exit(RC_ERROR);
 	  }
 
 	if (errdef == NULL)
@@ -446,7 +446,7 @@ char *type, *outdef, *errdef;
     else
       {
 	fprintf(stderr, "%s: Invalid -a argument!\n", myname);
-	exit(1);
+	exit(RC_ERROR);
       }
 }
 

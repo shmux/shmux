@@ -29,7 +29,7 @@
 #include "term.h"
 #include "units.h"
 
-static char const rcsid[] = "@(#)$Id: shmux.c,v 1.26 2003-06-18 00:36:42 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: shmux.c,v 1.27 2003-11-08 01:17:28 kalt Exp $";
 
 extern char *optarg;
 extern int optind, opterr;
@@ -88,7 +88,7 @@ int detailed;
 int
 main(int argc, char **argv)
 {
-    int badopt;
+    int badopt, rc;
     int opt_prefix, opt_status, opt_quiet, opt_internal, opt_debug;
     int opt_ctimeout, opt_outmode, opt_maxworkers, opt_vtest;
     u_int opt_test, opt_analyzer;
@@ -164,7 +164,7 @@ main(int argc, char **argv)
 	      break;
           case 'h':
               usage(1);
-              exit(0);
+              exit(RC_OK);
               break;
 	  case 'm':
 	      opt_outmode &= ~(OUT_NULL|OUT_MIXED);
@@ -224,7 +224,7 @@ main(int argc, char **argv)
 	      printf("%s version %s (PCRE version %s)\n",
 		     myname, SHMUX_VERSION, pcre_version());
 #endif
-	      exit(0);
+	      exit(RC_OK);
 	  case '?':
 	      badopt += 1;
 	      break;
@@ -236,14 +236,14 @@ main(int argc, char **argv)
     if (optind >= argc || badopt > 0 || opt_command == NULL)
       {
         usage(0);
-        exit(1);
+        exit(RC_ERROR);
       }
 
     target_default(opt_rcmd);
     if (opt_maxworkers <= 0)
       {
 	fprintf(stderr, "%s: Invalid -M argument!\n", myname);
-	exit(1);
+	exit(RC_ERROR);
       }
 
     if (opt_spawn == NULL)
@@ -254,14 +254,14 @@ main(int argc, char **argv)
     if (opt_analyzer != ANALYZE_NONE && opt_odir == NULL)
       {
 	fprintf(stderr, "%s: -o option required when using -a/-A!\n", myname);
-	exit(1);
+	exit(RC_ERROR);
       }
 
     /* -? requires -o, to avoid dangerous/reckless invocations. */
     if ((opt_outmode & (OUT_NULL|OUT_IFERR)) != 0 && opt_odir == NULL)
       {
 	fprintf(stderr, "%s: -o option required when using -q!\n", myname);
-	exit(1);
+	exit(RC_ERROR);
       }
 
     if (opt_odir != NULL)
@@ -282,7 +282,7 @@ main(int argc, char **argv)
 	/* Create odir if it doesn't already exists */
 	fprintf(stderr, "%s: mkdir(%s): %s\n",
 		myname, opt_odir, strerror(errno));
-	exit(1);
+	exit(RC_ERROR);
       }
 
     /* Should test outputs be shown? */
@@ -317,17 +317,8 @@ main(int argc, char **argv)
 
     /* Loop through targets/commands */
     start = time(NULL);
-    loop(opt_command, opt_ctimeout, opt_maxworkers, opt_spawn,
-	 opt_outmode, opt_odir, opt_analyzer, opt_ping, opt_test);
-
-    /* odir was temporary, remove it now */
-    if (opt_odir != NULL && (opt_outmode & OUT_COPY) == 0
-	&& rmdir(opt_odir) == -1)
-      {
-	fprintf(stderr, "%s: rmdir(%s): %s\n",
-		myname, opt_odir, strerror(errno));
-	exit(1);
-      }
+    rc = loop(opt_command, opt_ctimeout, opt_maxworkers, opt_spawn,
+	      opt_outmode, opt_odir, opt_analyzer, opt_ping, opt_test);
 
     /* Summary of results unless asked to be quiet */
     if (opt_quiet == 0)
@@ -336,5 +327,11 @@ main(int argc, char **argv)
 	target_results((int) (time(NULL) - start));
       }
 
-    exit(0);
+    /* odir was temporary, remove it now */
+    if (opt_odir != NULL && (opt_outmode & OUT_COPY) == 0
+	&& rmdir(opt_odir) == -1)
+	fprintf(stderr, "%s: rmdir(%s): %s\n",
+		myname, opt_odir, strerror(errno));
+
+    exit(rc);
 }

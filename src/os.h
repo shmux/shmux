@@ -1,10 +1,10 @@
 /*
-** Copyright (C) 2002 Christophe Kalt
+** Copyright (C) 2002, 2003 Christophe Kalt
 **
 ** This file is part of shmux,
 ** see the LICENSE file for details on your rights.
 **
-** $Id: os.h,v 1.3 2002-10-13 21:06:33 kalt Exp $
+** $Id: os.h,v 1.4 2003-11-08 01:17:27 kalt Exp $
 */
 
 #if !defined(_OS_H_)
@@ -28,5 +28,12 @@
 #include <limits.h>
 
 #include <string.h>
+
+/* shmux exit codes */
+#define RC_OK	 0
+#define RC_QUIT	 1
+#define RC_ABORT 2
+#define RC_FATAL 3
+#define RC_ERROR 4
 
 #endif

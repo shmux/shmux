@@ -1,5 +1,5 @@
-.TH SHMUX 8 "$Date: 2003-11-06 00:35:19 $"
-.DA November 5, 2003
+.TH SHMUX 8 "$Date: 2003-11-08 01:17:21 $"
+.DA November 7, 2003
 .SH NAME
 shmux - Shell Multiplexor
 .SH SYNOPSIS
@@ -227,11 +227,11 @@ commands are currently recognized:
 Prevent \fBshmux\fP from spawning any more children, wen for active
 children to complete, and then quit.
 .IP "\fBQ\fP"
-Quit immediately, not waiting for any active children to terminate.  This
-isn't recommended as the children are left running.  A better alternative
-is to press control-C which will be received by \fBshmux\fP and all running
-children.  These will typically abort, and \fBshmux\fP terminate in a
-cleaner fashion.
+Quit immediately (e.g. abort), not waiting for any active children to
+terminate.  This isn't recommended as children may be left running
+unattended.  A better alternative is to press control-C which will be
+received by \fBshmux\fP and all running children.  These will typically
+abort, and \fBshmux\fP terminate in a cleaner fashion.
 .IP "space"
 Initiate a pause, this prevents \fBshmux\fP from spawning any more children
 to do its work.  The following three commands may be used to resume work.
@@ -263,7 +263,7 @@ Display the list of all targets with their status.
 .IP "\fBk\fP"
 Allows sending a signal to a target.
 
-.SH ENVIRONMENT
+.SH ENVIRONMENT VARIABLES
 \fBshmux\fP will use the following environment variables if set:
 
 .IP SHMUX_RCMD
@@ -301,6 +301,25 @@ Specifies the default list of exit codes to be considered errors.  If the
 Specifies the default list of exit codes to be always display.  If the
 \fB-E\fP option is specified, it overrides this variable.
 
+.SH EXIT STATUS
+The following exit values are returned:
+.IP 0
+indicates that \fBshmux\fP was able to complete its work.  However, this
+does not mean that all targets successfully ran the \fIcommand\fP, nor that
+\fBshmux\fP ran without any error.
+.IP 1
+indicates \fBshmux\fP was cleanly interrupted before it could finish its
+work.
+.IP 2
+indicates \fBshmux\fP aborted upon user request, possibly leaving some
+children running.
+.IP 3
+indicates \fBshmux\fP encountered a fatal error which caused it to abort,
+possibly leaving some children running.
+.IP 4
+indicates a syntax error or a fatal error which caused \fBshmux\fP to abort
+before it could spawn any children.
+
 .SH SEE ALSO
 .IR fping (8),
 .IR sh (1),
@@ -324,5 +343,11 @@ using these programs.  To make matters worse such ports may be held for
 four minutes (by default) as per the TCP specification.  When using
 \fBshmux\fP, one can very quickly run out of privileged ports, at which
 point failures will start happening.
+
+All \fIrsh\fP and \fIssh\fP implementations fail to accurately return the
+remote command exit code to the caller.  Typically, \fIrsh\fP will simply
+not bother to return this exit code, and \fIssh\fP will try its best but is
+limited by the fact it also tries to return an error code for SSH related
+errors.  In either case, this may pose problems when using \fB-e\fP.
 
 Send bug reports to `shmux-bugs@taranis.org'.

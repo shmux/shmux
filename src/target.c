@@ -12,7 +12,7 @@
 
 #include "status.h"
 
-static char const rcsid[] = "@(#)$Id: target.c,v 1.11 2003-04-30 23:47:34 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: target.c,v 1.12 2003-11-08 01:17:28 kalt Exp $";
 
 extern char *myname;
 
@@ -61,7 +61,7 @@ char *cmd;
     else
       {
 	fprintf(stderr, "%s: Unrecognized rcmd command: %s\n", myname, cmd);
-	exit(1);
+	exit(RC_ERROR);
       }
 }
 
@@ -88,7 +88,7 @@ char *name;
     if (targets == NULL)
       {
 	perror("malloc/realloc failed");
-	exit(1);
+	exit(RC_ERROR);
       }
 
     tmax += 1;
@@ -484,15 +484,6 @@ int seconds;
 	    nprint("%d target%s processed in %d second%s.",
 		   tmax + 1, (tmax > 0) ? "s" : "",
 		   seconds, (seconds > 1) ? "s" : "");
-      }
-    else
-      {
-	if (u > 0)
-	    nprint("%d target%s processed (out of %d).",
-		   tmax + 1 - u, (tmax - u > 0) ? "s" : "", tmax + 1);
-	else
-	    nprint("%d target%s processed.",
-		   tmax + 1, (tmax > 0) ? "s" : "");
       }
 
     if (f + t + u + s + e > 0)

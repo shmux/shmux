@@ -11,7 +11,7 @@
 
 #include "byteset.h"
 
-static char const rcsid[] = "@(#)$Id: byteset.c,v 1.4 2003-04-26 01:51:35 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: byteset.c,v 1.5 2003-11-08 01:17:27 kalt Exp $";
 
 extern char *myname;
 
@@ -64,7 +64,7 @@ char *definition;
 
 	if (i < 0 || i > 255 || j < 0 || j > 255 || j < i) {
 	  fprintf(stderr, "%s: Invalid range: %s\n", myname, tok);
-	  exit(1);
+	  exit(RC_ERROR);
 	}
 
 	while (i <= j)
