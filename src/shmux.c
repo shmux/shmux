@@ -17,7 +17,7 @@
 #include "term.h"
 #include "units.h"
 
-static char const rcsid[] = "@(#)$Id: shmux.c,v 1.7 2002-07-09 21:57:05 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: shmux.c,v 1.8 2002-07-10 19:08:07 kalt Exp $";
 
 extern char *optarg;
 extern int optind, opterr;
@@ -167,16 +167,11 @@ main(int argc, char **argv)
 	exit(1);
       }
 
-    if (opt_odir != NULL)
+    if (opt_odir != NULL && mkdir(opt_odir, 0777) == -1 && errno != EEXIST)
       {
-	struct stat sb;
-
-	if (stat(opt_odir, &sb) == -1)
-	  {
-	    fprintf(stderr, "%s: Invalid -o argument, \"%s\": %s\n",
-		    myname, opt_odir, strerror(errno));
-	    exit(1);
-	  }
+	fprintf(stderr, "%s: mkdir(%s): %s\n",
+		myname, opt_odir, strerror(errno));
+	exit(1);
       }
 
     if (opt_vtest > 1)
