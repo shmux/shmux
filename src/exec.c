@@ -7,7 +7,6 @@
 
 #include "os.h"
 
-#include <stdarg.h>
 #if defined(HAVE_PATHS_H)
 # include <paths.h>
 #else
@@ -21,7 +20,7 @@
 #include "exec.h"
 #include "term.h"
 
-static char const rcsid[] = "@(#)$Id: exec.c,v 1.4 2002-07-10 23:25:53 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: exec.c,v 1.5 2002-08-09 00:23:10 kalt Exp $";
 
 pid_t
 exec(fd0, fd1, fd2, target, argv, timeout)
@@ -32,6 +31,8 @@ char *target, **argv;
     int in[2], out[2], err[2];
     struct rlimit fdlimit;
     pid_t child;
+
+    assert( fd1 != NULL );
 
     if (target != NULL)
       {
@@ -58,7 +59,7 @@ char *target, **argv;
 	
     if (fd0 != NULL) *fd0 = -1;
     *fd1 = -1;
-    if (fd2 != NULL) *fd1 = -1;
+    if (fd2 != NULL) *fd2 = -1;
 
     /* Get the pipes we need later on */
     in[0] = in[1] = -1;
@@ -162,7 +163,7 @@ char *target, **argv;
 			_PATH_DEVNULL, strerror(errno));
 		/* The parent knows what to make of this */
 		kill(getpid(), SIGTSTP);
-		write(2, error, strlen(error)+1);
+		write(err[1], error, strlen(error)+1);
 		_exit(0);
 	      }
 	    if (in[0] != 0)
@@ -171,7 +172,7 @@ char *target, **argv;
 			_PATH_DEVNULL, in[0]);
 		/* The parent knows what to make of this */
 		kill(getpid(), SIGTSTP);
-		write(2, error, strlen(error)+1);
+		write(err[1], error, strlen(error)+1);
 		_exit(0);
 	      }
 	  }
