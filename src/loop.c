@@ -25,7 +25,7 @@
 #include "target.h"
 #include "term.h"
 
-static char const rcsid[] = "@(#)$Id: loop.c,v 1.40 2003-06-18 01:01:05 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: loop.c,v 1.41 2003-11-06 00:35:20 kalt Exp $";
 
 extern char *myname;
 
@@ -37,6 +37,8 @@ struct child
     int		analyzer;	/* analyzer? */
     int		output;		/* output mode */
     int		execstate;	/* exec() status: 0=ok, 1=failed? 2=failed */
+    time_t	timeout;	/* time of exec() call */
+    int		timedout;	/* 0=no, 1=SIGTERM sent, 2=SIGKILL sent */
     char	*obuf, *ebuf;	/* stdout/stderr truncated buffer */
     char	*ofname, *efname; /* stdout/stderr file names */
     int		ofile, efile;	/* stdout/stderr file fd */
@@ -160,6 +162,8 @@ struct child *kid;
     kid->analyzer = 0;
     kid->output = OUT_MIXED;
     kid->execstate = 0;
+    kid->timeout = 0;
+    kid->timedout = 0;
     kid->obuf = kid->ebuf = NULL;
     kid->ofname = kid->efname = NULL;
     kid->ofile = kid->efile = -1;
@@ -1134,6 +1138,9 @@ u_int ctimeout, utest;
 			    continue;
 			  }
 
+		    if (ctimeout > 0)
+			children[idx].timeout = time(NULL) + ctimeout + 5;
+
 		    pfd[idx*3+1].events = POLLIN;
 		    pfd[idx*3+2].events = POLLIN;
 
@@ -1225,6 +1232,28 @@ u_int ctimeout, utest;
 		if (wprc == -1)
 		    eprint("waitpid(%d[%s]): %s",
 			   children[idx].pid, what, strerror(errno));
+
+		/* timeout exceeded? */
+		if (children[idx].timeout != 0
+		    && time(NULL) > children[idx].timeout)
+		  {
+		    assert( children[idx].timedout == 0 ||
+			    children[idx].timedout == 1 );
+		    if (children[idx].timedout == 0)
+		      {
+			iprint("Time out for %s (Sending SIGTERM)..", what);
+			kill(children[idx].pid, SIGTERM);
+			children[idx].timeout = time(NULL) + 5;
+		      }
+		    else
+		      {
+			iprint("Time out for %s (Sending SIGKILL)..", what);
+			kill(children[idx].pid, SIGKILL);
+			children[idx].timeout = 0;
+		      }
+		    children[idx].timedout += 1;
+		  }
+
 		idx += 1;
 		continue;
 	      }
@@ -1444,17 +1473,24 @@ u_int ctimeout, utest;
 		  }
 	      } else {
 		assert( WTERMSIG(status) != 0 );
-		if (WTERMSIG(status) == SIGALRM)
+		if (WTERMSIG(status) == SIGALRM
+		    || (children[idx].timedout > 0
+			&& (WTERMSIG(status) == SIGTERM
+			    || WTERMSIG(status) == SIGKILL)))
 		    if (children[idx].test == 0)
 		      {
-			eprint("%s for %s timed out",
+			eprint("%s for %s timed out (%s)",
 			       (children[idx].analyzer == 0) ? "Child"
-			       : "Analyzer", what);
+			       : "Analyzer", what,
+			       strsignal(WTERMSIG(status)));
 			if (idx > 0)
 			    set_cmdstatus(CMD_TIMEOUT);
 		      }
 		    else
+		      {
+			assert( WTERMSIG(status) == SIGALRM );
 			children[idx].passed = -2;
+		      }
 		else
 		  {
 		    eprint("%s for %s died: %s%s",

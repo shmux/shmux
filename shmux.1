@@ -1,5 +1,5 @@
-.TH SHMUX 8 "$Date: 2003-06-18 00:36:25 $"
-.DA May 8, 2003
+.TH SHMUX 8 "$Date: 2003-11-06 00:35:19 $"
+.DA November 5, 2003
 .SH NAME
 shmux - Shell Multiplexor
 .SH SYNOPSIS
@@ -78,7 +78,12 @@ Specify the \fIcommand\fP to execute on targets.
 .IP "\fB-C \fItimeout\fP"
 Specify a timeout for the command being executed on targets.  This should
 be a number followed by a time unit.  The following are valid time units:
-s(econds), m(inutes), h(our), d(ays), w(eeks).
+s(econds), m(inutes), h(our), d(ays), w(eeks).  The timeout is implemented
+by using alarm(3) which is unfortunately not always effective.  For this
+reason, \fBshmux\fP will actively monitor children processes and enforce
+the defined timeout by sending a TERM signal 5 seconds after the initial
+timeout has expired, and a KILL signal 5 seconds later if the child process
+is still running.
 .IP "\fB-M \fImax\fP"
 Defines the maximum number of spawned processes.  While there is no real
 (or hard coded) limitation for this, the system resources are typically
