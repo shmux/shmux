@@ -20,7 +20,7 @@
 #include "term.h"
 #include "units.h"
 
-static char const rcsid[] = "@(#)$Id: analyzer.c,v 1.4 2003-03-26 01:35:34 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: analyzer.c,v 1.5 2003-04-20 19:40:38 kalt Exp $";
 
 extern char *myname;
 
@@ -233,7 +233,7 @@ char *type, *out, *err;
 
     if (out == NULL)
       {
-	fprintf(stderr, "%s: No analysis defined!\n", myname); /* XXX */
+	fprintf(stderr, "%s: No analysis criteria defined!\n", myname);
 	exit(1);
       }
 	
