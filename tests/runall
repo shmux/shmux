@@ -1,0 +1,43 @@
+#! /bin/sh
+#
+# $Id: runall,v 1.1 2004-04-06 00:36:55 kalt Exp $
+#
+
+echo
+echo "WARNING: It is unfortunately unclear how portable this test suite is."
+echo
+echo "Some of these tests involve timers and are a little slow to complete.."
+
+tests=`grep '#-' *.sh | sort -n -k 2 | sed 's/.sh:.*//'`
+pad=0
+for t in $tests
+do
+  if [ `echo $t | wc -m` -gt $pad ]; then
+      pad=`echo $t | wc -m`
+  fi
+done
+pad=`expr $pad - 1`
+for t in $tests
+do
+  printf "running test %.${pad}s... " $t..........
+  ./$t.sh
+  if [ $? = 77 ]; then
+      echo " ok."
+  else
+      echo " failed!"
+      failed="$failed $t"
+  fi
+done
+echo
+if [ "x$failed" != "x" ]; then
+    echo
+    echo "Failed `echo $failed | wc -w | sed 's/ *//g'` set(s) of tests:"
+    for t in $failed
+    do
+      echo
+      echo "-- $t"
+      grep "##" $t.sh | sed 's/##/  /'
+    done
+    exit 1
+fi
+exit 0

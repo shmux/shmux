@@ -1,10 +1,10 @@
 #
-# Copyright (C) 2002, 2003 Christophe Kalt
+# Copyright (C) 2002, 2003, 2004 Christophe Kalt
 #
 # This file is part of shmux,
 # see the LICENSE file for details on your rights.
 #
-# $Id: Makefile.in,v 1.6 2003-06-18 00:34:16 kalt Exp $
+# $Id: Makefile.in,v 1.7 2004-04-06 00:36:51 kalt Exp $
 #
 
 INSTALL	= @INSTALL@
@@ -18,14 +18,7 @@ shmux:
 	@(cd src && $(MAKE) shmux)
 
 test: shmux
-	@(test=`./src/shmux -bsQtc 'echo $${SHMUX_TARGET}' sh:one 2>&1`; \
-	  if [ "x$${test}" = "xone" ]; then \
-		echo "Simple test succeeded... this doesn't mean much."; \
-	  else \
-		echo "Ugh, something's broken."; \
-		echo "If you're using gcc, try to disable optimization"; \
-		exit 1; \
-	  fi)
+	@(cd tests && ./runall)
 
 install: shmux
 	$(INSTALL) -d -m 0755 $(bindir)
