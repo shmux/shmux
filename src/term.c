@@ -6,8 +6,10 @@
 */
 
 #include "os.h"
-#include <sys/ioctl.h>
 
+#include <fcntl.h>
+#include <sys/ioctl.h>
+#include <termios.h>
 #if defined(HAVE_TERMCAP_H)
 # include <termcap.h>
 #elif defined(HAVE_CURSES_H)
@@ -21,28 +23,30 @@
 
 #include "term.h"
 
-static char const rcsid[] = "@(#)$Id: term.c,v 1.14 2003-04-11 20:11:16 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: term.c,v 1.15 2003-04-13 15:35:48 kalt Exp $";
 
 extern char *myname;
 
 static int targets, internalmsgs, debugmsgs, padding;
-static int otty, etty, CO, got_sigwin;
+static struct termios origt, shmuxt;
+static int otty, etty, CO, got_sigwin, ttyin;
 static char *MD,			/* bold */
 	    *ME,			/* turn off bold (and more) */
 	    *CE,			/* clear to end of line */
 	    *CR,			/* carriage return */
 	    *NL;			/* newline character if not \n */
 static char status[512];
-static FILE *tty;
+static FILE *ttyout;
 
 static void shmux_signal(int);
+static void tty_init(void);
 static int putchar2(int);
 static int putchar3(int);
 static void gprint(char *, char, char *, va_list);
 
 /*
 ** shmux_signal
-**	SIGWINCH/SIGCONT handler
+**	signal handler
 */
 static void
 shmux_signal(sig)
@@ -50,6 +54,25 @@ int sig;
 {
     if (sig == SIGWINCH || sig == SIGCONT)
 	got_sigwin += 1;
+    if (sig == SIGCONT)
+      {
+	if (ttyin >= 0 && tcsetattr(ttyin, TCSANOW, &shmuxt) < 0)
+	    /* Calling eprint from here isn't so smart.. */
+	    eprint("tcsetattr() failed: %s", strerror(errno));
+      }
+    if (sig == SIGINT || sig == SIGQUIT || sig == SIGABRT || sig == SIGTERM
+	|| sig == SIGTSTP)
+      {
+	/* restore original tty settings */
+	if (ttyin >= 0 && tcsetattr(ttyin, TCSANOW, &origt) < 0)
+	    /* Calling eprint from here isn't so smart.. */
+	    eprint("tcsetattr() failed: %s", strerror(errno));
+	if (sig != SIGTSTP)
+	    /* Resend the signal to ourselves */
+	    kill(getpid(), sig);
+	else
+	    kill(getpid(), SIGSTOP);
+      }
 }
 
 /*
@@ -71,41 +94,54 @@ int maxlen, prefix, progress, internal, debug;
     internalmsgs = internal;
     debugmsgs = debug;
 
+    /* Input initialization */
+
+    if (isatty(fileno(stdin)) == 1)
+	ttyin = fileno(stdin);
+    else
+	ttyin = open("/dev/tty", O_RDONLY, 0);
+
+    /* Output initializations */
+
     CE = NULL;
     CR = "\r";
     NL = "\n";
     status[0] = '\0';
 
-    otty = isatty(1);
-    etty = isatty(2);
+    otty = isatty(fileno(stdout));
+    etty = isatty(fileno(stderr));
 
     if (otty == 1)
-	tty = stdout;
+	ttyout = stdout;
     else if (etty == 1)
-	tty = stderr;
+	ttyout = stderr;
     else if (progress != 0)
-	tty = fopen(/*_PATH_TTY*/ "/dev/tty", "a");
+	ttyout = fopen("/dev/tty", "a");
     else
-	tty = NULL;
+	ttyout = NULL;
 
     term = getenv("TERM");
 
     if (debugmsgs != 0)
-	fprintf(stdout, "%*s$ otty[%d] etty[%d] tty[0x%X] TERM[%s]\n",
-		padding, myname, otty, etty, tty, (term != NULL) ? term : "");
+	fprintf(stdout,
+	     "%*s$ itty[%d] ttyin[%d] otty[%d] etty[%d] ttyout[%p] TERM[%s]\n",
+		padding, myname, isatty(fileno(stdin)), ttyin,
+		otty, etty, ttyout, (term != NULL) ? term : "");
 
     if (term == NULL)
       {
-	if (progress != 0 && tty != NULL)
+	if (progress != 0 && ttyout != NULL)
 	    fprintf(stderr, "%*s: TERM variable is not set!\n",
 		    padding, myname);
+	tty_init();
 	return;
       }
     if (tgetent(termcap, term) < 1)
       {
-	if (progress != 0 && tty != NULL)
+	if (progress != 0 && ttyout != NULL)
 	    fprintf(stderr, "%*s: No TERMCAP entry for ``%s''.\n",
 		    padding, myname, term);
+	tty_init();
 	return;
       }
 
@@ -139,9 +175,11 @@ int maxlen, prefix, progress, internal, debug;
     CE = tgetstr("ce", &ptr);
     if (progress == 0)
 	CE = NULL;
-    else if (CE == NULL && progress != 0 && tty != NULL)
+    else if (CE == NULL && progress != 0 && ttyout != NULL)
 	fprintf(stderr, "%*s: Terminal ``%s'' is too dumb! (no ce)\n",
 		padding, myname, term);
+
+    tty_init();
 }
 
 /*
@@ -154,9 +192,9 @@ term_size(void)
 #if defined(TIOCGWINSZ)
   struct winsize ws;
 
-  if (tty == NULL)
+  if (ttyout == NULL)
       return;
-  if (ioctl(fileno(tty), TIOCGWINSZ, &ws) < 0)
+  if (ioctl(fileno(ttyout), TIOCGWINSZ, &ws) < 0)
     {
       eprint("ioctl(tty, TIOCGWINSZ) failed: %s", strerror(errno));    
       return;
@@ -167,6 +205,84 @@ term_size(void)
       dprint("window seems to have %d columns.", CO);
     }
 #endif
+}
+
+/*
+** tty_init
+**	/dev/tty initialization
+*/
+static void
+tty_init(void)
+{
+    if (ttyin < 0)
+      {
+	dprint("No input tty available.");
+	return;
+      }
+
+    if (tcgetattr(ttyin, &origt) < 0) /* save original tty settings */
+      {
+	eprint("tcgetattr() failed: %s", strerror(errno));
+	ttyin = -1;
+      }
+    else
+      {
+	shmuxt = origt;
+	shmuxt.c_lflag &= ~(ICANON|ECHO); /* no echo or canonical processing */
+	shmuxt.c_cc[VMIN] = 1; /* no buffering */
+	shmuxt.c_cc[VTIME] = 0; /* no delaying */
+	if (tcsetattr(ttyin, TCSANOW, &shmuxt) == 0)
+	  {
+	    struct sigaction sa;
+
+	    atexit(tty_restore);
+
+	    /*
+	    ** Catch signals which require reinitializing or restoring
+	    ** tty settings
+	    */
+	    sigemptyset(&sa.sa_mask);
+	    sa.sa_flags = 0;
+	    sa.sa_handler = shmux_signal;
+	    sigaction(SIGTSTP, &sa, NULL);
+	    /* Only need to catch the following signals once, then we die. */
+	    sa.sa_flags = SA_RESETHAND;
+	    sigaction(SIGINT, &sa, NULL);
+	    sigaction(SIGQUIT, &sa, NULL);
+	    sigaction(SIGABRT, &sa, NULL);
+	    sigaction(SIGTERM, &sa, NULL);
+
+	    dprint("Input tty initialized");
+	  }
+	else
+	  {
+	    eprint("tcsetattr() failed: %s", strerror(errno));
+	    ttyin = -1;
+	  }
+      }
+}
+
+/*
+** tty_fd
+**	Returns the file descriptor associated with the tty input
+*/
+int
+tty_fd(void)
+{
+    return ttyin;
+}
+
+/*
+** tty_restore
+**	Restores /dev/tty original settings
+*/
+void
+tty_restore(void)
+{
+    /* restore original tty settings */
+    if (ttyin >= 0 && tcsetattr(ttyin, TCSANOW, &origt) < 0)
+	eprint("tcsetattr() failed: %s", strerror(errno));
+    ttyin = -1;
 }
 
 /*
@@ -181,7 +297,7 @@ sprint(char *format, ...)
     char *ch;
     int bold;
 
-    if (CE == NULL || tty == NULL)
+    if (CE == NULL || ttyout == NULL)
 	return;
 
     if (got_sigwin > 0)
@@ -208,7 +324,7 @@ sprint(char *format, ...)
     ch = status;
     while (*ch != '\0')
       {
-	if (*ch == '\a')
+	if (*ch == '\a' && bold == 0)
 	  {
 	    if (otty == 1 && MD != NULL)
 	      {
@@ -218,19 +334,19 @@ sprint(char *format, ...)
 	  }
 	else
 	  {
-	    if (*ch == ' ' && bold == 1)
+	    if ((*ch == ' ' || *ch == '\a') && bold == 1)
 	      {
 		tputs(ME, 0, putchar3);
 		bold = 0;
 	      }
-	    fprintf(tty, "%c", *ch);
+	    fprintf(ttyout, "%c", *ch);
 	  }
 	ch += 1;
       }
 
     tputs(CE, 0, putchar3);
     tputs(CR, 0, putchar3);
-    fflush(tty);
+    fflush(ttyout);
 }
 
 /*
@@ -252,7 +368,30 @@ static int
 putchar3(c)
 int c;
 {
-    return fputc(c, tty);
+    return fputc(c, ttyout);
+}
+
+/*
+** uprint:
+**	printf wrapper for messages destined to the user (e.g. /dev/tty)
+*/
+void
+uprint(char *format, ...)
+{
+    va_list va;
+
+    if (CE != NULL)
+	tputs(CE, 0, putchar3);
+
+    fprintf(ttyout, ">> ");
+    va_start(va, format);
+    vfprintf(ttyout, format, va);
+    tputs(NL, 0, putchar3);
+    va_end(va);
+    fflush(ttyout);
+
+    if (CE != NULL)
+	sprint(NULL);
 }
 
 /*
