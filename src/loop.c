@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2002, 2003 Christophe Kalt
+** Copyright (C) 2002, 2003, 2004 Christophe Kalt
 **
 ** This file is part of shmux,
 ** see the LICENSE file for details on your rights.
@@ -25,7 +25,7 @@
 #include "target.h"
 #include "term.h"
 
-static char const rcsid[] = "@(#)$Id: loop.c,v 1.44 2004-04-05 01:28:53 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: loop.c,v 1.45 2004-06-08 00:49:16 kalt Exp $";
 
 extern char *myname;
 
@@ -464,6 +464,7 @@ struct child *children;
 {
     char *cmd;
 
+    dprint("Current spawn mode: %d", spawn_mode);
     switch (c)
       {
       case 'h':
