@@ -1,9 +1,9 @@
 #
-# $Id: configure.ac,v 1.8 2003-05-27 00:30:56 kalt Exp $
+# $Id: configure.ac,v 1.9 2004-07-16 01:22:28 kalt Exp $
 #
 AC_PREREQ(2.53)
 AC_INIT([Shell Multiplexor], [], [shmux-bugs@taranis.org], [shmux])
-AC_REVISION([$Id: configure.ac,v 1.8 2003-05-27 00:30:56 kalt Exp $])
+AC_REVISION([$Id: configure.ac,v 1.9 2004-07-16 01:22:28 kalt Exp $])
 AC_CONFIG_SRCDIR([src/os.h])
 AC_CONFIG_HEADER([src/config.h])
 
@@ -34,7 +34,7 @@ if test "x$with_pcre" != "xno"; then
 fi
 
 # Checks for header files.
-AC_CHECK_HEADERS([paths.h termcap.h curses.h term.h sys/loadavg.h])
+AC_CHECK_HEADERS([libgen.h paths.h termcap.h curses.h term.h sys/loadavg.h])
 if test "x$with_pcre" != "xno"; then
    AC_CHECK_HEADERS([pcre.h])
 fi
@@ -49,7 +49,7 @@ AC_CHECK_DECLS([sys_signame], , , [#include <signal.h>])
 #AC_FUNC_FORK
 #AC_FUNC_MALLOC
 #AC_FUNC_VPRINTF
-#AC_CHECK_FUNCS([alarm memset strcasecmp strchr strdup strerror])
+AC_CHECK_FUNCS([basename])
 AC_FUNC_GETLOADAVG
 
 AC_CONFIG_FILES([src/Makefile Makefile])

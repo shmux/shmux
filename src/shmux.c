@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2002, 2003 Christophe Kalt
+** Copyright (C) 2002, 2003, 2004 Christophe Kalt
 **
 ** This file is part of shmux,
 ** see the LICENSE file for details on your rights.
@@ -7,7 +7,9 @@
 
 #include "os.h"
 
-#include <libgen.h>
+#if defined(HAVE_LIBGEN_H)
+# include <libgen.h>
+#endif
 #include <dirent.h>
 #if defined(HAVE_PATHS_H)
 # include <paths.h>
@@ -20,6 +22,10 @@
 # include <pcre.h>
 #endif
 
+#if !defined(HAVE_BASENAME)
+# define basename(s) ((strrchr(s,'/') == NULL) ? (char*)s : (strrchr(s,'/')+1))
+#endif
+
 #include "version.h"
 
 #include "analyzer.h"
@@ -29,7 +35,7 @@
 #include "term.h"
 #include "units.h"
 
-static char const rcsid[] = "@(#)$Id: shmux.c,v 1.27 2003-11-08 01:17:28 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: shmux.c,v 1.28 2004-07-16 01:22:28 kalt Exp $";
 
 extern char *optarg;
 extern int optind, opterr;

@@ -16,6 +16,10 @@
 #include <sys/resource.h>
 #include <poll.h>
 
+#if !defined(WCOREDUMP)
+# define WCOREDUMP(x) 0
+#endif
+
 #include "analyzer.h"
 #include "byteset.h"
 #include "exec.h"
@@ -25,7 +29,7 @@
 #include "target.h"
 #include "term.h"
 
-static char const rcsid[] = "@(#)$Id: loop.c,v 1.45 2004-06-08 00:49:16 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: loop.c,v 1.46 2004-07-16 01:22:28 kalt Exp $";
 
 extern char *myname;
 
