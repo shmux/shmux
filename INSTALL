@@ -1,10 +1,7 @@
 -- shmux status
 
-Here is the fourth public release of shmux.  This release has been
-successfully compiled on NetBSD, FreeBSD, Solaris and Linux.  Some features
-are still missing and will be added in future releases.  What is documented
-(in the manual page) is implemented and should be working, but the
-behaviour may slightly change in future releases.
+Here is the fifth public release of shmux.  It is expected to be the last
+alpha release before version 1.0.
 
 -- shmux dependencies
 
@@ -16,7 +13,7 @@ certain optional features of shmux.  See the man page for details.
 + ssh: http://www.fressh.org/, http://www.openssh.org/, ...
 
 Although this package uses autoconf, there is no real attempt to make sure
-it works on older UNIX systems as it relies on a number of soemwhat modern
+it works on older UNIX systems as it relies on a number of somewhat modern
 system calls.
 
 -- shmux installation notes
@@ -27,6 +24,12 @@ system calls.
 (4) make install
 
 -- shmux contact
+
+If you want to be informed about important news about shmux, such as new
+releases, subscribe to the shmux-announce mailing list, either by sending a
+mail including the "subscribe" keyword to shmux-announce-request@taranis.org,
+or simply visit the following web page:
+        http://web.taranis.org/mailman/listinfo/shmux-announce
 
 Send bug reports to `shmux-bugs@taranis.org'.  A bug report is an adequate
 description of the environment (versions of this package, the OS, fping and
@@ -39,4 +42,4 @@ Consider documentation errors as bugs, and report them as such.  If you
 develop anything pertaining to `shmux' or have suggestions, share your
 findings by writing to `shmux@taranis.org'.
 
--- $Id: INSTALL,v 1.5 2002-08-21 00:50:30 kalt Exp $
+-- $Id: INSTALL,v 1.6 2003-01-05 20:28:24 kalt Exp $

@@ -1,4 +1,14 @@
-$Id: CHANGES,v 1.3 2002-08-21 00:50:29 kalt Exp $
+$Id: CHANGES,v 1.4 2003-01-05 20:28:23 kalt Exp $
+
+Changes since 0.4a [2002/08/21]:
+
+- Fixed the sometimes erroneous "Pending" count in status display.
+- -o options now generates more files per target.
+- final summary report is now more detailed (in part thanks to -e).
+- added -e and -E options.
+- IRIX hides basename() in libgen, look there just in case.
+- termcap/curses checks and logic cleaned up in configure.ac & term.c.
+- MAXNAMLEN replaced with PATH_MAX.
 
 Changes since 0.3a [2002/07/11]:
 
