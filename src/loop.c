@@ -21,7 +21,7 @@
 #include "target.h"
 #include "term.h"
 
-static char const rcsid[] = "@(#)$Id: loop.c,v 1.13 2002-08-09 01:45:28 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: loop.c,v 1.14 2002-08-17 01:15:10 kalt Exp $";
 
 struct child
 {
@@ -198,25 +198,37 @@ struct child *kid;
 	assert( start < nl );
 	if (isfping == 0)
 	  {
-	    char **left;
-
-	    if (std == 1)
-		left = &(kid->obuf); /* stdout */
-	    else
-		left = &(kid->ebuf); /* stderr */
-
-	    if (*left != NULL)
+	    if (kid->ofile != -1)
 	      {
-		/*
-		** This is a little weak, but then again it shouldn't happen
-		** either..  Who just said "Never say never!"?  i swear i
-		** just heard someone say that...
-		*/
-		tprint(name, ((std == 1) ? MSG_STDOUTTRUNC : MSG_STDERRTRUNC),
-		       "%s", *left);
-		free(*left);
+		if (write((std == 1) ? kid->ofile : kid->efile,
+			  start, strlen(start)) == -1)
+		    /* Should we do a little more here? */
+		    eprint("Data lost for %s, write() failed: %s",
+			   name, strerror(errno));
 	      }
-	    *left = strdup(start);
+	    else
+	      {
+		char **left;
+		if (std == 1)
+		    left = &(kid->obuf); /* stdout */
+		else
+		    left = &(kid->ebuf); /* stderr */
+
+		if (*left != NULL)
+		  {
+		    /*
+		    ** This is a little weak, but then again it shouldn't
+		    ** happen often either..  Who just said "Never say
+		    ** never!"?  i swear i just heard someone say that...
+		    */
+		    tprint(name,
+			   ((std == 1) ? MSG_STDOUTTRUNC : MSG_STDERRTRUNC),
+			   "%s", *left);
+		    free(*left);
+		  }
+	    
+		*left = strdup(start);
+	      }
 	  }
 	else
 	  {
