@@ -29,7 +29,7 @@
 #include "term.h"
 #include "units.h"
 
-static char const rcsid[] = "@(#)$Id: shmux.c,v 1.19 2003-03-23 18:34:55 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: shmux.c,v 1.20 2003-03-30 02:52:11 kalt Exp $";
 
 extern char *optarg;
 extern int optind, opterr;
@@ -269,7 +269,19 @@ main(int argc, char **argv)
       {
 	int length;
 
-	length = target_add(argv[optind++]);
+	if (strcmp(argv[optind], "-") != 0)
+	    length = target_add(argv[optind++]);
+	else
+	  {
+	    char tname[256];
+
+	    optind += 1;
+	    while (fgets(tname, 256, stdin) != NULL)
+	      {
+		tname[strlen(tname)-1] = '\0';
+		length = target_add(tname);
+	      }
+	  }
 	if (length > longest)
 	    longest = length;
       }

@@ -1,4 +1,4 @@
-.TH SHMUX 8 "$Date: 2003-03-23 18:32:51 $"
+.TH SHMUX 8 "$Date: 2003-03-30 02:52:06 $"
 .DA March 18, 2003
 .SH NAME
 shmux - Shell Multiplexor
@@ -34,7 +34,7 @@ shmux - Shell Multiplexor
 ] [
 .B -T \fItimeout\fP
 ]
-.B -c \fIcommand\fP \fItargets...\fP
+.B -c \fIcommand\fP [ - | \fItargets...\fP ]
 
 .SH DESCRIPTION
 \fBshmux\fP is program for executing the same \fIcommand\fP on many hosts
@@ -42,7 +42,8 @@ in parallel.  For each target, a child process is spawned by \fBshmux\fP,
 and a shell on the target obtained one of the supported methods: \fIrsh\fP,
 \fIssh\fP, or \fIsh\fP.  The output produced by the children is received by
 \fBshmux\fP and either (optionally) output in turn to the user, or written
-to files for later processing.
+to files for later processing.  The list of \fItargets\fP may either be
+specified on the command line or be read from the standard input.
 
 The default method may be set by using the \fB-r\fP option, and may be
 overridden for any target by prefixing the target name by the method and a
