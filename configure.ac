@@ -1,9 +1,9 @@
 #
-# $Id: configure.ac,v 1.9 2004-07-16 01:22:28 kalt Exp $
+# $Id: configure.ac,v 1.10 2004-07-18 00:23:42 kalt Exp $
 #
 AC_PREREQ(2.53)
 AC_INIT([Shell Multiplexor], [], [shmux-bugs@taranis.org], [shmux])
-AC_REVISION([$Id: configure.ac,v 1.9 2004-07-16 01:22:28 kalt Exp $])
+AC_REVISION([$Id: configure.ac,v 1.10 2004-07-18 00:23:42 kalt Exp $])
 AC_CONFIG_SRCDIR([src/os.h])
 AC_CONFIG_HEADER([src/config.h])
 
@@ -49,8 +49,7 @@ AC_CHECK_DECLS([sys_signame], , , [#include <signal.h>])
 #AC_FUNC_FORK
 #AC_FUNC_MALLOC
 #AC_FUNC_VPRINTF
-AC_CHECK_FUNCS([basename])
-AC_FUNC_GETLOADAVG
+AC_CHECK_FUNCS([basename getloadavg])
 
 AC_CONFIG_FILES([src/Makefile Makefile])
 AC_OUTPUT
