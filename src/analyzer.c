@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2003 Christophe Kalt
+** Copyright (C) 2003, 2004 Christophe Kalt
 **
 ** This file is part of shmux,
 ** see the LICENSE file for details on your rights.
@@ -20,7 +20,7 @@
 #include "term.h"
 #include "units.h"
 
-static char const rcsid[] = "@(#)$Id: analyzer.c,v 1.11 2003-11-08 01:17:27 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: analyzer.c,v 1.12 2004-04-05 00:30:03 kalt Exp $";
 
 extern char *myname;
 
@@ -78,7 +78,7 @@ size_t *len;
     if (*len == 0)
 	return "";
     
-    mm = mmap(NULL, *len + 1, PROT_READ|PROT_WRITE, MAP_PRIVATE
+    mm = mmap(NULL, *len, PROT_READ|PROT_WRITE, MAP_PRIVATE
 #if defined(MAP_FILE)
 	       |MAP_FILE
 #endif
@@ -97,8 +97,6 @@ size_t *len;
 	    eprint("Fatal internal error for %s output analysis: mmap(%d [%s]) failed: %s", target_getname(), fd, name, strerror(errno));
 	return NULL;
       }
-
-    ((char *) mm)[*len] = '\0';
 
     return mm;
 }
@@ -197,7 +195,7 @@ void (*comp)(int, void *, char *);
 int *ok;
 char *str;
 {
-    char *fname;
+    char *fname, *rbuf;
     int fd;
     size_t len;
 
@@ -211,7 +209,7 @@ char *str;
 	    *ok = 1;
 	str += 1;
 	if (str[0] == '=')
-	    str += 1; /* expression follows */
+	    rbuf = str + 1; /* expression follows */
 	else if (str[0] == '<')
 	  {
 	    /* Expression is in a file */
@@ -226,13 +224,25 @@ char *str;
 	    str = mapfile(1, fd, fname, &len);
 	    if (str == NULL)
 		exit(RC_ERROR);
+            rbuf = malloc(len + 1);
+            if (rbuf == NULL)
+              {
+                fprintf(stderr, "%s: malloc() failed: %s\n",
+                        myname, strerror(errno));
+                exit(RC_ERROR);
+              }
+            memcpy((void *)rbuf, (void *)str, len);
+            rbuf[len] = '\0';
+            unmapfile(1, fname, str, len);
 	  }
       }
+    else
+        rbuf = str;
 
-    comp(1, re, str);
+    comp(1, re, rbuf);
 
     if (fname != NULL)
-	unmapfile(1, fname, str, len);
+        free(rbuf);
     if (fd >= 0)
 	close(fd);
 }
@@ -249,7 +259,7 @@ struct condition **list;
 {
     int fd, lineno, cond, max;
     size_t len;
-    char *str, *ln, *nl;
+    char *str, *ln, *lndup, *nl;
 
     assert( *list == NULL );
 
@@ -278,13 +288,32 @@ struct condition **list;
 
     ln = str; nl = str;
     lineno = 1;
-    while (nl - str < len)
+    lndup = NULL;
+    while (ln - str < len)
     {
       /* Parse the file line by line */
       while (nl - str < len && *nl != '\n')
 	  nl += 1;
-      assert( *nl == '\0' || *nl == '\n' );
-      *nl = '\0';
+
+      if ((nl - str) == len)
+	{
+	  if (*(nl - 1) != '\0')
+	    {
+	      assert( lndup == NULL );
+	      lndup = (char *) malloc(len - (ln - str) + 1);
+              if (lndup == NULL)
+                {
+                  fprintf(stderr, "%s: realloc() failed: %s\n", myname,
+                          strerror(errno));
+                  exit(RC_ERROR);
+                }
+	      memcpy(lndup, ln, len - (ln - str));
+	      lndup[len - (ln - str)] = '\0';
+	      ln = lndup;
+	    }
+	}
+      else
+	  *nl = '\0';
 
       /* Make sure the list structure is big enough */
       if (cond == max-2)
@@ -335,8 +364,12 @@ struct condition **list;
 
     (*list)[cond].ok = -1; /* Mark the end of the list */
 
+    if (lndup != NULL)
+	free(lndup);
+
     if (file != NULL)
 	unmapfile(1, file, str, len);
+
     if (fd >= 0)
 	close(fd);
 }
@@ -475,13 +508,36 @@ char *oname, *ename;
 	return -1;
       }
 
+    if (lseek(ofd, SEEK_END, 0) != 0)
+      {
+	eprint("lseek(%s, SEEK_END): %s", oname, strerror(errno));
+	return -1;
+      }
+    if (write(ofd, "\0", 1) != 1)
+      {
+	eprint("write(%s): %s", oname, strerror(errno));
+	return -1;
+      }
     output = mapfile(2, ofd, oname, &olen);
     if (output == NULL)
 	return -1;
+
+    if (lseek(efd, SEEK_END, 0) != 0)
+      {
+	eprint("lseek(%s, SEEK_END): %s", ename, strerror(errno));
+	return -1;
+      }
+    if (write(efd, "\0", 1) != 1)
+      {
+	eprint("write(%s): %s", ename, strerror(errno));
+	return -1;
+      }
     errput = mapfile(2, efd, ename, &elen);
     if (errput == NULL)
       {
 	unmapfile(2, oname, output, olen);
+        if (ftruncate(ofd, olen-1) != 0)
+            eprint("ftruncate(%s): %s", oname, strerror(errno));
 	return -1;
       }
     
@@ -574,7 +630,11 @@ char *oname, *ename;
 #endif
 
     unmapfile(2, oname, output, olen);
+    if (ftruncate(ofd, olen-1) != 0)
+        eprint("ftruncate(%s): %s", oname, strerror(errno));
     unmapfile(2, ename, errput, elen);
+    if (ftruncate(efd, elen-1) != 0)
+        eprint("ftruncate(%s): %s", ename, strerror(errno));
     
     return ok;
 }
