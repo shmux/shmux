@@ -12,7 +12,7 @@
 
 #include "status.h"
 
-static char const rcsid[] = "@(#)$Id: target.c,v 1.16 2004-12-13 23:02:39 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: target.c,v 1.17 2004-12-15 00:30:47 kalt Exp $";
 
 extern char *myname;
 
@@ -380,6 +380,45 @@ int ok;
 	targets[tcur].result = CMD_FAILURE;
       }
     status_phase(targets[tcur].status, 1);
+}
+
+/*
+** target_pong
+**	Specialized target_result() routine to deal with ping/pong oddities.
+*/
+int
+target_pong(name)
+char *name;
+{
+    tcur = -1;
+    while (++tcur <= tmax)
+      {
+        char *hname;
+
+        /* We're only interested in targets being pinged */
+        if (targets[tcur].phase != 1)
+            continue;
+        if (targets[tcur].status != 0)
+            continue;
+
+        /* No name given, any target will do. */
+        if (name == NULL)
+            break;
+
+        /* Find the specific name */
+        hname = index(targets[tcur].name, '@');
+        if (hname == NULL)
+            hname = targets[tcur].name;
+        else
+            hname += 1;
+        if (strcasecmp(hname, name) == 0)
+            break;
+      }
+
+    if (tcur > tmax)
+	return -1;
+
+    return 0;
 }
 
 /*
