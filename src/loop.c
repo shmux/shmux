@@ -21,7 +21,7 @@
 #include "target.h"
 #include "term.h"
 
-static char const rcsid[] = "@(#)$Id: loop.c,v 1.15 2002-08-17 02:12:07 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: loop.c,v 1.16 2002-10-13 20:42:35 kalt Exp $";
 
 struct child
 {
@@ -308,15 +308,15 @@ char **fname, *dir, *name, *extension;
     assert( name != NULL );
     assert( extension != NULL );
 
-    *fname = (char *) malloc(MAXNAMLEN);
+    *fname = (char *) malloc(PATH_MAX);
     if (*fname == NULL)
       {
 	perror("malloc failed");
 	exit(1);
       }
 
-    sz = snprintf(*fname, MAXNAMLEN, "%s/%s.%s", dir, name, extension);
-    if (sz >= MAXNAMLEN)
+    sz = snprintf(*fname, PATH_MAX, "%s/%s.%s", dir, name, extension);
+    if (sz >= PATH_MAX)
       {
 	eprint("\"%s\": name is too long", dir);
 	free(*fname); *fname = NULL;

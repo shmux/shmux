@@ -24,7 +24,7 @@
 #include "term.h"
 #include "units.h"
 
-static char const rcsid[] = "@(#)$Id: shmux.c,v 1.12 2002-08-09 14:50:35 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: shmux.c,v 1.13 2002-10-13 20:42:36 kalt Exp $";
 
 extern char *optarg;
 extern int optind, opterr;
@@ -75,7 +75,7 @@ main(int argc, char **argv)
     int opt_prefix, opt_status, opt_quiet, opt_internal, opt_debug;
     int opt_ctimeout, opt_mixed, opt_maxworkers, opt_vtest;
     u_int opt_test;
-    char *opt_rcmd, *opt_command, *opt_odir, *opt_ping, tdir[MAXNAMLEN];
+    char *opt_rcmd, *opt_command, *opt_odir, *opt_ping, tdir[PATH_MAX];
     int longest, ntargets;
     time_t start;
 
