@@ -20,7 +20,7 @@
 
 #include "term.h"
 
-static char const rcsid[] = "@(#)$Id: term.c,v 1.12 2003-03-26 02:02:48 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: term.c,v 1.13 2003-03-29 20:53:26 kalt Exp $";
 
 extern char *myname;
 
@@ -74,6 +74,11 @@ int maxlen, prefix, progress, internal, debug;
 	tty = NULL;
 
     term = getenv("TERM");
+
+    if (debugmsgs != 0)
+	fprintf(stdout, "%*s$ otty[%d] etty[%d] tty[0x%X] TERM[%s]\n",
+		padding, myname, otty, etty, tty, (term != NULL) ? term : "");
+
     if (term == NULL)
       {
 	if (progress != 0 && tty != NULL)
