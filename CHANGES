@@ -1,12 +1,22 @@
-$Id: CHANGES,v 1.1 2002-07-08 01:33:50 kalt Exp $
+$Id: CHANGES,v 1.2 2002-07-11 01:29:48 kalt Exp $
 
-Changes since 0.1a:
+Changes since 0.2a [2002/07/08]:
+
+- SIGINT is now caught, but not by children (which will die right away).
+- create the directory supplied with the -o option if it doesn't exist.
+- cleaned up environment manipulation in exec().
+- -b negates old -v option which is now the default, -v replaces old -d.
+- added environment variables SHMUX_SSH*_OPTS.
+- added -xa options to ssh by default.
+- SHMUX_SH was overloaded, added SHMUX_RCMD, renamed -m option to -r.
+- use strsignal(2) instead of sys_signame[].
+
+Changes since 0.1a [2002/07/04]:
 
 - added -o option.
 - don't display the status line unless stdout is a tty, even without -s.
 - added kludge to work around NetBSD's broken poll(2) implementation.
 - adjusted formula deciding the maximum allowed for -M.
-- children are now properly polled for data.
 - added -C option.
 - algorithm now prefers starting real commands over test commands.
 - made it easier to understand why tests fail (see -t).

@@ -1,11 +1,10 @@
 -- shmux status
 
-Here is the second public release of shmux, with a lot of new code.  So you
-should still be prepared for the unexpected as things have not yet been
-polished as much as they need to be.  Some features are still missing and
-will be added in future releases.  What is documented (in the manual page)
-is implemented and should be working, but the behaviour may slightly
-change in future releases.
+Here is the third public release of shmux.  This release has been
+successfully compiled on NetBSD, FreeBSD, Solaris and Linux.  Some features
+are still missing and will be added in future releases.  What is documented
+(in the manual page) is implemented and should be working, but the
+behaviour may slightly change in future releases.
 
 -- shmux dependencies
 
@@ -40,4 +39,4 @@ Consider documentation errors as bugs, and report them as such.  If you
 develop anything pertaining to `shmux' or have suggestions, share your
 findings by writing to `shmux@taranis.org'.
 
--- $Id: INSTALL,v 1.3 2002-07-08 01:33:50 kalt Exp $
+-- $Id: INSTALL,v 1.4 2002-07-11 01:29:48 kalt Exp $
