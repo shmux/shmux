@@ -12,7 +12,7 @@
 
 #include "status.h"
 
-static char const rcsid[] = "@(#)$Id: target.c,v 1.17 2004-12-15 00:30:47 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: target.c,v 1.18 2004-12-15 00:34:54 kalt Exp $";
 
 extern char *myname;
 
@@ -232,6 +232,8 @@ void
 target_getcmd(args, cmd)
 char **args, *cmd;
 {
+    char user[32], *at;
+
     assert( tcur >= 0 && tcur <= tmax );
 
     switch (targets[tcur].type)
@@ -249,9 +251,31 @@ char **args, *cmd;
 	  if (args[0] == NULL)
 	      args[0] = "rsh";
 	  args[1] = "-n";
-	  args[2] = targets[tcur].name;
-	  args[3] = cmd;
-	  args[4] = NULL;
+          at = index(targets[tcur].name, '@');
+          if (at == NULL)
+            {
+              args[2] = targets[tcur].name;
+              args[3] = cmd;
+              args[4] = NULL;
+            }
+          else
+            {
+              int i;
+
+              i = 0; /* strlcpy() rules, but it's still too new. */
+              while (targets[tcur].name[i] != '@' && i < 31)
+                {
+                  user[i] = targets[tcur].name[i];
+                  i += 1;
+                }
+              user[i] = '\0';
+
+              args[2] = "-l";
+              args[3] = user;
+              args[4] = at+1;
+              args[5] = cmd;
+              args[6] = NULL;
+            }
 	  return;
       case 2:
 	  args[0] = getenv("SHMUX_SSH1");
