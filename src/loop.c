@@ -23,7 +23,7 @@
 #include "target.h"
 #include "term.h"
 
-static char const rcsid[] = "@(#)$Id: loop.c,v 1.26 2003-03-21 20:55:30 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: loop.c,v 1.27 2003-03-29 20:47:35 kalt Exp $";
 
 extern char *myname;
 
@@ -487,12 +487,13 @@ u_int ctimeout, utest, test;
     struct child *children;
     struct pollfd *pfd;
     struct sigaction sa;
+    int idx;
     char *cargv[10];
 
     /* review process fd limit */
     setup_fdlimit((odir == NULL) ? 3 : 5, max);
 
-    /* Allocate the control structures */
+    /* Allocate and initialize the control structures */
     pfd = (struct pollfd *) malloc((max+2)*3 * sizeof(struct pollfd));
     if (pfd == NULL)
       {
@@ -500,6 +501,10 @@ u_int ctimeout, utest, test;
 	exit(1);
       }
     memset((void *) pfd, 0, (max+2)*3 * sizeof(struct pollfd));
+    idx = 0;
+    while (idx < (max+2)*3)
+	pfd[idx++].fd = -1;
+
     children = (struct child *) malloc((max+1) * sizeof(struct child));
     if (children == NULL)
       {
@@ -559,7 +564,7 @@ u_int ctimeout, utest, test;
     /* From here on, it's one big loop. */
     while (1)
       {
-	int pollrc, idx, done;
+	int pollrc, done;
 	char *what;
 
 	/* Update the status line before (possibly) pausing in poll() */
