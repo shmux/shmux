@@ -1,10 +1,10 @@
 /*
-** Copyright (C) 2002, 2003 Christophe Kalt
+** Copyright (C) 2002, 2003, 2004 Christophe Kalt
 **
 ** This file is part of shmux
 ** see the LICENSE file for details on your rights.
 **
-** $Id: target.h,v 1.4 2003-04-26 01:39:01 kalt Exp $
+** $Id: target.h,v 1.5 2004-12-13 23:02:39 kalt Exp $
 */
 
 #if !defined(_TARGET_H_)
@@ -14,6 +14,7 @@ void target_default(char *);
 int target_add(char *);
 int target_getmax(void);
 int target_setbyname(char *);
+int target_setbyhname(char *);
 int target_setbynum(u_int);
 char *target_getname(void);
 int target_getnum(void);

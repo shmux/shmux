@@ -12,7 +12,7 @@
 
 #include "status.h"
 
-static char const rcsid[] = "@(#)$Id: target.c,v 1.15 2004-07-06 01:05:26 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: target.c,v 1.16 2004-12-13 23:02:39 kalt Exp $";
 
 extern char *myname;
 
@@ -152,6 +152,35 @@ char *name;
     tcur = 0;
     while (tcur <= tmax && strcasecmp(targets[tcur].name, name) != 0)
 	tcur += 1;
+    if (tcur > tmax)
+	return -1;
+    return 0;
+}
+
+/*
+** target_setbyhname
+**	Find a target by host name, and set the current pointer.
+*/
+int
+target_setbyhname(name)
+char *name;
+{
+    assert( name != NULL );
+
+    tcur = 0;
+    while (tcur <= tmax)
+      {
+        char *hname;
+
+        hname = index(targets[tcur].name, '@');
+        if (hname == NULL)
+            hname = targets[tcur].name;
+        else
+            hname += 1;
+        if (strcasecmp(hname, name) == 0)
+            break;
+	tcur += 1;
+      }
     if (tcur > tmax)
 	return -1;
     return 0;
