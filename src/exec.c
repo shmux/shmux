@@ -21,7 +21,7 @@
 #include "exec.h"
 #include "term.h"
 
-static char const rcsid[] = "@(#)$Id: exec.c,v 1.1 2002-07-04 21:44:49 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: exec.c,v 1.2 2002-07-07 01:27:05 kalt Exp $";
 
 pid_t
 exec(fd0, fd1, fd2, target, argv, timeout)
@@ -179,8 +179,6 @@ char *target, **argv;
 	if (dup(err[1]) == -1) abort();
 	if (close(out[1]) == -1) abort();
 	if (fd2 != NULL && close(err[1]) == -1) abort();
-
-	/* XXX: Might need to ignore SIGINT? What about setsid()? */
 
 	alarm(timeout);
 
