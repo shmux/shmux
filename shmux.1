@@ -1,4 +1,4 @@
-.TH SHMUX 8 "$Date: 2003-05-13 01:26:17 $"
+.TH SHMUX 8 "$Date: 2003-06-18 00:36:25 $"
 .DA May 8, 2003
 .SH NAME
 shmux - Shell Multiplexor
@@ -190,7 +190,8 @@ failure is ultimately determined upon completion of the \fIcommand\fP.
 (Only the \fIlnregex\fP and \fIlnpcre\fP analyzers are able to determine
 errors while the \fIcommand\fP is running.)  When specified twice, this
 option allows to completely suppress output from the \fIcommand\fP run on
-targets.  Using this option (once or twice) requires using \fB-o\fP.
+targets.  This also changes the default spawn stategy to "all".  Using this
+option (once or twice) requires using \fB-o\fP.
 .IP "\fB-Q\fP"
 Suppress the final summary of results.
 .IP "\fB-s\fP"

@@ -29,7 +29,7 @@
 #include "term.h"
 #include "units.h"
 
-static char const rcsid[] = "@(#)$Id: shmux.c,v 1.25 2003-05-04 01:04:51 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: shmux.c,v 1.26 2003-06-18 00:36:42 kalt Exp $";
 
 extern char *optarg;
 extern int optind, opterr;
@@ -108,7 +108,7 @@ main(int argc, char **argv)
     opt_analyze = opt_outanalysis = opt_erranalysis = NULL;
     opt_command = opt_odir = opt_ping = NULL;
     opt_rcmd = getenv("SHMUX_RCMD");
-    opt_spawn = DEFAULT_SPAWNMODE;
+    opt_spawn = NULL;
     if (getenv("SHMUX_SPAWN") != NULL)
 	opt_spawn = getenv("SHMUX_SPAWN");
     if (opt_rcmd == NULL)
@@ -187,7 +187,11 @@ main(int argc, char **argv)
 	      if ((opt_outmode & OUT_IFERR) == 0)
 		  opt_outmode |= OUT_IFERR;
 	      else
+		{
 		  opt_outmode = OUT_NULL;
+		  if (opt_spawn == NULL)
+		      opt_spawn = "all";
+		}
 	      break;
 	  case 'Q':
 	      opt_quiet = 1;
@@ -241,6 +245,9 @@ main(int argc, char **argv)
 	fprintf(stderr, "%s: Invalid -M argument!\n", myname);
 	exit(1);
       }
+
+    if (opt_spawn == NULL)
+	opt_spawn = DEFAULT_SPAWNMODE;
 
     opt_analyzer = analyzer_init(opt_analyze, opt_outanalysis,opt_erranalysis);
     /* -A requires -o, to avoid dangerous/reckless invocations. */
