@@ -19,7 +19,7 @@
 #include "target.h"
 #include "term.h"
 
-static char const rcsid[] = "@(#)$Id: loop.c,v 1.5 2002-07-07 03:57:37 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: loop.c,v 1.6 2002-07-07 19:59:38 kalt Exp $";
 
 struct child
 {
@@ -254,8 +254,9 @@ u_int ctimeout, test;
     ** process may have, we do some math and try to avoid running into
     ** it which could be unpleasant depending on what we're trying to
     ** achieve when we run out.  The assumptions are:
-    ** + 3 for stdin, stdout and stderr
+    ** + 3 for stdin, stdout and stderr (our own)
     ** + 3 for stdin, stdout and stderr for fping
+    ** + 3 for pipe creation in exec.c/exec()
     ** + (3 * max) for children stdin, stdout and stderr
     ** And we add another 10 as safety margin.
     */  
@@ -264,9 +265,9 @@ u_int ctimeout, test;
 	eprint("getrlimit(RLIMIT_NOFILE): %s", strerror(errno));
 	exit(1);
       }
-    if (fdlimit.rlim_cur < (max + 2) * 3 + 10)
+    if (fdlimit.rlim_cur < (max + 3) * 3 + 10)
       {
-	fdlimit.rlim_cur = (max + 2) * 3 + 10;
+	fdlimit.rlim_cur = (max + 3) * 3 + 10;
 	if (fdlimit.rlim_cur > fdlimit.rlim_max)
 	    fdlimit.rlim_cur = fdlimit.rlim_max;
 
@@ -279,12 +280,12 @@ u_int ctimeout, test;
 	    eprint("getrlimit(RLIMIT_NOFILE): %s", strerror(errno));
 	    eprint("Unable to validate parallelism factor.");
 	  }
-	else if (fdlimit.rlim_cur < (max + 2) * 3 + 10)
+	else if (fdlimit.rlim_cur < (max + 3) * 3 + 10)
 	  {
 	    int old;
 	    
 	    old = max;
-	    max = ((fdlimit.rlim_cur - 10) / 3) - 2;
+	    max = ((fdlimit.rlim_cur - 10) / 3) - 3;
 	    eprint("Reducing parallelism factor to %d (from %d) because of system limitation.", max, old);
 	  }
       }
