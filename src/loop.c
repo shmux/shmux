@@ -29,7 +29,7 @@
 #include "target.h"
 #include "term.h"
 
-static char const rcsid[] = "@(#)$Id: loop.c,v 1.46 2004-07-16 01:22:28 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: loop.c,v 1.47 2004-12-13 23:02:51 kalt Exp $";
 
 extern char *myname;
 
@@ -428,7 +428,7 @@ char *line;
     if (space != NULL)
       {
 	*space = '\0';
-	if (target_setbyname(line) != 0)
+	if (target_setbyhname(line) != 0)
 	  {
 	    *space = ' ';
 	    dprint("fping garbage follows:");
@@ -832,9 +832,16 @@ u_int ctimeout, utest;
 
 	    while (target_next(1) == 0)
 	      {
+                char *tname;
+
 		target_start();
 		count += 1;
-		write(pfd[0].fd, target_getname(), strlen(target_getname()));
+                tname = index(target_getname(), '@');
+                if (tname == NULL)
+                    tname = target_getname();
+                else
+                    tname += 1;
+		write(pfd[0].fd, tname, strlen(tname));
 		write(pfd[0].fd, "\n", 1);
 	      }
 	    close(pfd[0].fd); pfd[0].fd = -1;
