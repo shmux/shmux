@@ -29,7 +29,7 @@
 #include "term.h"
 #include "units.h"
 
-static char const rcsid[] = "@(#)$Id: shmux.c,v 1.20 2003-03-30 02:52:11 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: shmux.c,v 1.21 2003-04-05 18:05:52 kalt Exp $";
 
 extern char *optarg;
 extern int optind, opterr;
@@ -50,7 +50,7 @@ static void
 usage(detailed)
 int detailed;
 {
-    fprintf(stderr, "Usage: %s [ options ] -c <command> <target1> [ <target2> ... ]\n", myname);
+    fprintf(stderr, "Usage: %s [ options ] -c <command> [ - | <target1> [ <target2> ... ] ]\n", myname);
 /*    fprintf(stderr, "Usage: %s [ options ] -i [ <target1> [ <target2> ... ] ]\n", myname);*/
     if (detailed == 0)
 	return;
