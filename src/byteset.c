@@ -10,7 +10,7 @@
 #include "byteset.h"
 #include "ctype.h"
 
-static char const rcsid[] = "@(#)$Id: byteset.c,v 1.1 2003-01-05 17:40:32 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: byteset.c,v 1.2 2003-01-08 00:47:06 kalt Exp $";
 
 extern char *myname;
 
@@ -25,7 +25,7 @@ byteset_init(set, definition)
 int set;
 char *definition;
 {
-    char *tok, *dash;
+    char *str, *tok, *dash;
     int i, j;
 
     assert( set == 0 || set == 1 );
@@ -35,7 +35,8 @@ char *definition;
     while (i < 256)
 	sets[set][i++] = 0;
 
-    tok = strtok(definition, ",");
+    str = strdup(definition);
+    tok = strtok(str, ",");
     while (tok != NULL)
       {
 	if (tok[0] == '-')
@@ -65,6 +66,7 @@ char *definition;
 
 	tok = strtok(NULL, ",");
       }
+    free(str);
 }
 
 /*
