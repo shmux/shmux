@@ -15,7 +15,7 @@
 #include "target.h"
 #include "term.h"
 
-static char const rcsid[] = "@(#)$Id: shmux.c,v 1.1 2002-07-04 21:44:50 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: shmux.c,v 1.2 2002-07-05 16:23:12 kalt Exp $";
 
 extern char *optarg;
 extern int optind, opterr;
@@ -141,6 +141,7 @@ main(int argc, char **argv)
 	  }
       }
 
+    target_default(opt_method);
     if (opt_maxworkers <= 0)
       {
 	fprintf(stderr, "%s: Invalid -M option!\n", myname);
