@@ -21,10 +21,10 @@
 #endif
 #define MAX(a, b) ((a > b) ? a : b)
 
-static char const rcsid[] = "@(#)$Id: status.c,v 1.8 2003-03-22 01:32:36 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: status.c,v 1.9 2003-04-13 15:36:55 kalt Exp $";
 
 static int spawned, inphase[5];
-static time_t changed[5];
+static time_t spawnedchg, changed[5];
 
 /*
 ** status_init
@@ -36,7 +36,7 @@ int pings, tests, analyzer;
 {
     spawned = 0;
     inphase[0] = inphase[1] = inphase[2] = inphase[3] = inphase[4] = 0;
-    changed[0] = changed[1] = changed[2] = changed[3] = 0;
+    spawnedchg = changed[0] = changed[1] = changed[2] = changed[3] = 0;
     if (pings == 0)
 	inphase[1] = -1;
     if (tests == 0)
@@ -54,6 +54,7 @@ status_spawned(count)
 int count;
 {
     spawned += count;
+    spawnedchg = time(NULL);
 }
 
 /*
@@ -85,7 +86,7 @@ void
 status_update(void)
 {
     time_t now;
-    char tmp[4][80], loadavg[20];
+    char tmp[4][80], loadavg[20], active[16];
 #if defined(HAVE_GETLOADAVG) && !defined(GETLOADAVG_PRIVILEGED)
     double load[3];
     static int erroronce = 1;
@@ -107,6 +108,10 @@ status_update(void)
 
     now = time(NULL);
 
+    if (spawned == 0 && spawnedchg > 0 && (now - spawnedchg) > 1)
+	strcpy(active, "\a[PAUSED]\a");
+    else
+	sprintf(active, "%d Active", spawned);
     if (inphase[1] >= 0)
 	sprintf(tmp[0], "%s%d Alive/",
 		(now - changed[1] < 2) ? "\a" : "", inphase[1]);
@@ -133,8 +138,8 @@ status_update(void)
 	tmp[3][0] = '\0';
       }
 
-    sprint("-- %d Active, %d Pending/%s%d Failed/%s%s%s%s -- %s",
-	   spawned,
+    sprint("-- %s, %d Pending/%s%d Failed/%s%s%s%s -- %s",
+	   active,
 	   target_getmax() - inphase[0] - MAX(0, inphase[1])
 	   - MAX(0, inphase[2]) - inphase[3] - MAX(0, inphase[4]),
 	   (now - changed[0] < 2) ? "\a" : "", inphase[0],
