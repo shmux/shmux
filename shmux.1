@@ -1,4 +1,4 @@
-.TH SHMUX 8 "$Date: 2002-08-09 01:45:27 $
+.TH SHMUX 8 "$Date: 2002-08-21 00:49:00 $
 .DA July 4, 2002
 .SH NAME
 shmux - Shell Multiplexor
@@ -157,8 +157,9 @@ Christophe Kalt <kalt@taranis.org>
 All \fIrsh\fP and some \fIssh\fP implementations effectively achieve user
 authentication by using privileged ports.  Since there are only 1024 such
 ports, there is an obvious limitation on how many connections may be open
-using these programs.  To make matters worse, a number of implementations
-do not properly close such network connections when exiting, leading to the
-port being kept open until a timeout kicks in.  When using \fBshmux\fP, one
-can very quickly run out of privileged ports, at which point failures will
-start happening.
+using these programs.  To make matters worse such ports may be held for
+four minutes (by default) as per the TCP specification.  When using
+\fBshmux\fP, one can very quickly run out of privileged ports, at which
+point failures will start happening.
+
+Send bug reports to `shmux-bugs@taranis.org'.
