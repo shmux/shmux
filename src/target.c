@@ -12,7 +12,7 @@
 
 #include "status.h"
 
-static char const rcsid[] = "@(#)$Id: target.c,v 1.6 2003-03-19 02:15:36 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: target.c,v 1.7 2003-03-22 01:30:58 kalt Exp $";
 
 extern char *myname;
 
@@ -350,9 +350,9 @@ target_results(seconds)
 int seconds;
 {
     int i, first;
-    int f, t, s, e;
+    int f, t, u, s, e;
 
-    f = t = s = e = 0;
+    f = t = u = s = e = 0;
     i = 0;
     while (i <= tmax)
       {
@@ -364,14 +364,14 @@ int seconds;
 	  case -1:
 	      t += 1;
 	      break;
+	  case 0:
+	      u += 1;
+	      break;
 	  case 1:
 	      s += 1;
 	      break;
 	  case 2:
 	      e += 1;
-	      break;
-	  case 0:
-	      assert( targets[i].status == -1 || targets[i].status == 4 );
 	      break;
 	  default:
 	      eprint("Unknown target result found!");
@@ -392,11 +392,15 @@ int seconds;
 	printf("Summary: ");
 	if (f > 0)
 	    printf("%d failure%s", f, (f > 1) ? "s" : "");
-	if (f > 0 && t + s + e > 0)
+	if (f > 0 && t + u + s + e > 0)
 	    printf(", ");
 	if (t > 0)
 	    printf("%d timeout%s", t, (t > 1) ? "s" : "");
-	if (t > 0 && s + e > 0)
+	if (t > 0 && u + s + e > 0)
+	    printf(", ");
+	if (u > 0)
+	    printf("%d unprocessed", u);
+	if (u > 0 && s + e > 0)
 	    printf(", ");
 	if (s > 0)
 	    printf("%d success%s", s, (s > 1) ? "es" : "");
