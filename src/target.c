@@ -12,7 +12,7 @@
 
 #include "status.h"
 
-static char const rcsid[] = "@(#)$Id: target.c,v 1.3 2002-07-06 20:22:38 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: target.c,v 1.4 2002-07-09 21:45:26 kalt Exp $";
 
 extern char *myname;
 
@@ -35,22 +35,22 @@ static int  type,	/* default type */
 **	add a target to the list
 */
 void
-target_default(method)
-char *method;
+target_default(cmd)
+char *cmd;
 {
-    if (strncmp("sh", method, 3) == 0)
+    if (strncmp("sh", cmd, 3) == 0)
 	type = 0;
-    else if (strncmp("rsh", method, 4) == 0)
+    else if (strncmp("rsh", cmd, 4) == 0)
 	type = 1;
-    else if (strncmp("ssh1", method, 5) == 0)
+    else if (strncmp("ssh1", cmd, 5) == 0)
 	type = 2;
-    else if (strncmp("ssh2", method, 5) == 0)
+    else if (strncmp("ssh2", cmd, 5) == 0)
 	type = 3;
-    else if (strncmp("ssh", method, 4) == 0)
+    else if (strncmp("ssh", cmd, 4) == 0)
 	type = 4;
     else
       {
-	fprintf(stderr, "%s: Unrecognized method: %s\n", myname, method);
+	fprintf(stderr, "%s: Unrecognized rcmd command: %s\n", myname, cmd);
 	exit(1);
       }
 }
@@ -202,7 +202,7 @@ char **args, *cmd;
 	  args[1] = "-c";
 	  args[2] = cmd;
 	  args[3] = NULL;
-	  break;
+	  return;
       case 1:
 	  args[0] = getenv("SHMUX_RSH");
 	  if (args[0] == NULL)
@@ -211,48 +211,48 @@ char **args, *cmd;
 	  args[2] = targets[tcur].name;
 	  args[3] = cmd;
 	  args[4] = NULL;
-	  break;
+	  return;
       case 2:
 	  args[0] = getenv("SHMUX_SSH1");
-	  if (args[0] == NULL)
-	      args[0] = getenv("SHMUX_SSH");
-	  if (args[0] == NULL)
-	      args[0] = "ssh";
-	  args[1] = "-o";
-	  args[2] = "BatchMode=yes";
-	  args[3] = "-1";
-	  args[4] = "-n";
-	  args[5] = targets[tcur].name;
-	  args[6] = cmd;
-	  args[7] = NULL;
+	  args[1] = "-1n";
+	  args[4] = getenv("SHMUX_SSH1_OPTS");
 	  break;
       case 3:
 	  args[0] = getenv("SHMUX_SSH2");
-	  if (args[0] == NULL)
-	      args[0] = getenv("SHMUX_SSH");
-	  if (args[0] == NULL)
-	      args[0] = "ssh";
-	  args[1] = "-o";
-	  args[2] = "BatchMode=yes";
-	  args[3] = "-2";
-	  args[4] = "-n";
-	  args[5] = targets[tcur].name;
-	  args[6] = cmd;
-	  args[7] = NULL;
+	  args[1] = "-2n";
+	  args[4] = getenv("SHMUX_SSH2_OPTS");
 	  break;
       case 4:
-	  args[0] = getenv("SHMUX_SSH");
-	  if (args[0] == NULL)
-	      args[0] = "ssh";
-	  args[1] = "-o";
-	  args[2] = "BatchMode=yes";
-	  args[3] = "-n";
-	  args[4] = targets[tcur].name;
-	  args[5] = cmd;
-	  args[6] = NULL;
+	  args[0] = NULL;
+	  args[1] = "-n";
+	  args[4] = NULL;
 	  break;
       default:
 	  abort();
+      }
+
+    /* Only ssh left */
+    if (args[0] == NULL)
+	args[0] = getenv("SHMUX_SSH");
+    if (args[0] == NULL)
+	args[0] = "ssh";
+    args[2] = "-o";
+    args[3] = "BatchMode=yes";
+    if (args[4] == NULL)
+	args[4] = getenv("SHMUX_SSH_OPTS");
+    if (args[4] == NULL)
+	args[4] = "-xa";
+    if (args[4][0] == '\0')
+      {
+	args[4] = targets[tcur].name;
+	args[5] = cmd;
+	args[6] = NULL;
+      }
+    else
+      {
+	args[5] = targets[tcur].name;
+	args[6] = cmd;
+	args[7] = NULL;
       }
 }
 

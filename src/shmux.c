@@ -17,7 +17,7 @@
 #include "term.h"
 #include "units.h"
 
-static char const rcsid[] = "@(#)$Id: shmux.c,v 1.5 2002-07-07 22:45:59 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: shmux.c,v 1.6 2002-07-09 21:45:26 kalt Exp $";
 
 extern char *optarg;
 extern int optind, opterr;
@@ -27,7 +27,7 @@ char *myname;
 #define	DEFAULT_MAXWORKERS 10
 #define DEFAULT_PINGTIMEOUT "500"
 #define DEFAULT_TESTTIMEOUT 15
-#define DEFAULT_METHOD "ssh"
+#define DEFAULT_RCMD "ssh"
 
 static void usage(int);
 
@@ -46,7 +46,7 @@ int detailed;
     fprintf(stderr, "  -C <timeout>  Set a command timeout.\n");
     fprintf(stderr, "\n");
     fprintf(stderr, "  -M            Maximum number of simultaneous processes (Default: %u).\n", DEFAULT_MAXWORKERS);
-    fprintf(stderr, "  -m <method>   Set the default method (Default: %s).\n", DEFAULT_METHOD);
+    fprintf(stderr, "  -r <rcmd>     Set the default method (Default: %s).\n", DEFAULT_RCMD);
     fprintf(stderr, "  -p            Ping targets to check for life.\n");
     fprintf(stderr, "  -P <millisec> Initial target timeout given to fping (Default: %s).\n", DEFAULT_PINGTIMEOUT);
     fprintf(stderr, "  -t            Send test command to verify target health.\n");
@@ -65,7 +65,7 @@ main(int argc, char **argv)
     int opt_verbose, opt_status, opt_quiet, opt_internal, opt_debug;
     int opt_ctimeout, opt_maxworkers, opt_vtest;
     u_int opt_test;
-    char *opt_method, *opt_command, *opt_odir, *opt_ping;
+    char *opt_rcmd, *opt_command, *opt_odir, *opt_ping;
     int longest, ntargets;
     time_t start;
 
@@ -75,9 +75,9 @@ main(int argc, char **argv)
     opt_verbose = opt_quiet = opt_internal = opt_debug = 0;
     opt_maxworkers = DEFAULT_MAXWORKERS;
     opt_ctimeout = opt_test = opt_vtest = 0;
-    opt_method = getenv("SHMUX_SH");
-    if (opt_method == NULL)
-	opt_method = DEFAULT_METHOD;
+    opt_rcmd = getenv("SHMUX_RCMD");
+    if (opt_rcmd == NULL)
+	opt_rcmd = DEFAULT_RCMD;
     opt_command = opt_odir = opt_ping = NULL;
 
     opterr = 0;
@@ -85,7 +85,7 @@ main(int argc, char **argv)
       {
         int c;
 	
-        c = getopt(argc, argv, "c:C:dDhm:M:o:pP:qstT:vV");
+        c = getopt(argc, argv, "c:C:dDhM:o:pP:qr:stT:vV");
 	
         /* Detect the end of the options. */
         if (c == -1)
@@ -109,9 +109,6 @@ main(int argc, char **argv)
               usage(1);
               exit(0);
               break;
-	  case 'm':
-	      opt_method = optarg;
-	      break;
 	  case 'M':
 	      opt_maxworkers = atoi(optarg);
 	      break;
@@ -127,6 +124,9 @@ main(int argc, char **argv)
 	      break;
 	  case 'q':
 	      opt_quiet = 1;
+	      break;
+	  case 'r':
+	      opt_rcmd = optarg;
 	      break;
 	  case 's':
 	      opt_status = 0;
@@ -160,7 +160,7 @@ main(int argc, char **argv)
         exit(1);
       }
 
-    target_default(opt_method);
+    target_default(opt_rcmd);
     if (opt_maxworkers <= 0)
       {
 	fprintf(stderr, "%s: Invalid -M argument!\n", myname);
