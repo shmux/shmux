@@ -29,7 +29,7 @@
 #include "term.h"
 #include "units.h"
 
-static char const rcsid[] = "@(#)$Id: shmux.c,v 1.23 2003-05-03 01:13:53 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: shmux.c,v 1.24 2003-05-03 16:00:05 kalt Exp $";
 
 extern char *optarg;
 extern int optind, opterr;
@@ -78,7 +78,9 @@ int detailed;
     fprintf(stderr, "  -m            Don't mix target outputs.\n");
     fprintf(stderr, "  -b            Show bare output without target names.\n");
     fprintf(stderr, "  -s            Suppress progress status.\n");
-    fprintf(stderr, "  -q            Suppress final summary.\n");
+    fprintf(stderr, "  -q            Suppress output of successful targets.\n");
+    fprintf(stderr, "  -qq           Suppress target output.\n");
+    fprintf(stderr, "  -Q            Suppress final summary.\n");
     fprintf(stderr, "  -v            Display internal status messages.\n");
     fprintf(stderr, "  -D            Display internal debug messages.\n");
 }
@@ -100,7 +102,7 @@ main(int argc, char **argv)
 
     opt_prefix = opt_status = 1;
     opt_quiet = opt_internal = opt_debug = 0;
-    opt_outmode = 1;
+    opt_outmode = OUT_MIXED;
     opt_maxworkers = DEFAULT_MAXWORKERS;
     opt_ctimeout = opt_test = opt_vtest = 0;
     opt_analyze = opt_outanalysis = opt_erranalysis = NULL;
@@ -125,7 +127,7 @@ main(int argc, char **argv)
       {
         int c;
 	
-        c = getopt(argc, argv, "a:A:bc:C:De:E:hmM:o:pP:qr:sS:tT:vV");
+        c = getopt(argc, argv, "a:A:bc:C:De:E:hmM:o:pP:qQr:sS:tT:vV");
 	
         /* Detect the end of the options. */
         if (c == -1)
@@ -165,7 +167,7 @@ main(int argc, char **argv)
               exit(0);
               break;
 	  case 'm':
-	      opt_outmode &= ~OUT_MIXED;
+	      opt_outmode &= ~(OUT_NULL|OUT_MIXED);
 	      opt_outmode |= OUT_ATEND;
 	      break;
 	  case 'M':
@@ -182,6 +184,12 @@ main(int argc, char **argv)
 	      opt_ping = optarg;
 	      break;
 	  case 'q':
+	      if ((opt_outmode & OUT_IFERR) == 0)
+		  opt_outmode |= OUT_IFERR;
+	      else
+		  opt_outmode = OUT_NULL;
+	      break;
+	  case 'Q':
 	      opt_quiet = 1;
 	      break;
 	  case 'r':
@@ -243,9 +251,9 @@ main(int argc, char **argv)
       }
 
     /* -? requires -o, to avoid dangerous/reckless invocations. */
-    if ((opt_outmode & OUT_IFERR) != 0 && opt_odir == NULL)
+    if ((opt_outmode & (OUT_NULL|OUT_IFERR)) != 0 && opt_odir == NULL)
       {
-	fprintf(stderr, "%s: -o option required when using -?!\n", myname);
+	fprintf(stderr, "%s: -o option required when using -q!\n", myname);
 	exit(1);
       }
 
