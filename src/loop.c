@@ -21,7 +21,7 @@
 #include "target.h"
 #include "term.h"
 
-static char const rcsid[] = "@(#)$Id: loop.c,v 1.12 2002-07-11 00:53:43 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: loop.c,v 1.13 2002-08-09 01:45:28 kalt Exp $";
 
 struct child
 {
@@ -30,6 +30,7 @@ struct child
     int		test, passed;	/* test?, passed? */
     int		execstate;	/* exec() status: 0=ok, 1=failed? 2=failed */
     char	*obuf, *ebuf;	/* stdout/stderr truncated buffer */
+    char	*ofname, *efname; /* stdout/stderr file names */
     int		ofile, efile;	/* stdout/stderr file fd */
     int		status;		/* waitpid(status) */
 };
@@ -40,7 +41,8 @@ static void shmux_sigint(int);
 static void init_child(struct child *);
 static void parse_child(char *, int, int, struct child *, int, char *);
 static void parse_fping(char *);
-static int output_file(char *, char *, char *);
+static int  output_file(char **, char *, char *, char *);
+static void output_show(char *, int, char *, int);
 
 /*
 ** shmux_sigint
@@ -65,6 +67,7 @@ struct child *kid;
     kid->test = kid->passed = 0;
     kid->execstate = 0;
     kid->obuf = kid->ebuf = NULL;
+    kid->ofname = kid->efname = NULL;
     kid->ofile = kid->efile = -1;
     kid->status = -1;
 
@@ -268,34 +271,85 @@ char *line;
 
 /*
 ** output_file
-**	Create and output file.
+**	Create an output file.
 */
 int
-output_file(dir, name, extension)
-char *dir, *name, *extension;
+output_file(fname, dir, name, extension)
+char **fname, *dir, *name, *extension;
 {
-    char fname[MAXNAMLEN];
     int sz, fd;
 
     assert( dir != NULL );
     assert( name != NULL );
     assert( extension != NULL );
 
-    sz = snprintf(fname, MAXNAMLEN, "%s/%s.%s", dir, name, extension);
-	if (sz >= MAXNAMLEN)
+    *fname = (char *) malloc(MAXNAMLEN);
+    if (*fname == NULL)
+      {
+	perror("malloc failed");
+	exit(1);
+      }
+
+    sz = snprintf(*fname, MAXNAMLEN, "%s/%s.%s", dir, name, extension);
+    if (sz >= MAXNAMLEN)
       {
 	eprint("\"%s\": name is too long", dir);
+	free(*fname); *fname = NULL;
 	return -1;
       }
 
-    fd = open(fname, O_WRONLY|O_CREAT|O_EXCL, 0666);
+    fd = open(*fname, O_RDWR|O_CREAT|O_EXCL, 0666);
     if (fd == -1)
       {
-	eprint("open(%s): %s", fname, strerror(errno));
+	eprint("open(%s): %s", *fname, strerror(errno));
+	free(*fname); *fname = NULL;
 	return -1;
       }
 
     return fd;
+}
+
+/*
+** output_show
+**	Show an output file.
+*/
+void
+output_show(name, fd, fname, type)
+char *name, *fname;
+int fd, type;
+{
+    FILE *f;
+    int cont;
+    char buffer[8192], *nl;
+
+    if (lseek(fd, SEEK_SET, 0) != 0)
+	eprint("lseek(%s): %s", fname, strerror(errno));
+
+    f = fdopen(fd, "r");
+    if (f == NULL)
+	eprint("fdopen(%s): %s", fname, strerror(errno));
+    
+    cont = 0;
+    while (fgets(buffer, 8192, f) != NULL)
+      {
+	nl = index(buffer, '\n');
+	if (nl != NULL)
+	    *nl = '\0';
+
+	if (cont == 0)
+	    tprint(name, (type == 1) ? MSG_STDOUT : MSG_STDERR, "%s", buffer);
+	else
+	    tprint(name, (type == 1) ? MSG_STDOUTTRUNC : MSG_STDERRTRUNC,
+		   "%s", buffer);
+
+	cont = (nl == NULL) ? 1 : 0;
+      }
+
+    if (feof(f) == 0)
+	eprint("fgets(%s): %s", fname, strerror(errno));
+
+    if (fclose(f) != 0)
+	eprint("fclose(%s): %s", fname, strerror(errno));
 }
 
 /*
@@ -304,9 +358,9 @@ char *dir, *name, *extension;
 **	targets with a simple echo command, and finally running a command.
 */
 void
-loop(cmd, ctimeout, max, odir, ping, test)
+loop(cmd, ctimeout, max, mixed, odir, ping, test)
 char *cmd, *ping, *odir;
-int max;
+int max, mixed;
 u_int ctimeout, test;
 {
     int fdfactor;
@@ -577,18 +631,14 @@ u_int ctimeout, test;
 		    init_child(&(children[idx]));
 		    if (odir != NULL)
 		      {
-			children[idx].ofile = output_file(odir,
-							  target_getname(),
-							  "stdout");
+			children[idx].ofile = output_file(&children[idx].ofname, odir, target_getname(), "stdout");
 			if (children[idx].ofile == -1)
 			  {
 			    eprint("Fatal error for %s", target_getname());
 			    target_result(-1);
 			    continue;
 			  }
-			children[idx].efile = output_file(odir,
-							  target_getname(),
-							  "stderr");
+			children[idx].efile = output_file(&children[idx].efname, odir, target_getname(), "stderr");
 			if (children[idx].efile == -1)
 			  {
 			    close(children[idx].efile);
@@ -731,9 +781,29 @@ u_int ctimeout, test;
 	      }
 
 	    if (children[idx].ofile != -1)
+	      {
+		if (mixed == 0)
+		    output_show(what, children[idx].ofile,
+				children[idx].ofname, 1);
 		close(children[idx].ofile);
+		if (mixed == 0 && unlink(children[idx].ofname) == -1)
+		    eprint("unlink(%s): %s",
+			   children[idx].ofname, strerror(errno));
+		assert( children[idx].ofname != NULL );
+		free(children[idx].ofname);
+	      }
 	    if (children[idx].efile != -1)
+	      {
+		if (mixed == 0)
+		    output_show(what, children[idx].efile,
+				children[idx].ofname, 2);
 		close(children[idx].efile);
+		if (mixed == 0 && unlink(children[idx].efname) == -1)
+		    eprint("unlink(%s): %s",
+			   children[idx].efname, strerror(errno));
+		assert( children[idx].efname != NULL );
+		free(children[idx].efname);
+	      }
 
 	    if (WIFEXITED(status) != 0)
 	      {

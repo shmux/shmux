@@ -6,7 +6,14 @@
 */
 
 #include "os.h"
+
 #include <libgen.h>
+#include <dirent.h>
+#if defined(HAVE_PATHS_H)
+# include <paths.h>
+#else
+# define _PATH_TMP "/tmp"
+#endif
 #include <time.h>
 #include <sys/stat.h>
 
@@ -17,7 +24,7 @@
 #include "term.h"
 #include "units.h"
 
-static char const rcsid[] = "@(#)$Id: shmux.c,v 1.10 2002-07-27 18:59:19 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: shmux.c,v 1.11 2002-08-09 01:45:29 kalt Exp $";
 
 extern char *optarg;
 extern int optind, opterr;
@@ -53,6 +60,7 @@ int detailed;
     fprintf(stderr, "  -T <seconds>  Time to wait for test answer (Default: %d).\n", DEFAULT_TESTTIMEOUT);
     fprintf(stderr, "\n");
     fprintf(stderr, "  -o <dir>      Send the output to files under the specified directory.\n");
+    fprintf(stderr, "  -m            Don't mix target outputs.\n");
     fprintf(stderr, "  -b            Show bare output without target names.\n");
     fprintf(stderr, "  -s            Suppress progress status.\n");
     fprintf(stderr, "  -q            Suppress final summary.\n");
@@ -65,9 +73,9 @@ main(int argc, char **argv)
 {
     int badopt;
     int opt_prefix, opt_status, opt_quiet, opt_internal, opt_debug;
-    int opt_ctimeout, opt_maxworkers, opt_vtest;
+    int opt_ctimeout, opt_mixed, opt_maxworkers, opt_vtest;
     u_int opt_test;
-    char *opt_rcmd, *opt_command, *opt_odir, *opt_ping;
+    char *opt_rcmd, *opt_command, *opt_odir, *opt_ping, tdir[MAXNAMLEN];
     int longest, ntargets;
     time_t start;
 
@@ -75,6 +83,7 @@ main(int argc, char **argv)
 
     opt_prefix = opt_status = 1;
     opt_quiet = opt_internal = opt_debug = 0;
+    opt_mixed = 1;
     opt_maxworkers = DEFAULT_MAXWORKERS;
     opt_ctimeout = opt_test = opt_vtest = 0;
     opt_rcmd = getenv("SHMUX_RCMD");
@@ -87,7 +96,7 @@ main(int argc, char **argv)
       {
         int c;
 	
-        c = getopt(argc, argv, "bc:C:DhM:o:pP:qr:stT:vV");
+        c = getopt(argc, argv, "bc:C:DhmM:o:pP:qr:stT:vV");
 	
         /* Detect the end of the options. */
         if (c == -1)
@@ -111,6 +120,9 @@ main(int argc, char **argv)
               usage(1);
               exit(0);
               break;
+	  case 'm':
+	      opt_mixed = 0;
+	      break;
 	  case 'M':
 	      opt_maxworkers = atoi(optarg);
 	      break;
@@ -169,6 +181,18 @@ main(int argc, char **argv)
 	exit(1);
       }
 
+    if (opt_odir == NULL)
+      {
+	char *tmp;
+
+	tmp = getenv("TMPDIR");
+	sprintf(tdir, "%s/%s.%d.%ld", (tmp != NULL) ? tmp : _PATH_TMP, myname,
+		(int) getpid(), (long) time(NULL));
+	opt_odir = tdir;
+      }
+    else
+	opt_mixed = 1;
+
     if (opt_odir != NULL && mkdir(opt_odir, 0777) == -1 && errno != EEXIST)
       {
 	fprintf(stderr, "%s: mkdir(%s): %s\n",
@@ -195,7 +219,14 @@ main(int argc, char **argv)
 
     start = time(NULL);
     loop(opt_command, opt_ctimeout, opt_maxworkers,
-	 opt_odir, opt_ping, opt_test);
+	 opt_mixed, opt_odir, opt_ping, opt_test);
+
+    if (opt_mixed == 0 && rmdir(opt_odir) == -1)
+	&& rmdir(opt_odir) == -1)
+      {
+	fprintf(stderr, "%s: rmdir(%s): %s\n",
+		myname, opt_odir, strerror(errno));
+	exit(1);
       }
     /* Summary of results unless asked to be quiet */
     if (opt_quiet == 0)

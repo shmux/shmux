@@ -1,4 +1,4 @@
-.TH SHMUX 8 "$Date: 2002-07-10 23:57:07 $
+.TH SHMUX 8 "$Date: 2002-08-09 01:45:27 $
 .DA July 4, 2002
 .SH NAME
 shmux - Shell Multiplexor
@@ -12,7 +12,7 @@ shmux - Shell Multiplexor
 
 .B shmux
 [
-.B -bdpqstv
+.B -bdmpqstv
 ] [
 .B -C \fItimeout\fP
 ] [
@@ -94,6 +94,11 @@ for failed tests will be displayed to help the user understand what went
 wrong.
 .IP "\fB-T \fItimeout\fP"
 Defines the test timeout in seconds.  (Implies \fB-t\fP.)
+.IP "\fB-m\fP"
+By default the output is displayed as soon as it is received.  For
+multi-line outputs, this will typically result in output from several
+targets being mixed.  This option may be used to keep each target output
+separate.
 .IP "\fB-b\fP"
 Show the bare output from the executed commands instead of prefixing each
 line by the corresponding target name.
