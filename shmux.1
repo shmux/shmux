@@ -1,5 +1,5 @@
-.TH SHMUX 8 "$Date: 2002-08-21 00:49:00 $
-.DA July 4, 2002
+.TH SHMUX 8 "$Date: 2003-01-05 20:25:05 $"
+.DA January 5, 2003
 .SH NAME
 shmux - Shell Multiplexor
 .SH SYNOPSIS
@@ -19,6 +19,10 @@ shmux - Shell Multiplexor
 .B -M \fImax\fP
 ] [
 .B -r \fIrcmd\fP
+] [
+.B -e \fIlist\fP
+] [
+.B -E \fIlist\fP
 ] [
 .B -o \fIdir\fP
 ] [
@@ -72,13 +76,23 @@ also consider the load imposed on the system by the creation of a
 (potentially) large number of processes.
 .IP "\fB-r \fIrcmd\fP"
 Defines the default method used to run a shell on targets.
+.IP "\fB-e \fIlist\fP"
+Defines which \fIcommand\fP exit codes should be considered errors and
+reported as such.  The \fIlist\fP should be a comma separated list of
+ranges of the form "x", "x-y", "x-" or "-y" where "x" and "y" are numbers
+between 0 and 255.
+.IP "\fB-E \fIlist\fP"
+Defines which \fIcommand\fP exit codes should always be output to the
+screen.  Codes that are considered errors (see the \fB-e\fP option) are
+always shown, but by default, other exit codes are only shown if the
+\fB-v\fP option is specified.  This allows more flexibility.
 .IP "\fB-o \fIdir\fP"
 If specified, the directory must already exist and \fBshmux\fP will place
-the output of the executed commands in files under this directory.  For
-each target, the files will be named after the target name so as to make it
-easy to identify.  The files must not already exist, so it is recommended
-that the directory be emtpy.  This also means that each target must be
-unique.
+the output and (for normal terminations) the exit code of the executed
+commands in files under this directory.  For each target, the files will be
+named after the target name so as to make it easy to identify.  The files
+must not already exist, so it is recommended that the directory be emtpy.
+This also means that each target must be unique.
 .IP "\fB-p\fP"
 Ping targets to verify they are alive before doing anything.  The target
 names must be unique or bad things will happen.
@@ -87,11 +101,11 @@ Defines the initial target ping timeout in milliseconds, see
 \fIfping(8)\fP.  (Implies \fB-p\fP.)
 .IP "\fB-t\fP"
 Before executing the specified \fIcommand\fP for a target, send a simple
-echo test and verify that the output is correct.  This is a step above the
-ping test as it verifies that it is possible to get a shell on the target.
-If this option is specified twice (or once when \fB-T\fP is used), output
-for failed tests will be displayed to help the user understand what went
-wrong.
+"echo" test and verify that the output is correct.  This step goes beyond
+the simple ping test as it verifies that it is possible to get a shell on
+the target.  If this option is specified twice (or once when \fB-T\fP is
+used), output for failed tests will be displayed to help the user
+understand what went wrong.
 .IP "\fB-T \fItimeout\fP"
 Defines the test timeout in seconds.  (Implies \fB-t\fP.)
 .IP "\fB-m\fP"
@@ -110,6 +124,18 @@ Suppress the progress status line.
 Display internal status messages.
 .IP "\fB-D\fP"
 Display internal debug messages.
+
+.SH EXIT CODES
+\fBshmux\fP will optionally report the exit code of \fIthe command it
+runs\fP for each target.  For the \fIsh\fP command, this will be the same
+as the \fIcommand\fP itself, but this is the exceptions.  For other
+methods, the exit code reported by \fBshmux\fP really is the code returned
+by the program used to spawn \fIcommand\fP for that method.
+
+In particular, \fIrsh\fP typically only returns either 0 or 1 while
+different implementations of \fIssh\fP have different behaviours which may
+include returning the actual exit code of the remotely executed command or
+not.
 
 .SH ENVIRONMENT
 \fBshmux\fP will use the following environment variables if set:
@@ -139,6 +165,12 @@ to pass a complex serie of options.  However, it can be used to suppress
 the default, and or add options such as "-4", "-6", or even "-v".  It is
 recommended to avoid using these variables in favor of tuning the ssh
 configuration file(s).
+.IP SHMUX_ERRORCODES
+Specifies the default list of exit codes to be considered errors.  If the
+\fB-e\fP option is specified, it overrides this variable.
+.IP SHMUX_SHOWCODES
+Specifies the default list of exit codes to be always display.  If the
+\fB-E\fP option is specified, it overrides this variable.
 
 .SH SEE ALSO
 .IR fping (8),
