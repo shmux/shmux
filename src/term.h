@@ -4,7 +4,7 @@
 ** This file is part of shmux
 ** see the LICENSE file for details on your rights.
 **
-** $Id: term.h,v 1.1 2002-07-04 21:44:51 kalt Exp $
+** $Id: term.h,v 1.2 2002-07-06 20:06:22 kalt Exp $
 */
 
 #if !defined(_TERM_H_)
@@ -32,11 +32,11 @@ void eprint(char *, ...)
 # endif
 	;
 
-# define MSG_DEBUG	'$'
-# define MSG_STDOUT     ':'
-# define MSG_STDOUTCONT '+'
-# define MSG_STDERR     '!'
-# define MSG_STDERRCONT '*'
+# define MSG_DEBUG       '$'
+# define MSG_STDOUT      ':'
+# define MSG_STDOUTTRUNC '+'
+# define MSG_STDERR      '!'
+# define MSG_STDERRTRUNC '*'
 
 void tprint(char *, char, char *, ...)
 # if __GNUC__ == 2 && __GNUC_MINOR__ >= 5

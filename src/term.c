@@ -23,7 +23,7 @@ extern int	tputs(char *, int, int (*)(int));
 
 #include "term.h"
 
-static char const rcsid[] = "@(#)$Id: term.c,v 1.2 2002-07-06 18:45:17 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: term.c,v 1.3 2002-07-06 20:06:22 kalt Exp $";
 
 extern char *myname;
 
@@ -186,7 +186,7 @@ gprint(char *prefix, char separator, char *format, va_list va)
     int (*pc)(int);
 
     std = stdout; pc = putchar;
-    if (separator == MSG_STDERR || separator == MSG_STDERRCONT)
+    if (separator == MSG_STDERR || separator == MSG_STDERRTRUNC)
       {
 	std = stderr; pc = putchar2;
 	if (etty == 1 && MD != NULL)
