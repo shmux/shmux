@@ -1,4 +1,13 @@
-$Id: CHANGES,v 1.8 2003-05-05 00:58:11 kalt Exp $
+$Id: CHANGES,v 1.9 2003-06-22 18:56:32 kalt Exp $
+
+Changes since 0.9a [2003/05/04]:
+
+- plugged termcap escape sequence leakage to output files.
+- assertion was no longer valid when using -o but not -qq.
+- -qq now implies "-S all" (as default only).
+- assertion was failed with -qq.
+- updated mcmd.sh for new shmux usage.
+- added ln{pc,}re analyzer.
 
 Changes since 0.8a [2003/04/30]:
 
