@@ -29,7 +29,7 @@
 #include "target.h"
 #include "term.h"
 
-static char const rcsid[] = "@(#)$Id: loop.c,v 1.47 2004-12-13 23:02:51 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: loop.c,v 1.48 2004-12-15 00:32:17 kalt Exp $";
 
 extern char *myname;
 
@@ -428,7 +428,7 @@ char *line;
     if (space != NULL)
       {
 	*space = '\0';
-	if (target_setbyhname(line) != 0)
+	if (target_pong(line) != 0 && target_setbyhname(line) != 0)
 	  {
 	    *space = ' ';
 	    dprint("fping garbage follows:");
@@ -1527,7 +1527,14 @@ u_int ctimeout, utest;
 	    children[idx].pid = 0;
 
 	    if (idx == 0)
+              {
 		dprint("fping is done");
+                while (target_pong(NULL) == 0)
+                  {
+                    eprint("%s assumed to be alive (missing from fping results)", target_getname());
+                    target_result(1);
+                  }
+              }
 	    else
 	      {
 		if (children[idx].execstate != 0
