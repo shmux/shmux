@@ -4,7 +4,7 @@
 # This file is part of shmux,
 # see the LICENSE file for details on your rights.
 #
-# $Id: Makefile.in,v 1.1 2002-07-04 21:44:44 kalt Exp $
+# $Id: Makefile.in,v 1.2 2002-07-09 00:21:28 kalt Exp $
 #
 
 INSTALL	= @INSTALL@
@@ -38,5 +38,5 @@ clean:
 
 distclean:
 	@(cd src && $(MAKE) distclean)
-	/bin/rm -f Makefile config.cache config.status config.log
-	/bin/rm -f configure.lineno autom4te.cache
+	/bin/rm -f Makefile config.* configure.lineno
+	/bin/rm -rf autom4te.cache
