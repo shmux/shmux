@@ -21,7 +21,7 @@
 #include "exec.h"
 #include "term.h"
 
-static char const rcsid[] = "@(#)$Id: exec.c,v 1.3 2002-07-07 03:57:36 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: exec.c,v 1.4 2002-07-10 23:25:53 kalt Exp $";
 
 pid_t
 exec(fd0, fd1, fd2, target, argv, timeout)
@@ -32,26 +32,29 @@ char *target, **argv;
     int in[2], out[2], err[2];
     struct rlimit fdlimit;
     pid_t child;
-    char *env;
 
     if (target != NULL)
       {
-	env = malloc(strlen(target) + 14);
-	if (env == NULL)
+	static char *env = NULL;
+	char *new;
+
+	new = malloc(strlen(target) + 14);
+	if (new == NULL)
 	  {
 	    eprint("malloc failed, cannot set SHMUX_TARGET to %s", target);
 	    return -1;
 	  }
-	sprintf(env, "SHMUX_TARGET=%s", target);
-	if (putenv(env) == -1)
+	sprintf(new, "SHMUX_TARGET=%s", target);
+	if (putenv(new) == -1)
 	  {
-	    eprint("putenv(%s) failed: %s", env, strerror(errno));
-	    free(env);
+	    eprint("putenv(%s) failed: %s", new, strerror(errno));
+	    free(new);
 	    return -1;
 	  }
+	if (env != NULL)
+	    free(env);
+	env = new;
       }
-    else
-	env = NULL;
 	
     if (fd0 != NULL) *fd0 = -1;
     *fd1 = -1;
@@ -108,8 +111,6 @@ char *target, **argv;
 	    close(err[0]); close(err[1]);
 	  }
 	eprint("fork(): %s", strerror(errno));
-	if (env != NULL)
-	    free(env);
 	return -1;
       }
 
@@ -126,8 +127,6 @@ char *target, **argv;
 	  {
 	    close(err[1]); *fd2 = err[0];
 	  }
-	if (env != NULL)
-	    free(env);
 	return child;
       }
     else
