@@ -23,11 +23,11 @@
 
 #include "term.h"
 
-static char const rcsid[] = "@(#)$Id: term.c,v 1.17 2003-04-26 01:32:17 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: term.c,v 1.18 2003-05-03 23:23:33 kalt Exp $";
 
 extern char *myname;
 
-static int targets, internalmsgs, debugmsgs, padding;
+static int targets, internalmsgs, debugmsgs, padding, mypid;
 static struct termios origt, shmuxt;
 static int otty, etty, CO, got_sigwin, ttyin;
 static char *MD,			/* bold */
@@ -94,6 +94,8 @@ int maxlen, prefix, progress, internal, debug;
     targets = prefix;
     internalmsgs = internal;
     debugmsgs = debug;
+
+    mypid = getpid();
 
     /* Input initialization */
 
@@ -282,6 +284,8 @@ tty_fd(void)
 void
 tty_restore(void)
 {
+    if (getpid() != mypid)
+	return;
     /* restore original tty settings */
     if (ttyin >= 0 && tcsetattr(ttyin, TCSANOW, &origt) < 0)
 	eprint("tcsetattr() failed: %s", strerror(errno));
