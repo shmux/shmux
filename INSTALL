@@ -32,7 +32,7 @@ a solution, from which the problem might be difficult to infer.
 
 Your feedback will help to make a better and more portable package.
 Consider documentation errors as bugs, and report them as such.  If you
-develop anything pertaining to `shmux' or have suggestions, let us know and
-share your findings by writing at `shmux-forum@taranis.org'.
+develop anything pertaining to `shmux' or have suggestions, share your
+findings by writing to `shmux@taranis.org'.
 
--- $Id: INSTALL,v 1.1 2002-07-04 21:44:43 kalt Exp $
+-- $Id: INSTALL,v 1.2 2002-07-06 20:53:58 kalt Exp $
