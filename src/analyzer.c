@@ -20,7 +20,7 @@
 #include "term.h"
 #include "units.h"
 
-static char const rcsid[] = "@(#)$Id: analyzer.c,v 1.6 2003-05-06 01:27:40 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: analyzer.c,v 1.7 2003-05-07 00:57:07 kalt Exp $";
 
 extern char *myname;
 
@@ -43,11 +43,12 @@ static u_int	run_timeout;
 
 static void *mapfile(int, int, char *, size_t *);
 static void unmapfile(int, char *, void *, size_t);
-static void compile_re(void *, char *);
+static void compile_re(int, void *, char *);
 #if defined(HAVE_PCRE_H)
-static void compile_pcre(void *, char *);
+static void compile_pcre(int, void *, char *);
 #endif
-static void restr_init(void *, void (*)(void *, char *), int *, char *);
+static void restr_init(void *, void (*)(int, void *, char *), int *, char *);
+static void loadfile(int, char *, struct condition **list);
 
 /*
 ** mapfile
@@ -77,7 +78,7 @@ size_t *len;
     if (*len == 0)
 	return "";
     
-    mm = mmap(NULL, *len, PROT_READ, MAP_PRIVATE
+    mm = mmap(NULL, *len + 1, PROT_READ|PROT_WRITE, MAP_PRIVATE
 #if defined(MAP_FILE)
 	       |MAP_FILE
 #endif
@@ -96,6 +97,8 @@ size_t *len;
 	    eprint("Fatal internal error for %s output analysis: mmap(%d [%s]) failed: %s", target_getname(), fd, name, strerror(errno));
 	return NULL;
       }
+
+    ((char *) mm)[*len] = '\0';
 
     return mm;
 }
@@ -132,7 +135,8 @@ size_t len;
 **	Regular expression (regex_t) initialization
 */
 void
-compile_re(reptr, str)
+compile_re(mline, reptr, str)
+int mline;
 void *reptr;
 char *str;
 {
@@ -140,7 +144,9 @@ char *str;
     int errcode;
 
     re = reptr;
-    errcode = regcomp(re, str, REG_EXTENDED|REG_NOSUB|REG_NEWLINE);
+    errcode = regcomp(re, str,
+		      (mline != 0) ? REG_EXTENDED|REG_NOSUB|REG_NEWLINE
+		      : REG_EXTENDED|REG_NOSUB);
     if (errcode != 0)
       {
 	char buf[1024];
@@ -159,7 +165,8 @@ char *str;
 **	Perl Compatible Regular Expression (pcre) initialization
 */
 void
-compile_pcre(pcreptr, str)
+compile_pcre(mline, pcreptr, str)
+int mline;
 void *pcreptr;
 char *str;
 {
@@ -168,7 +175,8 @@ char *str;
     int erroffset;
 
     re = pcreptr;
-    *re = pcre_compile(str, PCRE_MULTILINE, &error, &erroffset, NULL);
+    *re = pcre_compile(str, (mline != 0) ? PCRE_MULTILINE : 0,
+		       &error, &erroffset, NULL);
     if (*re == NULL)
       {
 	fprintf(stderr, "%s: Bad PCRE (offset %d): %s\n",
@@ -185,7 +193,7 @@ char *str;
 static void
 restr_init(re, comp, ok, str)
 void *re;
-void (*comp)(void *, char *);
+void (*comp)(int, void *, char *);
 int *ok;
 char *str;
 {
@@ -221,10 +229,108 @@ char *str;
 	  }
       }
 
-    comp(re, str);
+    comp(1, re, str);
 
     if (fname != NULL)
 	unmapfile(1, fname, str, len);
+    if (fd >= 0)
+	close(fd);
+}
+
+/*
+** loadfile
+**	Read a list of one line conditions from a file
+*/
+static void
+loadfile(type, file, list)
+int type;
+char *file;
+struct condition **list;
+{
+    int fd, lineno, cond, max;
+    size_t len;
+    char *str, *ln, *nl;
+
+    assert( *list == NULL );
+
+    /* Allocate a list of conditions */
+    max = 10;
+    *list = (struct condition *) malloc(max * sizeof(struct condition));
+    if (*list == NULL)
+      {
+	fprintf(stderr, "%s: malloc() failed: %s", myname, strerror(errno));
+	exit(1);
+      }
+    cond = 0;
+
+    fd = -1;
+    len = 0;
+    fd = open(file, O_RDONLY, 0);
+    if (fd == -1)
+      {
+	fprintf(stderr, "%s: open(%s) failed: %s\n", 
+		myname, file, strerror(errno));
+	exit(1);
+      }
+    str = mapfile(1, fd, file, &len);
+    if (str == NULL)
+	exit(1);
+
+    ln = str; nl = str;
+    lineno = 1;
+    while (nl - str < len)
+    {
+      /* Parse the file line by line */
+      while (nl - str < len && *nl != '\n')
+	  nl += 1;
+      assert( *nl == '\0' || *nl == '\n' );
+      *nl = '\0';
+
+      /* Make sure the list structure is big enough */
+      if (cond == max-2)
+	{
+	  max *= 2;
+	  *list = (struct condition *) realloc(*list,
+					       max* sizeof(struct condition *));
+	  if (*list == NULL)
+	    {
+	      fprintf(stderr, "%s: realloc() failed: %s", myname,
+		      strerror(errno));
+	      exit(1);
+	    }
+	}
+
+      /* Finally, compile the expression */
+      if (*ln == '=' || *ln == '~' || *ln == '!')
+	{
+	  if (*ln != '!')
+	      (*list)[cond].ok = 0;
+	  else
+	      (*list)[cond].ok = 1;
+	  if (type == ANALYZE_LNRE)
+	      compile_re(0, (void *) &((*list)[cond].val.re), ln + 1);
+#if defined(HAVE_PCRE_H)
+	  else if (type == ANALYZE_LNPCRE)
+	      compile_pcre(0, (void *) &((*list)[cond].val.pcre), ln + 1);
+#endif
+	  else
+	      abort();
+	  cond += 1;
+	}
+      else if (*ln != '\0')
+	{
+	  fprintf(stderr, "Invalid configuration in \"%s\" line %d: %s\n",
+		  file, lineno, ln);
+	  exit(1);
+	}
+      ln = nl + 1;
+      lineno += 1;
+    }
+
+    (*list)[cond].ok = -1; /* Mark the end of the list */
+
+    if (file != NULL)
+	unmapfile(1, file, str, len);
     if (fd >= 0)
 	close(fd);
 }
@@ -268,10 +374,12 @@ char *type, *outdef, *errdef;
 	if (type[0] != 'p')
 	    restr_init((void *) &(out->val.re), compile_re,
 		       &(out->ok), outdef);
-#if defined(HAVE_PCRE_H)
 	else
+#if defined(HAVE_PCRE_H)
 	    restr_init((void *) &(out->val.pcre), compile_pcre,
 		       &(out->ok), outdef);
+#else
+	    abort();
 #endif
 
 	err = (struct condition *) malloc(sizeof(struct condition));
@@ -292,12 +400,31 @@ char *type, *outdef, *errdef;
 	else
 	    restr_init((void *) &(err->val.pcre), compile_pcre,
 		       &(err->ok), errdef);
+#else
+	    abort();
 #endif
 
 	if (type[0] != 'p')
 	    return ANALYZE_RE;
 	else
 	    return ANALYZE_PCRE;
+      }
+    else if (strcmp(type, "lnregex") == 0 || strcmp(type, "lnre") == 0
+	     || strcmp(type, "lnpcre") == 0)
+      {
+	loadfile((type[0] != 'p') ? ANALYZE_LNRE : ANALYZE_LNPCRE,
+		 outdef, &out);
+
+	if (errdef == NULL)
+	    err = NULL;
+	else
+	    loadfile((type[0] != 'p') ? ANALYZE_LNRE : ANALYZE_LNPCRE,
+		     errdef, &err);
+
+	if (type[0] != 'p')
+	    return ANALYZE_LNRE;
+	else
+	    return ANALYZE_LNPCRE;
       }
     else
       {
@@ -343,9 +470,11 @@ char *oname, *ename;
     ok = 0;
     if (type == ANALYZE_RE)
       {
+	/* First check stdout */
 	o = regexec(&(out->val.re), (char *) output, 0, NULL, 0);
 	if (o != 0 && o != REG_NOMATCH)
 	  {
+	    /* Something bad happened */
 	    char buf[1024];
 	    
 	    if (regerror(o, &(out->val.re), buf, 1024) != 0)
@@ -357,14 +486,17 @@ char *oname, *ename;
 	else if ((o == 0 && out->ok != 0)
 		 || (o == REG_NOMATCH && out->ok == 0))
 	  {
+	    /* Matched but shouldn't have, or the other way around */
 	    ok = 1;
 	    dprint("Analysis for %s: out=%d[%d] err=?[%d] ok=%d (REG_NOMATCH=%d)", target_getname(), o, out->ok, err->ok, ok, REG_NOMATCH);
 	  }
 	else
 	  {
+	    /* Stdout ok, let's check stderr */
 	    e = regexec(&(err->val.re), (char *) errput, 0, NULL, 0);
 	    if (e != 0 && e != REG_NOMATCH)
 	      {
+		/* Something bad happened */
 		char buf[1024];
 		
 		if (regerror(e, &(err->val.re), buf, 1024) != 0)
@@ -375,49 +507,139 @@ char *oname, *ename;
 	      }
 	    else if ((e == 0 && err->ok != 0)
 		     || (e == REG_NOMATCH && err->ok == 0))
+		/* Matched but shouldn't have, or the other way around */
 		ok = 1;
-	    
+	    /* Summary of results */
 	    dprint("Analysis for %s: out=%d[%d] err=%d[%d] ok=%d (REG_NOMATCH=%d)", target_getname(), o, out->ok, e, err->ok, ok, REG_NOMATCH);
 	  }
       }
 #if defined(HAVE_PCRE_H)
-    else
+    else if (type == ANALYZE_PCRE)
       {
+	/* First check stdout */
 	o = pcre_exec(out->val.pcre, NULL, (char *) output, olen,
 		      0, 0, NULL, 0);
 	if (o < 0 && o != PCRE_ERROR_NOMATCH)
 	  {
+	    /* Something bad happened */
 	    eprint("Fatal error for %s output analysis: pcre_exec() failed with code %d", target_getname(), o);
 	    ok = -1;
 	  }
 	else if ((o >= 0 && out->ok != 0)
 		 || (o == PCRE_ERROR_NOMATCH && out->ok == 0))
 	  {
+	    /* Matched but shouldn't have, or the other way around */
 	    ok = 1;
 	    dprint("Analysis for %s: out=%d[%d] err=?[%d] ok=%d (PCRE_ERROR_NOMATCH=%d)", target_getname(), o, out->ok, err->ok, ok, PCRE_ERROR_NOMATCH);
 	  }
 	else
 	  {
+	    /* Stdout ok, let's check stderr */
 	    e = pcre_exec(err->val.pcre, NULL, (char *) errput, elen,
 			  0, 0, NULL, 0);
 	    if (e < 0 && e != PCRE_ERROR_NOMATCH)
 	      {
+		/* Something bad happened */
 		eprint("Fatal error for %s output analysis: pcre_exec() failed with code %d", target_getname(), e);
 		ok = -1;
 	      }
 	    else if ((e >= 0 && err->ok != 0)
 		     || (e == PCRE_ERROR_NOMATCH && err->ok == 0))
+		/* Matched but shouldn't have, or the other way around */
 		ok = 1;
-	    
+	    /* Summary of results */
 	    dprint("Analysis for %s: out=%d[%d] err=%d[%d] ok=%d (PCRE_ERROR_NOMATCH=%d)", target_getname(), o, out->ok, e, err->ok, ok, PCRE_ERROR_NOMATCH);
 	  }
       }
+    else
+	abort();
 #endif
 
     unmapfile(2, oname, output, olen);
     unmapfile(2, ename, errput, elen);
     
     return ok;
+}
+
+/*
+** analyzer_lnrun
+**	Analyze a single line of output from a target according to user
+**	specified regular expressions.
+*/
+int
+analyzer_lnrun(type, what, str)
+u_int type, what;
+char *str;
+{
+    struct condition *list;
+    int r;
+
+    assert( type == ANALYZE_LNRE || type == ANALYZE_LNPCRE );
+    assert( what == ANALYZE_STDOUT || what == ANALYZE_STDERR );
+    assert( str != NULL );
+
+    if (what == ANALYZE_STDOUT)
+	list = out;
+    else
+	list = err;
+
+    /* Special case: no condition defined == there can't be any output */
+    if (list == NULL && str[0] != '\0')
+	return 1;
+
+    while (list->ok != -1)
+      {
+	if (type == ANALYZE_LNRE)
+	  {
+	    r = regexec(&(list->val.re), str, 0, NULL, 0);
+	    if (r != 0 && r != REG_NOMATCH)
+	      {
+		/* Something bad happened */
+		char buf[1024];
+		
+		if (regerror(r, &(list->val.re), buf, 1024) != 0)
+		    eprint("Fatal error for %s output analysis: regexec() failed with code %s", target_getname(), buf);
+		else
+		    eprint("Fatal error for %s output analysis: regexec() failed with code %d", target_getname(), r);
+		return -1;
+	      }
+	    else
+	      {
+		dprint("Analysis for %s: %d[%d] (REG_NOMATCH=%d)", target_getname(), r, list->ok, REG_NOMATCH);
+		if (r == 0 && list->ok != 0)
+		    /* Matched but was not supposed to! */
+		    return 1;
+	      }
+	  }
+#if defined(HAVE_PCRE_H)
+	else if (type == ANALYZE_LNPCRE)
+	  {
+	    r = pcre_exec(list->val.pcre, NULL, str, strlen(str),
+			  0, 0, NULL, 0);
+	    if (r < 0 && r != PCRE_ERROR_NOMATCH)
+	      {
+		/* Something bad happened */
+		eprint("Fatal error for %s output analysis: pcre_exec() failed with code %d", target_getname(), r);
+		return -1;
+	      }
+	    else
+	      {
+		dprint("Analysis for %s: %d[%d] (PCRE_ERROR_NOMATCH=%d)", target_getname(), r, list->ok, PCRE_ERROR_NOMATCH);
+		if (r >= 0 && list->ok != 0)
+		    /* Matched but was not supposed to! */
+		    return 1;
+	      }
+	  }
+#endif
+	else
+	    abort();
+
+	list += 1;
+      }
+
+    dprint("Analysis for %s: OK!", target_getname());
+
+    return 0;
 }
 
 /*
