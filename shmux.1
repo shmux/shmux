@@ -1,4 +1,4 @@
-.TH SHMUX 8 "$Date: 2002-07-06 20:53:13 $
+.TH SHMUX 8 "$Date: 2002-07-07 03:57:36 $
 .DA July 4, 2002
 .SH NAME
 shmux - Shell Multiplexor
@@ -14,7 +14,11 @@ shmux - Shell Multiplexor
 [
 .B -dDpqstv
 ] [
+.B -C \fItimeout\fP
+] [
 .B -M \fImax\fP
+] [
+.B -m \fImethod\fP
 ] [
 .B -P \fItimeout\fP
 ] [
@@ -52,10 +56,16 @@ targets rather than waiting for the standard (longer) network timeout.
 Display a brief help message.
 .IP "\fB-V\fP"
 Display the version information.
-.IP "\fB-m \fImethod\fP"
-Defines the default method used to run a shell on targets.
+.IP "\fB-c \fIcommand\fP"
+Specify the \fIcommand\fP to execute on targets.
+.IP "\fB-C \fItimeout\fP"
+Specify a timeout for the command being executed on targets.  This should
+be a number followed by a time unit.  The following are valid time units:
+s(econds), m(inutes), h(our), d(ays), w(eeks).
 .IP "\fB-M \fImax\fP"
 Defines the maximum number of spawned processes.
+.IP "\fB-m \fImethod\fP"
+Defines the default method used to run a shell on targets.
 .IP "\fB-p\fP"
 Ping targets to verify they are alive before doing anything.
 .IP "\fB-P \fItimeout\fP"

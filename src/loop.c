@@ -19,7 +19,7 @@
 #include "target.h"
 #include "term.h"
 
-static char const rcsid[] = "@(#)$Id: loop.c,v 1.4 2002-07-06 21:01:12 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: loop.c,v 1.5 2002-07-07 03:57:37 kalt Exp $";
 
 struct child
 {
@@ -239,9 +239,10 @@ char *line;
 **	targets with a simple echo command, and finally running a command.
 */
 void
-loop(cmd, max, ping, test)
+loop(cmd, ctimeout, max, ping, test)
 char *cmd, *ping;
-int max, test;
+int max;
+u_int ctimeout, test;
 {
     struct rlimit fdlimit;
     struct child *children;
@@ -358,7 +359,7 @@ int max, test;
 
 	if (pollrc > 0)
 	  {
-	    dprint("poll() = %d", pollrc);
+	    dprint("poll(%d) = %d", (max+2)*3, pollrc);
 	    idx = 0;
 	    while (idx < (max+2)*3)
 	      {
@@ -452,7 +453,8 @@ int max, test;
 		    target_getcmd(cargv, cmd);
 		    children[idx].pid = exec(NULL, &(pfd[idx*3+1].fd),
 					     &(pfd[idx*3+2].fd),
-					     target_getname(), cargv, 0);
+					     target_getname(), cargv,
+					     ctimeout);
 		    if (children[idx].pid == -1)
 			  {
 			    /* Error message was given by exec() */
@@ -460,6 +462,10 @@ int max, test;
 			    target_result(-1);
 			    continue;
 			  }
+
+		    pfd[idx*3+1].events = POLLIN;
+		    pfd[idx*3+2].events = POLLIN;
+
 		    init_child(&(children[idx]));
 		    dprint("%s, phase 3: pid = %d (idx=%d) %d/%d/%d",
 			   target_getname(), children[idx].pid, idx,
@@ -487,6 +493,10 @@ int max, test;
 			    target_result(-1);
 			    continue;
 			  }
+
+			pfd[idx*3+1].events = POLLIN;
+			pfd[idx*3+2].events = POLLIN;
+
 			init_child(&(children[idx]));
 			children[idx].test = 1;
 			dprint("%s, phase 2: pid = %d (idx=%d) %d/%d/%d",
@@ -565,6 +575,9 @@ int max, test;
 	    if (pfd[idx*3+1].fd != -1 || pfd[idx*3+2].fd !=-1)
 	      {
 		/* Let's finish reading from these before going on */
+		if (children[idx].status == -1)
+		    dprint("%s (idx=%d) died but has open fd(s), saved status",
+			   what, idx);
 		children[idx].status = status;
 		idx += 1;
 		continue;
@@ -594,8 +607,11 @@ int max, test;
 		  }
 	      } else {
 		assert( WTERMSIG(status) != 0 );
-		if (WTERMSIG(status) == SIGALRM && children[idx].test != 0)
-		    children[idx].passed = -2;
+		if (WTERMSIG(status) == SIGALRM)
+		    if (children[idx].test == 0)
+			eprint("Child for %s timed out", what);
+		    else
+			children[idx].passed = -2;
 		else
 #if defined(SYS_SIGLIST_DECLARED)
 		    eprint("%s for %s died on SIG%s%s",

@@ -14,8 +14,9 @@
 #include "loop.h"
 #include "target.h"
 #include "term.h"
+#include "units.h"
 
-static char const rcsid[] = "@(#)$Id: shmux.c,v 1.3 2002-07-06 20:53:16 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: shmux.c,v 1.4 2002-07-07 03:57:37 kalt Exp $";
 
 extern char *optarg;
 extern int optind, opterr;
@@ -33,12 +34,15 @@ static void
 usage(detailed)
 int detailed;
 {
-    fprintf(stderr, "Usage: %s [ options ] -c <command> <host1> [ <host2> ... ]\n", myname);
-/*    fprintf(stderr, "Usage: %s [ options ] -i [ <host1> [ <host2> ... ] ]\n", myname);*/
+    fprintf(stderr, "Usage: %s [ options ] -c <command> <target1> [ <target2> ... ]\n", myname);
+/*    fprintf(stderr, "Usage: %s [ options ] -i [ <target1> [ <target2> ... ] ]\n", myname);*/
     if (detailed == 0)
 	return;
     fprintf(stderr, "  -h            Print this message.\n");
     fprintf(stderr, "  -V            Output version info.\n");
+    fprintf(stderr, "\n");
+    fprintf(stderr, "  -c <command>  Command to execute on targets.\n");
+    fprintf(stderr, "  -C <timeout>  Set a command timeout.\n");
     fprintf(stderr, "\n");
     fprintf(stderr, "  -M            Maximum number of simultaneous processes (Default: %u).\n", DEFAULT_MAXWORKERS);
     fprintf(stderr, "  -m <method>   Set the default method (Default: %s).\n", DEFAULT_METHOD);
@@ -58,7 +62,8 @@ int
 main(int argc, char **argv)
 {
     int opt_verbose, opt_status, opt_quiet, opt_internal, opt_debug;
-    int opt_maxworkers, opt_test, opt_vtest;
+    int opt_ctimeout, opt_maxworkers, opt_vtest;
+    u_int opt_test;
     char *opt_method, *opt_command, *opt_ping;
     int longest, ntargets;
     time_t start;
@@ -68,7 +73,7 @@ main(int argc, char **argv)
     opt_status = 1;
     opt_verbose = opt_quiet = opt_internal = opt_debug = 0;
     opt_maxworkers = DEFAULT_MAXWORKERS;
-    opt_test = opt_vtest = 0;
+    opt_ctimeout = opt_test = opt_vtest = 0;
     opt_method = getenv("SHMUX_SH");
     if (opt_method == NULL)
 	opt_method = DEFAULT_METHOD;
@@ -80,16 +85,19 @@ main(int argc, char **argv)
       {
         int c;
 	
-        c = getopt(argc, argv, "c:dDhm:M:pP:qstT:vV");
+        c = getopt(argc, argv, "c:C:dDhm:M:pP:qstT:vV");
 	
         /* Detect the end of the options. */
         if (c == -1)
             break;
-
+	
         switch (c)
           {
 	  case 'c':
 	      opt_command = optarg;
+	      break;
+	  case 'C':
+	      opt_ctimeout = unit_time(optarg);
 	      break;
 	  case 'd':
 	      opt_internal = 1;
@@ -174,7 +182,7 @@ main(int argc, char **argv)
     term_init(longest, opt_verbose, opt_status, opt_internal, opt_debug);
 
     start = time(NULL);
-    loop(opt_command, opt_maxworkers, opt_ping, opt_test);
+    loop(opt_command, opt_ctimeout, opt_maxworkers, opt_ping, opt_test);
       }
     /* Summary of results unless asked to be quiet */
     if (opt_quiet == 0)

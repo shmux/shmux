@@ -21,11 +21,12 @@
 #include "exec.h"
 #include "term.h"
 
-static char const rcsid[] = "@(#)$Id: exec.c,v 1.2 2002-07-07 01:27:05 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: exec.c,v 1.3 2002-07-07 03:57:36 kalt Exp $";
 
 pid_t
 exec(fd0, fd1, fd2, target, argv, timeout)
-int *fd0, *fd1, *fd2, timeout;
+int *fd0, *fd1, *fd2;
+u_int timeout;
 char *target, **argv;
 {
     int in[2], out[2], err[2];
