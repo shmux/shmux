@@ -29,7 +29,7 @@
 #include "term.h"
 #include "units.h"
 
-static char const rcsid[] = "@(#)$Id: shmux.c,v 1.22 2003-04-19 00:43:04 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: shmux.c,v 1.23 2003-05-03 01:13:53 kalt Exp $";
 
 extern char *optarg;
 extern int optind, opterr;
@@ -88,7 +88,7 @@ main(int argc, char **argv)
 {
     int badopt;
     int opt_prefix, opt_status, opt_quiet, opt_internal, opt_debug;
-    int opt_ctimeout, opt_mixed, opt_maxworkers, opt_vtest;
+    int opt_ctimeout, opt_outmode, opt_maxworkers, opt_vtest;
     u_int opt_test, opt_analyzer;
     char *opt_analyze, *opt_outanalysis, *opt_erranalysis;
     char *opt_spawn, *opt_command, *opt_odir, *opt_ping, *opt_rcmd;
@@ -100,7 +100,7 @@ main(int argc, char **argv)
 
     opt_prefix = opt_status = 1;
     opt_quiet = opt_internal = opt_debug = 0;
-    opt_mixed = 1;
+    opt_outmode = 1;
     opt_maxworkers = DEFAULT_MAXWORKERS;
     opt_ctimeout = opt_test = opt_vtest = 0;
     opt_analyze = opt_outanalysis = opt_erranalysis = NULL;
@@ -165,7 +165,8 @@ main(int argc, char **argv)
               exit(0);
               break;
 	  case 'm':
-	      opt_mixed = 0;
+	      opt_outmode &= ~OUT_MIXED;
+	      opt_outmode |= OUT_ATEND;
 	      break;
 	  case 'M':
 	      opt_maxworkers = atoi(optarg);
@@ -237,26 +238,28 @@ main(int argc, char **argv)
     /* -A requires -o, to avoid dangerous/reckless invocations. */
     if (opt_analyzer != ANALYZE_NONE && opt_odir == NULL)
       {
-	fprintf(stderr, "%s: -o option required when using -A!\n", myname);
+	fprintf(stderr, "%s: -o option required when using -a/-A!\n", myname);
 	exit(1);
       }
 
-    if (opt_mixed == 0)
+    /* -? requires -o, to avoid dangerous/reckless invocations. */
+    if ((opt_outmode & OUT_IFERR) != 0 && opt_odir == NULL)
       {
-	/* User asked for non-mixed output */
-	if (opt_odir == NULL)
-	  {
-	    /* We'll need a temporary directory */
-	    char *tmp;
-	    
-	    tmp = getenv("TMPDIR");
-	    sprintf(tdir, "%s/%s.%d.%ld", (tmp != NULL) ? tmp : _PATH_TMP,
-		    myname, (int) getpid(), (long) time(NULL));
-	    opt_odir = tdir;
-	  }
-	else
-	    /* Senseless, -o was also specified. */
-	    opt_mixed = 1;
+	fprintf(stderr, "%s: -o option required when using -?!\n", myname);
+	exit(1);
+      }
+
+    if (opt_odir != NULL)
+	opt_outmode |= OUT_COPY;
+    else if ((opt_outmode & OUT_ATEND) != 0)
+      {
+	/* We'll need a temporary directory */
+	char *tmp;
+
+	tmp = getenv("TMPDIR");
+	sprintf(tdir, "%s/%s.%d.%ld", (tmp != NULL) ? tmp : _PATH_TMP,
+		myname, (int) getpid(), (long) time(NULL));
+	opt_odir = tdir;
       }
 
     if (opt_odir != NULL && mkdir(opt_odir, 0777) == -1 && errno != EEXIST)
@@ -300,10 +303,10 @@ main(int argc, char **argv)
     /* Loop through targets/commands */
     start = time(NULL);
     loop(opt_command, opt_ctimeout, opt_maxworkers, opt_spawn,
-	 opt_mixed, opt_odir, opt_analyzer, opt_ping, opt_test);
+	 opt_outmode, opt_odir, opt_analyzer, opt_ping, opt_test);
 
     /* odir was temporary, remove it now */
-    if (opt_mixed == 0 && rmdir(opt_odir) == -1)
+    if ((opt_outmode & OUT_COPY) == 0 && rmdir(opt_odir) == -1)
 	&& rmdir(opt_odir) == -1)
       {
 	fprintf(stderr, "%s: rmdir(%s): %s\n",

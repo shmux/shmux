@@ -25,7 +25,7 @@
 #include "target.h"
 #include "term.h"
 
-static char const rcsid[] = "@(#)$Id: loop.c,v 1.33 2003-04-26 01:47:26 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: loop.c,v 1.34 2003-05-03 01:13:53 kalt Exp $";
 
 extern char *myname;
 
@@ -35,6 +35,7 @@ struct child
     int		num;		/* target number */
     int		test, passed;	/* test?, passed? */
     int		analyzer;	/* analyzer? */
+    int		output;		/* output mode */
     int		execstate;	/* exec() status: 0=ok, 1=failed? 2=failed */
     char	*obuf, *ebuf;	/* stdout/stderr truncated buffer */
     char	*ofname, *efname; /* stdout/stderr file names */
@@ -148,7 +149,7 @@ int fdfactor, max;
 
 /*
 ** init_child
-**	Used to initnialize a child structure whenever a new child is spawned.
+**	Used to initialize a child structure whenever a new child is spawned.
 */
 static void
 init_child(kid)
@@ -157,6 +158,7 @@ struct child *kid;
     kid->num = target_getnum();
     kid->test = kid->passed = 0;
     kid->analyzer = 0;
+    kid->output = OUT_MIXED;
     kid->execstate = 0;
     kid->obuf = kid->ebuf = NULL;
     kid->ofname = kid->efname = NULL;
@@ -249,11 +251,14 @@ struct child *kid;
 		    }
 		  else
 		    {
+		      if ((kid->output & OUT_MIXED) != 0)
+			  /* Outputing to screen */
+			  tprint(name, ((std == 1) ? MSG_STDOUT : MSG_STDERR),
+				 "%s%s", (*left == NULL) ? "" : *left, start);
 		      if (kid->ofile != -1)
 			{
 			  /* Outputing to a file, so need to add \r\n back */
 			  assert( left == NULL || *left == NULL );
-			  *nl = '\n';
 			  if (*(nl-1) == '\0') /* XXX */
 			      *(nl-1) = '\r';
 			  if (write((std == 1) ? kid->ofile : kid->efile,
@@ -261,12 +266,12 @@ struct child *kid;
 			      /* Should we do a little more here? */
 			      eprint("Data lost for %s, write() failed: %s",
 				     name, strerror(errno));
-			  return;
+			  if (write((std == 1) ? kid->ofile : kid->efile,
+				    "\n", 1) == -1)
+			      /* Should we do a little more here? */
+			      eprint("Data lost for %s, write() failed: %s",
+				     name, strerror(errno));
 			}
-		      else
-			  /* Outputing to screen */
-			  tprint(name, ((std == 1) ? MSG_STDOUT : MSG_STDERR),
-				 "%s%s", (*left == NULL) ? "" : *left, start);
 		    }
 		}
 	      else
@@ -291,54 +296,51 @@ struct child *kid;
 	assert( start < nl );
 	if (isfping == 0)
 	  {
-	    if (kid->ofile != -1)
-	      {
-		/* Outputing to a file, so just stuff it there directly */
-		if (write((std == 1) ? kid->ofile : kid->efile,
-			  start, strlen(start)) == -1)
-		    /* Should we do a little more here? */
-		    eprint("Data lost for %s, write() failed: %s",
-			   name, strerror(errno));
-	      }
+	    char **left;
+
+	    if (std == 1)
+		left = &(kid->obuf); /* stdout */
+	    else
+		left = &(kid->ebuf); /* stderr */
+
+	    if (*left == NULL)
+		*left = strdup(start);
 	    else
 	      {
-		/* Outputing to the screen, so save this for later */
-		char **left;
-
-		if (std == 1)
-		    left = &(kid->obuf); /* stdout */
-		else
-		    left = &(kid->ebuf); /* stderr */
-
-		if (*left == NULL)
-		    *left = strdup(start);
+		int leftlen;
+		leftlen = strlen(*left);
+		
+		if (leftlen > 1024)
+		  {
+		    if (kid->ofile != -1)
+		      {
+			if (write((std == 1) ? kid->ofile : kid->efile,
+				  start, strlen(start)) == -1)
+			    /* Should we do a little more here? */
+			    eprint("Data lost for %s, write() failed: %s",
+				   name, strerror(errno));
+		      }
+		    if ((kid->output & OUT_MIXED) != 0)
+			/* Outputing to screen */
+			tprint(name,
+			       ((std == 1) ? MSG_STDOUTTRUNC: MSG_STDERRTRUNC),
+			       "%s", *left);
+		    free(*left);
+		    *left = NULL;
+		  }
 		else
 		  {
-		    int leftlen;
-		    leftlen = strlen(*left);
-
-		    if (leftlen > 1024)
-		      {
-			tprint(name,
-			       ((std == 1) ? MSG_STDOUTTRUNC :MSG_STDERRTRUNC),
-			       "%s", *left);
-			free(*left);
-			*left = NULL;
-		      }
-		    else
-		      {
-			char *old;
-
-			old = *left;
-			*left = (char *) malloc(strlen(start) + leftlen + 1);
-			strcpy(*left, old);
-			free(old);
-			strcpy((*left) + leftlen, start);
-		      }
+		    char *old;
+		    
+		    old = *left;
+		    *left = (char *) malloc(strlen(start) + leftlen + 1);
+		    strcpy(*left, old);
+		    free(old);
+		    strcpy((*left) + leftlen, start);
 		  }
 	      }
 	  }
-	else
+      	else
 	  {
 	    assert( isfping == 1 );
 	    eprint("Truncated output from fping lost: %s", start);
@@ -676,9 +678,9 @@ int result;
 **	targets with a simple echo command, and finally running a command.
 */
 void
-loop(cmd, ctimeout, max, spawn, mixed, odir, utest, ping, test)
+loop(cmd, ctimeout, max, spawn, outmode, odir, utest, ping, test)
 char *cmd, *spawn, *ping, *odir;
-int max, mixed;
+int max, outmode;
 u_int ctimeout, utest, test;
 {
     struct child *children;
@@ -686,6 +688,8 @@ u_int ctimeout, utest, test;
     struct sigaction sa, saved_sa;
     int idx;
     char *cargv[10];
+
+    assert( (outmode & OUT_MIXED) != 0 || (outmode & OUT_ATEND) != 0 );
 
     /* check spawn */
     if (strcmp(spawn, "all") == 0)
@@ -963,7 +967,8 @@ u_int ctimeout, utest, test;
 
 		    init_child(&(children[idx]));
 		    children[idx].analyzer = 1;
-		    assert( odir != NULL );
+		    children[idx].output = outmode & (OUT_MIXED|OUT_ATEND);
+		    assert( odir != NULL && (outmode & OUT_COPY) != 0 );
 		    children[idx].ofile = output_file(&children[idx].ofname, odir, target_getname(), "analyzer.stdout");
 		    if (children[idx].ofile == -1)
 		      {
@@ -1018,14 +1023,23 @@ u_int ctimeout, utest, test;
 			continue;
 		      }
 
-		    if (spawn_mode == SPAWN_ONE)
-			spawn_mode = SPAWN_NONE;
-
 		    target_start();
 
 		    init_child(&(children[idx]));
-		    if (odir != NULL)
+
+		    children[idx].output = outmode;
+		    if (spawn_mode == SPAWN_ONE)
 		      {
+			spawn_mode = SPAWN_NONE;
+			if ((outmode & OUT_ATEND) != 0
+			    && (outmode & OUT_IFERR) == 0)
+			    children[idx].output = (outmode & ~OUT_ATEND)
+				|OUT_MIXED;
+		      }
+
+		    if ((outmode & (OUT_ATEND|OUT_IFERR|OUT_COPY)) != 0)
+		      {
+			assert( odir != NULL );
 			children[idx].ofile = output_file(&children[idx].ofname, odir, target_getname(), "stdout");
 			if (children[idx].ofile == -1)
 			  {
@@ -1210,17 +1224,25 @@ u_int ctimeout, utest, test;
 	    ** If user asked for a non-mixed output, now's a good time to
 	    ** show the output on screen.
 	    */
-	    if (children[idx].ofile != -1 && mixed == 0)
+	    if (children[idx].ofile != -1)
 	      {
-		output_show(what, children[idx].ofile, children[idx].ofname,1);
-		if (unlink(children[idx].ofname) == -1)
+		if ((children[idx].output & OUT_ATEND) != 0
+		    && (children[idx].output & OUT_IFERR) == 0)
+		    output_show(what, children[idx].ofile,
+				children[idx].ofname,1);
+		if ((outmode & OUT_COPY) == 0
+		    && unlink(children[idx].ofname) == -1)
 		    eprint("unlink(%s): %s",
 			   children[idx].ofname, strerror(errno));
 	      }
-	    if (children[idx].efile != -1 && mixed == 0)
+	    if (children[idx].efile != -1)
 	      {
-		output_show(what, children[idx].efile, children[idx].ofname,2);
-		if (unlink(children[idx].efname) == -1)
+		if ((children[idx].output & OUT_ATEND) != 0
+		    && (children[idx].output & OUT_IFERR) == 0)
+		    output_show(what, children[idx].efile,
+				children[idx].ofname,2);
+		if ((outmode & OUT_COPY) == 0
+		    && unlink(children[idx].efname) == -1)
 		    eprint("unlink(%s): %s",
 			   children[idx].efname, strerror(errno));
 	      }
@@ -1237,10 +1259,6 @@ u_int ctimeout, utest, test;
 			   what, WEXITSTATUS(status));
 		else if (children[idx].analyzer == 1)
 		  {
-		    output_show(what, children[idx].ofile,
-				children[idx].ofname, 1);
-		    output_show(what, children[idx].efile,
-				children[idx].ofname, 2);
 		    dprint("Analyzer for %s exited with status %d",
 			   what, WEXITSTATUS(status));
 		    if (WEXITSTATUS(status) == 0)
@@ -1259,11 +1277,12 @@ u_int ctimeout, utest, test;
 		else if (children[idx].execstate == 0)
 		  {
 		    /* save exit status */
-		    if (odir != NULL && mixed != 0)
+		    if ((outmode & OUT_COPY) != 0)
 		      {
 			int fd;
 			char *fn;
 
+			assert( odir != NULL );
 			fd = output_file(&fn, odir, what, "exit");
 			if (fd >= 0)
 			  {
@@ -1277,7 +1296,8 @@ u_int ctimeout, utest, test;
 
 		    if (byteset_test(BSET_ERROR, WEXITSTATUS(status)) == 0)
 		      {
-			if (utest != ANALYZE_NONE)
+			if (utest != ANALYZE_NONE
+			    && (children[idx].output & OUT_IFERR) != 0)
 			  {
 			    output_show(what, children[idx].ofile,
 					children[idx].ofname, 1);
@@ -1303,13 +1323,20 @@ u_int ctimeout, utest, test;
 					     children[idx].ofname,
 					     children[idx].efile,
 					     children[idx].efname) == 0)
+			      {
+				iprint("Analysis of %s output indicates a success", what);
 				set_cmdstatus(CMD_SUCCESS);
+			      }
 			    else
 			      {
-				output_show(what, children[idx].ofile,
-					    children[idx].ofname, 1);
-				output_show(what, children[idx].efile,
-					    children[idx].ofname, 2);
+				eprint("Analysis of %s output indicates an error", what);
+				if ((children[idx].output & OUT_IFERR) != 0)
+				  {
+				    output_show(what, children[idx].ofile,
+						children[idx].ofname, 1);
+				    output_show(what, children[idx].efile,
+						children[idx].ofname, 2);
+				  }
 				set_cmdstatus(CMD_ERROR);
 			      }
 			  }
