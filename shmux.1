@@ -1,4 +1,4 @@
-.TH SHMUX 8 "$Date: 2004-04-01 00:54:14 $"
+.TH SHMUX 8 "$Date: 2004-07-20 00:12:16 $"
 .DA November 7, 2003
 .SH NAME
 shmux - Shell Multiplexor
@@ -68,6 +68,9 @@ process the output or run a user specified command to determine whether the
 \fIcommand\fP was successful or resulted in an error.  Optionally, the
 \fIcommand\fP output is suppressed for successful targets.
 
+Finally \fBshmux\fP will print out a summary of the results and list
+targets with errors.
+
 .SH OPTIONS
 .IP "\fB-h\fP"
 Display a brief help message.
@@ -83,7 +86,12 @@ by using alarm(3) which is unfortunately not always effective.  For this
 reason, \fBshmux\fP will actively monitor children processes and enforce
 the defined timeout by sending a TERM signal 5 seconds after the initial
 timeout has expired, and a KILL signal 5 seconds later if the child process
-is still running.
+is still running.  When using the \fIsh\fP method, nothing guarantees that
+all the children will be terminated as \fBshmux\fP is able to send signal
+only to the shell process.  Finally, only commands which terminate
+because of an ALRM signal or because of a TERM or KILL signal after such
+signal has been issued by \fBshmux\fP will be reported as having timed out
+in the final summary report produced by \fBshmux\fP upon exiting.
 .IP "\fB-M \fImax\fP"
 Defines the maximum number of spawned processes.  While there is no real
 (or hard coded) limitation for this, the system resources are typically
@@ -149,8 +157,10 @@ of an error.
 
 For the \fIrun\fP analyzer, the \fB-A\fP must be specified at least once
 with the name of a program to run, and optionally a second time to specify
-a timeout.  The program will be called after a \fIcommand\fP completes on a
-target unless the \fIcommand\fP exit code is considered an error (see
+a timeout which defaults to 15 seconds if unset.  This timeout is
+implemented using alarm(3) and will not otherwise be enforced by
+\fBshmux\fP.  The program will be called after a \fIcommand\fP completes on
+a target unless the \fIcommand\fP exit code is considered an error (see
 \fB-e\fP) with two arguments: the target name and the directory specified
 with the \fB-o\fP option.  The output of the program will always be shown
 to the user.  Exit codes other than 0 indicate that the \fIcommand\fP
@@ -349,5 +359,8 @@ remote command exit code to the caller.  Typically, \fIrsh\fP will simply
 not bother to return this exit code, and \fIssh\fP will try its best but is
 limited by the fact it also tries to return an error code for SSH related
 errors.  In either case, this may pose problems when using \fB-e\fP.
+
+Under Cygwin, child processes do not inherit alarm(3) settings from the
+parent disabling this simple timeout enforcement system used by \fBshmux\fP.
 
 Send bug reports to `shmux-bugs@taranis.org'.
