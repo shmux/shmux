@@ -25,7 +25,7 @@
 #include "target.h"
 #include "term.h"
 
-static char const rcsid[] = "@(#)$Id: loop.c,v 1.37 2003-05-04 01:25:23 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: loop.c,v 1.38 2003-05-08 00:27:58 kalt Exp $";
 
 extern char *myname;
 
@@ -55,7 +55,7 @@ static int spawn_mode;
 static void shmux_sigint(int);
 static void setup_fdlimit(int, int);
 static void init_child(struct child *);
-static void parse_child(char *, int, int, struct child *, int, char *);
+static void parse_child(char *, int, int, int, struct child *, int, char *);
 static void parse_fping(char *);
 static void parse_user(int, struct child *, int);
 static int  output_file(char **, char *, char *, char *);
@@ -173,9 +173,9 @@ struct child *kid;
 **	Parse output from children
 */
 static void
-parse_child(name, isfping, verbose_tests, kid, std, buffer)
+parse_child(name, isfping, verbose_tests, analyzer, kid, std, buffer)
 char *name, *buffer;
-int isfping, verbose_tests, std;
+int isfping, verbose_tests, analyzer, std;
 struct child *kid;
 {
     char *start, *nl;
@@ -251,6 +251,42 @@ struct child *kid;
 		    }
 		  else
 		    {
+		      if ((kid->output & OUT_ERR) == 0
+			  && (analyzer == ANALYZE_LNRE
+			      || analyzer == ANALYZE_LNPCRE))
+			{
+			  /* Line based analyzer is used, get to work */
+			  char *str;
+
+			  if (*left == NULL)
+			      str = start;
+			  else
+			    {
+			      str = (char *) malloc(strlen(*left)
+						    + strlen(start) + 1);
+			      sprintf(str, "%s%s", *left, start);
+			    }
+
+			  if (analyzer_lnrun(analyzer,
+					     (std == 1) ? ANALYZE_STDOUT
+					     : ANALYZE_STDERR, str) != 0)
+			    {
+			      if ((kid->output & OUT_IFERR) != 0
+				  && (kid->output & OUT_MIXED) != 0)
+				  {
+				    assert( (kid->output & OUT_COPY) != 0 );
+				    output_show(name, kid->ofile, kid->ofname,
+						std);
+				    output_show(name, kid->efile, kid->efname,
+						std);
+				  }
+			      kid->output &= ~OUT_IFERR;
+			      kid->output |= OUT_ERR;
+			      eprint("Analysis of %s output indicates an error", name);
+			    }
+			  if (*left != NULL)
+			      free(str);
+			}
 		      if ((kid->output & OUT_MIXED) != 0
 			  && (kid->output & OUT_IFERR) == 0)
 			  /* Outputing to screen */
@@ -321,11 +357,28 @@ struct child *kid;
 			    eprint("Data lost for %s, write() failed: %s",
 				   name, strerror(errno));
 		      }
+		    if ((kid->output & OUT_IFERR) != 0
+			&& (analyzer == ANALYZE_LNRE
+			    || analyzer == ANALYZE_LNPCRE))
+			{
+			  /*
+			  ** These analyzers can't handle truncated lines,
+			  ** so treat as an error.
+			  */
+			  if ((kid->output & OUT_MIXED) != 0)
+			    {
+			      output_show(name, kid->ofile, kid->ofname, std);
+			      output_show(name, kid->efile, kid->efname, std);
+			    }
+			  kid->output &= ~OUT_IFERR;
+			  kid->output |= OUT_ERR;
+			  eprint("Truncated line caused analyzer failure for %s", name);
+			}
 		    if ((kid->output & OUT_MIXED) != 0
 			&& (kid->output & OUT_IFERR) == 0)
 			/* Outputing to screen */
 			tprint(name,
-			       ((std == 1) ? MSG_STDOUTTRUNC: MSG_STDERRTRUNC),
+			       ((std == 1) ? MSG_STDOUTTRUNC : MSG_STDERRTRUNC),
 			       "%s", *left);
 		    free(*left);
 		    *left = NULL;
@@ -617,13 +670,23 @@ char *name, *fname;
 int fd, type;
 {
     FILE *f;
-    int cont;
+    int fd2, cont;
     char buffer[8192], *nl;
 
-    if (lseek(fd, SEEK_SET, 0) != 0)
-	eprint("lseek(%s): %s", fname, strerror(errno));
+    fd2 = dup(fd);
+    if (fd2 < 0)
+      {
+	eprint("dup(%s): %s", fname, strerror(errno));
+	return;
+      }
 
-    f = fdopen(fd, "r");
+    if (lseek(fd2, SEEK_SET, 0) != 0)
+      {
+	eprint("lseek(%s, SEEK_SET): %s", fname, strerror(errno));
+	return;
+      }
+
+    f = fdopen(fd2, "r");
     if (f == NULL)
 	eprint("fdopen(%s): %s", fname, strerror(errno));
     
@@ -873,8 +936,8 @@ u_int ctimeout, utest;
 			if (idx == 0)
 			    parse_user(buffer[0], children, max);
 			else
-			    parse_child(what, idx<=2, test<0, children+(idx/3),
-					idx%3, buffer);
+			    parse_child(what, idx<=2, test<0, utest,
+					children+(idx/3), idx%3, buffer);
 		      }
 		    else
 		      {
@@ -1319,6 +1382,14 @@ u_int ctimeout, utest;
 		      {
 			if (utest == ANALYZE_NONE || utest == ANALYZE_RUN)
 			    set_cmdstatus(CMD_SUCCESS);
+			else if (utest == ANALYZE_LNRE
+				 || utest == ANALYZE_LNPCRE)
+			  {
+			    if ((children[idx].output & OUT_ERR) == 0)
+				set_cmdstatus(CMD_SUCCESS);
+			    else
+				set_cmdstatus(CMD_ERROR);
+			  }
 			else
 			  {
 			    /*
