@@ -19,7 +19,7 @@
 #include "target.h"
 #include "term.h"
 
-static char const rcsid[] = "@(#)$Id: loop.c,v 1.1 2002-07-04 21:44:50 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: loop.c,v 1.2 2002-07-06 20:11:17 kalt Exp $";
 
 struct child
 {
@@ -32,6 +32,8 @@ struct child
 };
 
 static void init_child(struct child *);
+static void parse_child(char *, int, struct child *, int, char *);
+static void parse_fping(char *);
 
 /*
 ** init_child
@@ -48,6 +50,183 @@ struct child *kid;
     kid->status = -1;
 
     status_spawned(1);
+}
+
+/*
+** parse_child
+**	Parse output from children
+*/
+static void
+parse_child(name, isfping, kid, std, buffer)
+char *name, *buffer;
+int isfping, std;
+struct child *kid;
+{
+    char *start, *nl;
+
+    assert( std == 1 || std == 2 );
+
+    start = nl = buffer;
+
+    while (*nl != '\0')
+      {
+	char **left;
+
+	if (*nl != '\n') /* Purify reports *1* UMR here?!? */
+	  {
+	    nl += 1;
+	    continue;
+	  }
+
+	if (*(nl-1) == '\r') /* XXX */
+	    *(nl-1) = '\0';
+	else
+	    *nl = '\0';
+
+	left = NULL;
+	/* Check which state the child is in. */
+	switch (kid->execstate)
+	  {
+	  case 2:
+	      /* Error from exec() */
+	      eprint("Fatal error for %s: %s", name, start);
+	      break;
+	  case 1:
+	      /* Possible error message from exec() */
+	      if (strcmp(start, "SHMUCK!") == 0)
+		{
+		  /* Should be from exec() */
+		  kid->execstate = 2;
+		  break;
+		}
+	      /* Can't be.. */
+	      eprint("Unexpected meaningless SIGTSTP received by child spawned for '%s'.  Recovering..", name);
+	      kid->execstate = 0;
+	      /* FALLTHROUGH */
+	  case 0:
+	      /* General case, we read output from child */
+	      if (std == 1)
+		  left = &(kid->obuf); /* stdout */
+	      else
+		  left = &(kid->ebuf); /* stderr */
+	      
+	      if (isfping == 0)
+		{
+		  /* Test or real command */
+		  if (kid->test == 1)
+		    {
+		      /*
+		      ** `SHMUX.' must arrive all at once (including the \n).
+		      ** Considered reasonnable until proven to be a bug.
+		      */
+		      if (strcmp(start, "SHMUX.") == 0
+			  && kid->passed == 0 && std == 1)
+			  kid->passed = 1;
+		      else
+			  kid->passed = -1;
+
+		      dprint("Test output for %s: %s%s",
+			     name, (*left == NULL) ? "" : *left, start);
+		    }
+		  else
+		    {
+		      if (kid->test == 1)
+			  kid->passed = -1;
+		      tprint(name, ((std == 1) ? MSG_STDOUT : MSG_STDERR),
+			     "%s%s", (*left == NULL) ? "" : *left, start);
+		    }
+		}
+	      else
+		  parse_fping(start);
+
+	      break;
+	  default:
+	      abort();
+	  }
+	
+	start = nl += 1;
+	if (left != NULL && *left != NULL)
+	  {
+	    free(*left);
+	    *left = NULL;
+	  }
+      }
+
+    if (start != nl)
+      {
+	/* There is some leftover data not terminated by \n */
+	assert( start < nl );
+	if (isfping == 0)
+	  {
+	    char **left;
+
+	    if (std == 1)
+		left = &(kid->obuf); /* stdout */
+	    else
+		left = &(kid->ebuf); /* stderr */
+
+	    if (*left != NULL)
+	      {
+		/*
+		** This is a little weak, but then again it shouldn't happen
+		** either..  Who just said "Never say never!"?  i swear i
+		** just heard someone say that...
+		*/
+		tprint(name, ((std == 1) ? MSG_STDOUTTRUNC : MSG_STDERRTRUNC),
+		       "%s", *left);
+		free(*left);
+	      }
+	    *left = strdup(start);
+	  }
+	else
+	  {
+	    assert( isfping == 1 );
+	    eprint("Truncated output from fping lost: %s", start);
+	  }
+      }
+}
+
+/*
+** parse_fping
+**	Parse one line of output from fping
+*/
+static void
+parse_fping(line)
+char *line;
+{
+    char *space;
+		  
+    space = strchr(line, ' ');
+    if (space != NULL)
+      {
+	*space = '\0';
+	if (target_setbyname(line) != 0)
+	  {
+	    *space = ' ';
+	    dprint("fping garbage follows:");
+	    eprint("%s", line);
+	  }
+	else
+	  {
+	    *space = ' ';
+	    if (strcmp(space+1, "is alive") == 0)
+	      {
+		iprint("%s", line);
+		target_result(1);
+	      }
+	    else
+	      {
+		/* Assuming too much? */
+		eprint("%s", line);
+		target_result(0);
+	      }
+	  }
+      }
+    else if (strcmp(line, "") != 0)
+      {
+	dprint("fping garbage follows:");
+	eprint("%s", line);
+      }
 }
 
 /*
@@ -200,23 +379,34 @@ int max, test;
 		       (pfd[idx].revents & POLLOUT) != 0,
 		       (pfd[idx].revents & POLLERR) != 0,
 		       (pfd[idx].revents & POLLHUP) != 0);
+
 		if (idx % 3 != 0)
 		  {
 		    /* Stdout or stderr with output ready to be read */
-		    char buffer[8192], *start, *nl, **left;
+		    char buffer[8192];
 		    int sz;
 
-		    sz = read(pfd[idx].fd, buffer, 8191); buffer[sz] = '\0';
-		    /* XXX what about -1 ??? */
+		    sz = read(pfd[idx].fd, buffer, 8191);
 		    dprint("idx=%d[%s] fd=%d(%d) read()=%d",
 			   idx, what, pfd[idx].fd, idx%3, sz);
-		    left = NULL;
-		    if (sz == 0)
+		    if (sz > 0)
 		      {
+			buffer[sz] = '\0';
+			parse_child(what, idx<=2, children+(idx/3),
+				    idx%3, buffer);
+		      }
+		    else
+		      {
+			char **left;
+
 			/*
 			** Child is probably gone, we'll catch that below;
 			** For now, just cleanup.
 			*/
+			if (sz == -1)
+			    eprint("Unexpected read(STD%s) error for %s: %s",
+				   (idx%3 == 1) ? "OUT" : "ERR", what,
+				   strerror(errno));
 			close(pfd[idx].fd); pfd[idx].fd = -1;
 			if (idx%3 == 1)
 			    left = &(children[idx/3].obuf);
@@ -224,145 +414,11 @@ int max, test;
 			    left = &(children[idx/3].ebuf);
 			if (*left != NULL)
 			  {
-			    tprint(what, (idx%3 == 1) ? MSG_STDOUTCONT
-				   : MSG_STDERRCONT, "%s", *left);
-			    eprint("Previous line was incomplete.");
+			    tprint(what, (idx%3 == 1) ? MSG_STDOUTTRUNC
+				   : MSG_STDERRTRUNC, "%s", *left);
+			    eprint("Previous line was incomplete."); /* So? */
 			    free(*left);
 			    *left = NULL;
-			  }
-			idx += 1;
-			continue;
-		      }
-		    start = nl = buffer;
-		    while (*nl != '\0')
-		      {
-			if (*nl == '\n') /* Purify reports *1* UMR here?!? */
-			  {
-			    if (*(nl-1) == '\r') /* XXX */
-				*(nl-1) = '\0';
-			    else
-				*nl = '\0';
-			    left = NULL;
-			    switch (children[idx/3].execstate)
-			      {
-			      case 2:
-				  /* Error from exec() */
-				  eprint("Fatal error for %s: %s", what,start);
-				  break;
-			      case 1:
-				  /* Possible error message from exec() */
-				  if (strcmp(start, "SHMUCK!") == 0)
-				    {
-				      /* Should be from exec() */
-				      children[idx/3].execstate = 2;
-				      break;
-				    }
-				  /* Can't be.. */
-				  eprint("Unexpected meaningless SIGTSTP received by child spawned for '%s'.  Recovering..", what);
-				  children[idx/3].execstate = 0;
-				  /* FALLTHROUGH */
-			      case 0:
-				  /* General case, output from child */
-				  if (idx%3 == 1)
-				      left = &(children[idx/3].obuf);
-				  else
-				      left = &(children[idx/3].ebuf);
-
-				  if (idx > 2)
-				    {
-				      /* Test or real command */
-				      if (children[idx/3].test == 1)
-					{
-					  /*
-					  ** The `SHMUX.' must arrive all
-					  ** at once (including the \n).
-					  ** Is this reasonnable or a bug?
-					  */
-					  if (strcmp(start, "SHMUX.") == 0
-					      && children[idx/3].passed == 0
-					      && idx%3 == 1)
-					      children[idx/3].passed = 1;
-					  else
-					      children[idx/3].passed = -1;
-					  dprint("Test output for %s: %s%s",
-						 what, 
-						 (*left == NULL) ? "" : *left,
-						 start);
-					}
-				      else
-					{
-					  if (children[idx/3].test == 1)
-					      children[idx/3].passed = -1;
-					  tprint(what, (*left == NULL) ?
-						 ((idx%3 == 1) ? MSG_STDOUT
-						  : MSG_STDERR)
-						 : ((idx%3 == 1)?MSG_STDOUTCONT
-						    : MSG_STDERRCONT),
-						 "%s%s",
-						 (*left == NULL) ? "" : *left,
-						 start);
-					}
-				    }
-				  else
-				    {
-				      /* fping output */
-				      char *space;
-				      
-				      space = strchr(start, ' ');
-				      if (space != NULL)
-					{
-					  *space = '\0';
-					  if (target_setbyname(start) != 0)
-					    {
-					      *space = ' ';
-					      dprint("fping garbage follows:");
-					      eprint("%s", start);
-					      break;
-					    }
-					  *space = ' ';
-					  if (strcmp(space+1, "is alive") == 0)
-					    {
-					      iprint("%s", start);
-					      target_result(1);
-					    }
-					  else
-					    {
-					      /* Assuming too much? */
-					      eprint("%s", start);
-					      target_result(0);
-					    }
-					}
-				      else if (strcmp(start, "") != 0)
-					{
-					  dprint("fping garbage follows:");
-					  eprint("%s", start);
-					}
-				    }
-				  break;
-			      default:
-				  abort();
-			      }
-
-			    start = nl + 1;
-			    if (left != NULL && *left != NULL)
-			      {
-				free(*left); /* XXX Could do better.. */
-				*left = NULL;
-			      }
-			  }
-			nl += 1;
-		      }
-		    if (start != nl)
-		      {
-			assert( start < nl );
-			if (left != NULL)
-			  {
-			    assert( *left == NULL );
-			    *left = strdup(start);
-			  }
-			else
-			  {
-			    /* XXX - losing data here.. */
 			  }
 		      }
 		  }
@@ -475,6 +531,10 @@ int max, test;
 
 	    if (WIFSTOPPED(status) != 0)
 	      {
+		/*
+		** YYY These could/should be ignored once we've received
+		** some output from the child.
+		*/
 		if (WSTOPSIG(status) == SIGTSTP)
 		  {
 		    /* exec() failed, see exec.c */
