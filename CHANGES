@@ -1,4 +1,13 @@
-$Id: CHANGES,v 1.2 2002-07-11 01:29:48 kalt Exp $
+$Id: CHANGES,v 1.3 2002-08-21 00:50:29 kalt Exp $
+
+Changes since 0.3a [2002/07/11]:
+
+- improved handling of partial lines.
+- truncated lines would cause a crash (failed assertion) with -o.
+- added -m option.
+- enabled gcc macros for v3.x
+- fixed miscellaneous little bugs in exec().
+- fixed getopt() usage.
 
 Changes since 0.2a [2002/07/08]:
 

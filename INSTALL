@@ -1,6 +1,6 @@
 -- shmux status
 
-Here is the third public release of shmux.  This release has been
+Here is the fourth public release of shmux.  This release has been
 successfully compiled on NetBSD, FreeBSD, Solaris and Linux.  Some features
 are still missing and will be added in future releases.  What is documented
 (in the manual page) is implemented and should be working, but the
@@ -39,4 +39,4 @@ Consider documentation errors as bugs, and report them as such.  If you
 develop anything pertaining to `shmux' or have suggestions, share your
 findings by writing to `shmux@taranis.org'.
 
--- $Id: INSTALL,v 1.4 2002-07-11 01:29:48 kalt Exp $
+-- $Id: INSTALL,v 1.5 2002-08-21 00:50:30 kalt Exp $
