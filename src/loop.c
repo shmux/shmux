@@ -19,7 +19,7 @@
 #include "target.h"
 #include "term.h"
 
-static char const rcsid[] = "@(#)$Id: loop.c,v 1.6 2002-07-07 19:59:38 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: loop.c,v 1.7 2002-07-07 20:46:05 kalt Exp $";
 
 struct child
 {
@@ -283,25 +283,47 @@ u_int ctimeout, test;
 	else if (fdlimit.rlim_cur < (max + 3) * 3 + 10)
 	  {
 	    int old;
-	    
+
 	    old = max;
 	    max = ((fdlimit.rlim_cur - 10) / 3) - 3;
 	    eprint("Reducing parallelism factor to %d (from %d) because of system limitation.", max, old);
 	  }
       }
 	
+#if defined(__NetBSD__)
+    /* See NetBSD PR#17507 */
+    {
+      int i, *fds;
+      
+      fds = (int *) malloc(fdlimit.rlim_cur * sizeof(int));
+      if (fds == NULL)
+	{
+	  perror("malloc failed");
+	  exit(1);
+	}
+      i = -1;
+      do
+	  fds[++i] = dup(0);
+      while (i < fdlimit.rlim_cur && fds[i] != -1);
+      dprint("Duped %d fds to get around NetBSD's broken poll(2)", i);
+      while (i >= 0)
+	  close(fds[i--]);
+      free(fds);
+    }
+#endif
+
     /* Allocate the control structures */
     pfd = (struct pollfd *) malloc((max+2)*3 * sizeof(struct pollfd));
     if (pfd == NULL)
       {
-	perror("malloc/realloc failed");
+	perror("malloc failed");
 	exit(1);
       }
     memset((void *) pfd, 0, (max+2)*3 * sizeof(struct pollfd));
     children = (struct child *) malloc((max+1) * sizeof(struct child));
     if (children == NULL)
       {
-	perror("malloc/realloc failed");
+	perror("malloc failed");
 	exit(1);
       }
     memset((void *) children, 0, (max+1)*sizeof(struct child));
