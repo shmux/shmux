@@ -20,7 +20,7 @@
 #include "exec.h"
 #include "term.h"
 
-static char const rcsid[] = "@(#)$Id: exec.c,v 1.5 2002-08-09 00:23:10 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: exec.c,v 1.6 2003-03-18 14:54:52 kalt Exp $";
 
 pid_t
 exec(fd0, fd1, fd2, target, argv, timeout)
@@ -71,20 +71,14 @@ char *target, **argv;
     if (pipe(out) == -1)
       {
 	eprint("pipe(\"%s\"): %s", argv[0], strerror(errno));
-	if (fd0 != NULL)
-	  {
-	    close(in[0]); close(in[1]);
-	  }
+	if (fd0 != NULL) { close(in[0]); close(in[1]); }
 	return -1;
       }
     err[0] = err[1] = -1;
     if (fd2 != NULL && pipe(err) == -1)
       {
 	eprint("pipe(\"%s\"): %s", argv[0], strerror(errno));
-	if (fd0 != NULL)
-	  {
-	    close(in[0]); close(in[1]);
-	  }
+	if (fd0 != NULL) { close(in[0]); close(in[1]); }
 	close(out[0]); close(out[1]);
 	return -1;
       }
@@ -107,10 +101,7 @@ char *target, **argv;
       {
 	/* Nope.. */
 	close(in[0]); close(in[1]); close(out[0]); close(out[1]);
-	if (fd2 != NULL)
-	  {
-	    close(err[0]); close(err[1]);
-	  }
+	if (fd2 != NULL) { close(err[0]); close(err[1]); }
 	eprint("fork(): %s", strerror(errno));
 	return -1;
       }
@@ -119,15 +110,9 @@ char *target, **argv;
     if (child > 0)
       {
 	/* Close the child side of the pipes */
-	if (fd0 != NULL)
-	    {
-	      close(in[0]); *fd0 = in[1];
-	    }
+	if (fd0 != NULL) { close(in[0]); *fd0 = in[1]; }
 	close(out[1]); *fd1 = out[0];
-	if (fd2 != NULL)
-	  {
-	    close(err[1]); *fd2 = err[0];
-	  }
+	if (fd2 != NULL) { close(err[1]); *fd2 = err[0]; }
 	return child;
       }
     else
