@@ -12,7 +12,7 @@
 
 #include "status.h"
 
-static char const rcsid[] = "@(#)$Id: target.c,v 1.10 2003-04-26 01:39:00 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: target.c,v 1.11 2003-04-30 23:47:34 kalt Exp $";
 
 extern char *myname;
 
@@ -475,11 +475,25 @@ int seconds;
       }
 
     if (seconds >= 0)
-	nprint("%d target%s processed in %d second%s.",
-	       tmax + 1, (tmax > 0) ? "s" : "",
-	       seconds, (seconds > 1) ? "s" : "");
+      {
+	if (u > 0)
+	    nprint("%d target%s processed (out of %d) in %d second%s.",
+		   tmax + 1 - u, (tmax - u > 0) ? "s" : "", tmax +1,
+		   seconds, (seconds > 1) ? "s" : "");
+	else
+	    nprint("%d target%s processed in %d second%s.",
+		   tmax + 1, (tmax > 0) ? "s" : "",
+		   seconds, (seconds > 1) ? "s" : "");
+      }
     else
-	nprint("%d target%s processed.", tmax + 1, (tmax > 0) ? "s" : "");
+      {
+	if (u > 0)
+	    nprint("%d target%s processed (out of %d).",
+		   tmax + 1 - u, (tmax - u > 0) ? "s" : "", tmax + 1);
+	else
+	    nprint("%d target%s processed.",
+		   tmax + 1, (tmax > 0) ? "s" : "");
+      }
 
     if (f + t + u + s + e > 0)
       {
