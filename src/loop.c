@@ -22,7 +22,7 @@
 #include "target.h"
 #include "term.h"
 
-static char const rcsid[] = "@(#)$Id: loop.c,v 1.23 2003-03-18 15:50:28 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: loop.c,v 1.24 2003-03-18 16:02:01 kalt Exp $";
 
 extern char *myname;
 
@@ -688,7 +688,7 @@ u_int ctimeout, test;
 			children[idx].efile = output_file(&children[idx].efname, odir, target_getname(), "stderr");
 			if (children[idx].efile == -1)
 			  {
-			    close(children[idx].efile);
+			    close(children[idx].ofile);
 			    eprint("Fatal error for %s", target_getname());
 			    target_result(-1);
 			    continue;
