@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2002, 2003 Christophe Kalt
+** Copyright (C) 2002, 2003, 2004 Christophe Kalt
 **
 ** This file is part of shmux,
 ** see the LICENSE file for details on your rights.
@@ -12,7 +12,7 @@
 
 #include "status.h"
 
-static char const rcsid[] = "@(#)$Id: target.c,v 1.14 2003-11-28 20:16:11 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: target.c,v 1.15 2004-07-06 01:05:26 kalt Exp $";
 
 extern char *myname;
 
@@ -253,18 +253,32 @@ char **args, *cmd;
     if (args[4] == NULL)
 	args[4] = getenv("SHMUX_SSH_OPTS");
     if (args[4] == NULL)
-	args[4] = "-xa";
+      {
+	args[4] = "-x";
+        args[5] = "-a";
+      }
+    else
+        args[5] = NULL;
     if (args[4][0] == '\0')
       {
+        /* User supplied args[4], but empty */
 	args[4] = targets[tcur].name;
 	args[5] = cmd;
 	args[6] = NULL;
       }
-    else
+    else if (args[5] == NULL)
       {
+        /* User supplied args[4] */
 	args[5] = targets[tcur].name;
 	args[6] = cmd;
 	args[7] = NULL;
+      }
+    else
+      {
+        /* Default args[4] and args[5] */
+	args[6] = targets[tcur].name;
+	args[7] = cmd;
+	args[8] = NULL;
       }
 }
 
