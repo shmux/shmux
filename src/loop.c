@@ -21,7 +21,7 @@
 #include "target.h"
 #include "term.h"
 
-static char const rcsid[] = "@(#)$Id: loop.c,v 1.10 2002-07-09 21:35:17 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: loop.c,v 1.11 2002-07-09 21:40:55 kalt Exp $";
 
 struct child
 {
@@ -657,7 +657,7 @@ u_int ctimeout, test;
 		    kill(children[idx].pid, SIGCONT);
 		  }
 		else
-		    eprint("%s for %s stopped on %s!?",
+		    eprint("%s for %s stopped: %s!?",
 			   (children[idx].test == 0) ? "Child" : "Test", what,
 			   strsignal(WSTOPSIG(status)));
 		idx += 1;
@@ -711,7 +711,7 @@ u_int ctimeout, test;
 		    else
 			children[idx].passed = -2;
 		else
-		    eprint("%s for %s died on %s%s",
+		    eprint("%s for %s died: %s%s",
 			   (children[idx].test == 0) ? "Child" : "Test", what,
 			   strsignal(WTERMSIG(status)),
 			   (WCOREDUMP(status) != 0) ? " (core dumped)" : "");
