@@ -1,3 +1,10 @@
+-- shmux NEWS
+
+Version 0.9a introduces the following usage changes:
+
+o The old -q option is now -Q
+o Old behaviour of -o option can be obtained with -qqo
+
 -- shmux dependencies
 
 shmux will make use of the following programs if they are available on the
@@ -42,4 +49,4 @@ Consider documentation errors as bugs, and report them as such.  If you
 develop anything pertaining to `shmux' or have suggestions, share your
 findings by writing to `shmux@taranis.org'.
 
--- $Id: INSTALL,v 1.8 2003-04-30 23:50:25 kalt Exp $
+-- $Id: INSTALL,v 1.9 2003-05-05 00:58:11 kalt Exp $

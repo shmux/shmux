@@ -1,4 +1,12 @@
-$Id: CHANGES,v 1.7 2003-04-30 23:50:24 kalt Exp $
+$Id: CHANGES,v 1.8 2003-05-05 00:58:11 kalt Exp $
+
+Changes since 0.8a [2003/04/30]:
+
+- fixed -t option behaviour.
+- tty_restore() must do its work only for shmux, not forked processes.
+- reset signal handlers in exec().
+- Added new -q option.
+- Renamed -q option to -Q.
 
 Changes since 0.7a [2003/03/30]:
 

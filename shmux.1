@@ -1,5 +1,5 @@
-.TH SHMUX 8 "$Date: 2003-04-26 01:48:20 $"
-.DA April 25, 2003
+.TH SHMUX 8 "$Date: 2003-05-05 00:58:12 $"
+.DA May 4, 2003
 .SH NAME
 shmux - Shell Multiplexor
 .SH SYNOPSIS
@@ -12,7 +12,7 @@ shmux - Shell Multiplexor
 
 .B shmux
 [
-.B -bdmpqstv
+.B -bdmpqQstv
 ] [
 .B -C \fItimeout\fP
 ] [
@@ -43,9 +43,9 @@ shmux - Shell Multiplexor
 in parallel.  For each target, a child process is spawned by \fBshmux\fP,
 and a shell on the target obtained one of the supported methods: \fIrsh\fP,
 \fIssh\fP, or \fIsh\fP.  The output produced by the children is received by
-\fBshmux\fP and either (optionally) output in turn to the user, or written
-to files for later processing.  The list of \fItargets\fP may either be
-specified on the command line or be read from the standard input.
+\fBshmux\fP and either (optionally) output in turn to the user, and/or
+written to files for later processing.  The list of \fItargets\fP may
+either be specified on the command line or be read from the standard input.
 
 The default method may be set by using the \fB-r\fP option, and may be
 overridden for any target by prefixing the target name by the method and a
@@ -59,14 +59,14 @@ invoked for, the \fISHMUX_TARGET\fP environment variable is set by
 Before executing the specified \fIcommand\fP, \fBshmux\fP will optionally
 ping each target to ensure that it can be reached, and/or run a dummy test
 \fIcommand\fP to make sure that the target not only is alive, but that it
-is possible to execute a \fIcommand\fP on it.  Both these tests are
+is possible to cleanly execute a command on it.  Both these tests are
 typically run with a fairly short timeout to quickly dismiss unavailable
 targets rather than waiting for the standard (longer) network timeout.
 
 After executing the specified \fIcommand\fP, \fBshmux\fP will optionally
 process the output or run a user specified command to determine whether the
-\fIcommand\fP was successful or resulted in an error.  For successful
-targets, the \fIcommand\fP output is suppressed.
+\fIcommand\fP was successful or resulted in an error.  Optionally, the
+\fIcommand\fP output is suppressed for successful targets.
 
 .SH OPTIONS
 .IP "\fB-h\fP"
@@ -140,7 +140,8 @@ the output and (for normal terminations) the exit code of the executed
 commands in files under this directory.  For each target, the files will be
 named after the target name so as to make it easy to identify.  The files
 must not already exist, so it is recommended that the directory be emtpy.
-This also means that each target must be unique.
+This also means that each target must be unique.  The directory will be
+created if it does not exist.
 .IP "\fB-p\fP"
 Ping targets to verify they are alive before doing anything.  The target
 names must be unique or bad things will happen.
@@ -165,6 +166,14 @@ separate.
 Show the bare output from the executed commands instead of prefixing each
 line by the corresponding target name.
 .IP "\fB-q\fP"
+Used once, this will suppress the output from successful targets (as
+defined by the use of options options \fB-e\fP, \fB-a\fP and \fB-A\fP.  If
+using the \fIrun\fP analyzer, the output of all targets is suppressed.
+Note that using this option effectively implies \fB-m\fP as failure is
+determined upon completion of the \fIcommand\fP.  When specified twice,
+this option allows to completely suppress output from the \fIcommand\fP run
+on targets.  Using this option (once or twice) requires using \fB-o\fP.
+.IP "\fB-Q\fP"
 Suppress the final summary of results.
 .IP "\fB-s\fP"
 Suppress the progress status line.

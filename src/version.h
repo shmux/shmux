@@ -1,1 +1,1 @@
-#define SHMUX_VERSION "0.8a"
+#define SHMUX_VERSION "0.9a"
