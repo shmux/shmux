@@ -6,7 +6,7 @@
 # The following script cannot be used as-is, it is only provided as a sample
 # and starting point.  Look for XXX to see where changes are required.
 #
-# $Id: mcmd.sh,v 1.1 2003-03-23 18:52:56 kalt Exp $
+# $Id: mcmd.sh,v 1.2 2003-05-08 01:31:30 kalt Exp $
 #
 
 # XXX CMDOPTS should be replaced with any option one may want to pass to
@@ -69,7 +69,7 @@ trap "cleanup" 0 1 3 15
 
 # XXX CMD needs to be replaced with the real command name, obviously
 # XXX This is also where you may want to customize the way shmux is invoked
-MUX=`shmux -o /tmp/mux.$$ -p -r sh $SHMUX_FLAGS -c "CMD $CMD_FLAGS \\$SHMUX_TARGET" $* 2>&1`
+MUX=`shmux -qq -o /tmp/mux.$$ -p -r sh $SHMUX_FLAGS -c "CMD $CMD_FLAGS \\$SHMUX_TARGET" $* 2>&1`
 
 if [ $abort != "0" ]
 then
