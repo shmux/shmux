@@ -8,6 +8,7 @@
 #include "os.h"
 #include <libgen.h>
 #include <time.h>
+#include <sys/stat.h>
 
 #include "version.h"
 
@@ -16,7 +17,7 @@
 #include "term.h"
 #include "units.h"
 
-static char const rcsid[] = "@(#)$Id: shmux.c,v 1.4 2002-07-07 03:57:37 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: shmux.c,v 1.5 2002-07-07 22:45:59 kalt Exp $";
 
 extern char *optarg;
 extern int optind, opterr;
@@ -64,7 +65,7 @@ main(int argc, char **argv)
     int opt_verbose, opt_status, opt_quiet, opt_internal, opt_debug;
     int opt_ctimeout, opt_maxworkers, opt_vtest;
     u_int opt_test;
-    char *opt_method, *opt_command, *opt_ping;
+    char *opt_method, *opt_command, *opt_odir, *opt_ping;
     int longest, ntargets;
     time_t start;
 
@@ -77,15 +78,14 @@ main(int argc, char **argv)
     opt_method = getenv("SHMUX_SH");
     if (opt_method == NULL)
 	opt_method = DEFAULT_METHOD;
-
-    opt_command = opt_ping = NULL;
+    opt_command = opt_odir = opt_ping = NULL;
 
     opterr = 0;
     while (1)
       {
         int c;
 	
-        c = getopt(argc, argv, "c:C:dDhm:M:pP:qstT:vV");
+        c = getopt(argc, argv, "c:C:dDhm:M:o:pP:qstT:vV");
 	
         /* Detect the end of the options. */
         if (c == -1)
@@ -114,6 +114,9 @@ main(int argc, char **argv)
 	      break;
 	  case 'M':
 	      opt_maxworkers = atoi(optarg);
+	      break;
+	  case 'o':
+	      opt_odir = optarg;
 	      break;
 	  case 'p':
 	      if (opt_ping == NULL)
@@ -151,21 +154,33 @@ main(int argc, char **argv)
 	  }
       }
 
-    target_default(opt_method);
-    if (opt_maxworkers <= 0)
-      {
-	fprintf(stderr, "%s: Invalid -M option!\n", myname);
-	exit(1);
-      }
-
-    if (opt_vtest > 1)
-	opt_test *= -1;
-
     if (optind >= argc || opterr > 0 || opt_command == NULL)
       {
         usage(0);
         exit(1);
       }
+
+    target_default(opt_method);
+    if (opt_maxworkers <= 0)
+      {
+	fprintf(stderr, "%s: Invalid -M argument!\n", myname);
+	exit(1);
+      }
+
+    if (opt_odir != NULL)
+      {
+	struct stat sb;
+
+	if (stat(opt_odir, &sb) == -1)
+	  {
+	    fprintf(stderr, "%s: Invalid -o argument, \"%s\": %s\n",
+		    myname, opt_odir, strerror(errno));
+	    exit(1);
+	  }
+      }
+
+    if (opt_vtest > 1)
+	opt_test *= -1;
 
     ntargets = 0;
     longest = strlen(myname);
@@ -182,7 +197,8 @@ main(int argc, char **argv)
     term_init(longest, opt_verbose, opt_status, opt_internal, opt_debug);
 
     start = time(NULL);
-    loop(opt_command, opt_ctimeout, opt_maxworkers, opt_ping, opt_test);
+    loop(opt_command, opt_ctimeout, opt_maxworkers,
+	 opt_odir, opt_ping, opt_test);
       }
     /* Summary of results unless asked to be quiet */
     if (opt_quiet == 0)

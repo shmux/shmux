@@ -1,4 +1,4 @@
-.TH SHMUX 8 "$Date: 2002-07-07 03:57:36 $
+.TH SHMUX 8 "$Date: 2002-07-07 22:45:45 $
 .DA July 4, 2002
 .SH NAME
 shmux - Shell Multiplexor
@@ -19,6 +19,8 @@ shmux - Shell Multiplexor
 .B -M \fImax\fP
 ] [
 .B -m \fImethod\fP
+] [
+.B -o \fIdir\fP
 ] [
 .B -P \fItimeout\fP
 ] [
@@ -63,9 +65,21 @@ Specify a timeout for the command being executed on targets.  This should
 be a number followed by a time unit.  The following are valid time units:
 s(econds), m(inutes), h(our), d(ays), w(eeks).
 .IP "\fB-M \fImax\fP"
-Defines the maximum number of spawned processes.
+Defines the maximum number of spawned processes.  While there is no real
+(or hard coded) limitation for this, the system resources are typically
+bounded and this affects \fBshmux\fP in turn.  The most critical resource
+is the maximum number of open files a process may have.  But one should
+also consider the load imposed on the system by the creation of a
+(potentially) large number of processes.
 .IP "\fB-m \fImethod\fP"
 Defines the default method used to run a shell on targets.
+.IP "\fB-o \fIdir\fP"
+If specified, the directory must already exist and \fBshmux\fP will place
+the output of the executed commands in files under this directory.  For
+each target, the files will be named after the target name so as to make it
+easy to identify.  The files must not already exist, so it is recommended
+that the directory be emtpy.  This also means that each target must be
+unique.
 .IP "\fB-p\fP"
 Ping targets to verify they are alive before doing anything.
 .IP "\fB-P \fItimeout\fP"

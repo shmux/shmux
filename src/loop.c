@@ -7,6 +7,8 @@
 
 #include "os.h"
 
+#include <fcntl.h>
+#include <dirent.h>
 #include <signal.h>
 #include <sys/wait.h>
 #include <sys/time.h>		/* FreeBSD wants this for the next one.. */
@@ -19,7 +21,7 @@
 #include "target.h"
 #include "term.h"
 
-static char const rcsid[] = "@(#)$Id: loop.c,v 1.7 2002-07-07 20:46:05 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: loop.c,v 1.8 2002-07-07 22:45:59 kalt Exp $";
 
 struct child
 {
@@ -28,12 +30,14 @@ struct child
     int		test, passed;	/* test?, passed? */
     int		execstate;	/* exec() status: 0=ok, 1=failed? 2=failed */
     char	*obuf, *ebuf;	/* stdout/stderr truncated buffer */
+    int		ofile, efile;	/* stdout/stderr file fd */
     int		status;		/* waitpid(status) */
 };
 
 static void init_child(struct child *);
 static void parse_child(char *, int, int, struct child *, int, char *);
 static void parse_fping(char *);
+static int output_file(char *, char *, char *);
 
 /*
 ** init_child
@@ -47,6 +51,7 @@ struct child *kid;
     kid->test = kid->passed = 0;
     kid->execstate = 0;
     kid->obuf = kid->ebuf = NULL;
+    kid->ofile = kid->efile = -1;
     kid->status = -1;
 
     status_spawned(1);
@@ -136,8 +141,22 @@ struct child *kid;
 		    {
 		      if (kid->test == 1)
 			  kid->passed = -1;
-		      tprint(name, ((std == 1) ? MSG_STDOUT : MSG_STDERR),
-			     "%s%s", (*left == NULL) ? "" : *left, start);
+		      if (kid->ofile != -1)
+			{
+			  assert( left == NULL || *left == NULL );
+			  *nl = '\n';
+			  if (*(nl-1) == '\0') /* XXX */
+			      *(nl-1) = '\r';
+			  if (write((std == 1) ? kid->ofile : kid->efile,
+				    start, strlen(start)) == -1)
+			      /* Should we do a little more here? */
+			      eprint("Data lost for %s, write() failed: %s",
+				     name, strerror(errno));
+			  return;
+			}
+		      else
+			  tprint(name, ((std == 1) ? MSG_STDOUT : MSG_STDERR),
+				 "%s%s", (*left == NULL) ? "" : *left, start);
 		    }
 		}
 	      else
@@ -234,16 +253,49 @@ char *line;
 }
 
 /*
+** output_file
+**	Create and output file.
+*/
+int
+output_file(dir, name, extension)
+char *dir, *name, *extension;
+{
+    char fname[MAXNAMLEN];
+    int sz, fd;
+
+    assert( dir != NULL );
+    assert( name != NULL );
+    assert( extension != NULL );
+
+    sz = snprintf(fname, MAXNAMLEN, "%s/%s.%s", dir, name, extension);
+	if (sz >= MAXNAMLEN)
+      {
+	eprint("\"%s\": name is too long", dir);
+	return -1;
+      }
+
+    fd = open(fname, O_WRONLY|O_CREAT|O_EXCL, 0666);
+    if (fd == -1)
+      {
+	eprint("open(%s): %s", fname, strerror(errno));
+	return -1;
+      }
+
+    return fd;
+}
+
+/*
 ** loop
 **	Main loop.  Takes care of (optionally) pinging targets, testing
 **	targets with a simple echo command, and finally running a command.
 */
 void
-loop(cmd, ctimeout, max, ping, test)
-char *cmd, *ping;
+loop(cmd, ctimeout, max, odir, ping, test)
+char *cmd, *ping, *odir;
 int max;
 u_int ctimeout, test;
 {
+    int fdfactor;
     struct rlimit fdlimit;
     struct child *children;
     struct pollfd *pfd;
@@ -257,17 +309,18 @@ u_int ctimeout, test;
     ** + 3 for stdin, stdout and stderr (our own)
     ** + 3 for stdin, stdout and stderr for fping
     ** + 3 for pipe creation in exec.c/exec()
-    ** + (3 * max) for children stdin, stdout and stderr
+    ** + (3 or 5 * max) for children stdin, stdout and stderr
     ** And we add another 10 as safety margin.
-    */  
+    */
+    fdfactor = (odir == NULL) ? 3 : 5;
     if (getrlimit(RLIMIT_NOFILE, &fdlimit) == -1)
       {
 	eprint("getrlimit(RLIMIT_NOFILE): %s", strerror(errno));
 	exit(1);
       }
-    if (fdlimit.rlim_cur < (max + 3) * 3 + 10)
+    if (fdlimit.rlim_cur < (max + 3) * fdfactor + 10)
       {
-	fdlimit.rlim_cur = (max + 3) * 3 + 10;
+	fdlimit.rlim_cur = (max + 3) * fdfactor + 10;
 	if (fdlimit.rlim_cur > fdlimit.rlim_max)
 	    fdlimit.rlim_cur = fdlimit.rlim_max;
 
@@ -280,12 +333,12 @@ u_int ctimeout, test;
 	    eprint("getrlimit(RLIMIT_NOFILE): %s", strerror(errno));
 	    eprint("Unable to validate parallelism factor.");
 	  }
-	else if (fdlimit.rlim_cur < (max + 3) * 3 + 10)
+	else if (fdlimit.rlim_cur < (max + 3) * fdfactor + 10)
 	  {
 	    int old;
 
 	    old = max;
-	    max = ((fdlimit.rlim_cur - 10) / 3) - 3;
+	    max = ((fdlimit.rlim_cur - 10) / fdfactor) - 3;
 	    eprint("Reducing parallelism factor to %d (from %d) because of system limitation.", max, old);
 	  }
       }
@@ -472,6 +525,30 @@ u_int ctimeout, test;
 		if (idx > 0 && target_next(3) == 0)
 		  {
 		    done = 0;
+
+		    init_child(&(children[idx]));
+		    if (odir != NULL)
+		      {
+			children[idx].ofile = output_file(odir,
+							  target_getname(),
+							  "stdout");
+			if (children[idx].ofile == -1)
+			  {
+			    eprint("Fatal error for %s", target_getname());
+			    target_result(-1);
+			    continue;
+			  }
+			children[idx].efile = output_file(odir,
+							  target_getname(),
+							  "stderr");
+			if (children[idx].efile == -1)
+			  {
+			    close(children[idx].efile);
+			    eprint("Fatal error for %s", target_getname());
+			    target_result(-1);
+			    continue;
+			  }
+		      }
 		    pfd[idx*3].fd = -1;
 		    target_getcmd(cargv, cmd);
 		    children[idx].pid = exec(NULL, &(pfd[idx*3+1].fd),
@@ -489,7 +566,6 @@ u_int ctimeout, test;
 		    pfd[idx*3+1].events = POLLIN;
 		    pfd[idx*3+2].events = POLLIN;
 
-		    init_child(&(children[idx]));
 		    dprint("%s, phase 3: pid = %d (idx=%d) %d/%d/%d",
 			   target_getname(), children[idx].pid, idx,
 			   pfd[idx*3].fd, pfd[idx*3+1].fd, pfd[idx*3+2].fd);
@@ -612,6 +688,11 @@ u_int ctimeout, test;
 		close(pfd[idx*3].fd); pfd[idx*3].fd = -1;
 	      }
 
+	    if (children[idx].ofile != -1)
+		close(children[idx].ofile);
+	    if (children[idx].efile != -1)
+		close(children[idx].efile);
+
 	    if (WIFEXITED(status) != 0)
 	      {
 		if (children[idx].test == 1)
@@ -671,7 +752,7 @@ u_int ctimeout, test;
 
 	    status_spawned(-1);
 
-	    /* Don't increment, catch it at the top again */
+	    /* Don't increment idx, catch it at the top again */
 	  }
 
 	if (done == 1)
