@@ -1,10 +1,11 @@
 -- shmux status
 
-This is the first public release of shmux, so you should be prepared for
-the unexpected as things have not yet been polished as much as they need to
-be.  A number of features are also missing and will be added in future
-releases.  What is documented (in the manual page) is implemented and
-should be working, but the behaviour may slightly change.
+Here is the second public release of shmux, with a lot of new code.  So you
+should still be prepared for the unexpected as things have not yet been
+polished as much as they need to be.  Some features are still missing and
+will be added in future releases.  What is documented (in the manual page)
+is implemented and should be working, but the behaviour may slightly
+change in future releases.
 
 -- shmux dependencies
 
@@ -14,6 +15,10 @@ certain optional features of shmux.  See the man page for details.
 
 + fping: http://www.fping.com/
 + ssh: http://www.fressh.org/, http://www.openssh.org/, ...
+
+Although this package uses autoconf, there is no real attempt to make sure
+it works on older UNIX systems as it relies on a number of soemwhat modern
+system calls.
 
 -- shmux installation notes
 
@@ -35,4 +40,4 @@ Consider documentation errors as bugs, and report them as such.  If you
 develop anything pertaining to `shmux' or have suggestions, share your
 findings by writing to `shmux@taranis.org'.
 
--- $Id: INSTALL,v 1.2 2002-07-06 20:53:58 kalt Exp $
+-- $Id: INSTALL,v 1.3 2002-07-08 01:33:50 kalt Exp $

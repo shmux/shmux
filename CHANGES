@@ -1,0 +1,17 @@
+$Id: CHANGES,v 1.1 2002-07-08 01:33:50 kalt Exp $
+
+Changes since 0.1a:
+
+- added -o option.
+- don't display the status line unless stdout is a tty, even without -s.
+- added kludge to work around NetBSD's broken poll(2) implementation.
+- adjusted formula deciding the maximum allowed for -M.
+- children are now properly polled for data.
+- added -C option.
+- algorithm now prefers starting real commands over test commands.
+- made it easier to understand why tests fail (see -t).
+- added environment variables SHMUX_*SH.
+- cleaned up loop.c for better readability, also fixed output processing bugs.
+- updated status line format and added load average to it (where supported).
+- -m didn't actually do anything, even if most of the code was written for it.
+- status line was wrong when fping wasn't used.
