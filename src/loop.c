@@ -25,7 +25,7 @@
 #include "target.h"
 #include "term.h"
 
-static char const rcsid[] = "@(#)$Id: loop.c,v 1.39 2003-06-18 00:26:55 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: loop.c,v 1.40 2003-06-18 01:01:05 kalt Exp $";
 
 extern char *myname;
 
@@ -295,15 +295,16 @@ struct child *kid;
 		      if (kid->ofile != -1)
 			{
 			  /* Outputing to a file, so need to add \r\n back */
-			  assert( left == NULL || *left == NULL );
 			  if (*(nl-1) == '\0') /* XXX */
 			      *(nl-1) = '\r';
-			  if (write((std == 1) ? kid->ofile : kid->efile,
-				    start, strlen(start)) == -1)
-			      /* Should we do a little more here? */
-			      eprint("Data lost for %s, write() failed: %s",
-				     name, strerror(errno));
-			  if (write((std == 1) ? kid->ofile : kid->efile,
+			  if ((left != NULL && *left != NULL &&
+			       write((std == 1) ? kid->ofile : kid->efile,
+				     *left, strlen(*left)) == -1)
+			      ||
+			      write((std == 1) ? kid->ofile : kid->efile,
+				    start, strlen(start)) == -1
+			      ||
+			      write((std == 1) ? kid->ofile : kid->efile,
 				    "\n", 1) == -1)
 			      /* Should we do a little more here? */
 			      eprint("Data lost for %s, write() failed: %s",
