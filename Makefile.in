@@ -4,7 +4,7 @@
 # This file is part of shmux,
 # see the LICENSE file for details on your rights.
 #
-# $Id: Makefile.in,v 1.7 2004-04-06 00:36:51 kalt Exp $
+# $Id: Makefile.in,v 1.8 2004-04-09 01:05:29 kalt Exp $
 #
 
 INSTALL	= @INSTALL@
@@ -12,7 +12,8 @@ prefix	= @prefix@
 exec_prefix = @exec_prefix@
 bindir	= @bindir@
 mandir	= @mandir@
-sharedir= @datadir@/shmux
+datadir	= @datadir@
+sharedir= $(datadir)/shmux
 
 shmux:
 	@(cd src && $(MAKE) shmux)
@@ -21,12 +22,12 @@ test: shmux
 	@(cd tests && ./runall)
 
 install: shmux
-	$(INSTALL) -d -m 0755 $(bindir)
-	$(INSTALL) -m 755 src/shmux $(bindir)
-	$(INSTALL) -d -m 0755 $(mandir)/man1
-	$(INSTALL) -m 644 shmux.1 $(mandir)/man1
-	$(INSTALL) -d -m 0755 $(sharedir)
-	$(INSTALL) -m 644 mcmd.sh $(sharedir)
+	$(INSTALL) -d -m 0755 $(DESTDIR)$(bindir)
+	$(INSTALL) -m 755 src/shmux $(DESTDIR)$(bindir)
+	$(INSTALL) -d -m 0755 $(DESTDIR)$(mandir)/man1
+	$(INSTALL) -m 644 shmux.1 $(DESTDIR)$(mandir)/man1
+	$(INSTALL) -d -m 0755 $(DESTDIR)$(sharedir)
+	$(INSTALL) -m 644 mcmd.sh $(DESTDIR)$(sharedir)
 	@echo ; echo "Done!"
 
 clean:
