@@ -4,7 +4,7 @@
 # This file is part of shmux,
 # see the LICENSE file for details on your rights.
 #
-# $Id: Makefile.in,v 1.5 2003-03-27 00:55:43 kalt Exp $
+# $Id: Makefile.in,v 1.6 2003-06-18 00:34:16 kalt Exp $
 #
 
 INSTALL	= @INSTALL@
@@ -18,7 +18,7 @@ shmux:
 	@(cd src && $(MAKE) shmux)
 
 test: shmux
-	@(test=`./src/shmux -bsqtc 'echo $${SHMUX_TARGET}' sh:one 2>&1`; \
+	@(test=`./src/shmux -bsQtc 'echo $${SHMUX_TARGET}' sh:one 2>&1`; \
 	  if [ "x$${test}" = "xone" ]; then \
 		echo "Simple test succeeded... this doesn't mean much."; \
 	  else \
