@@ -23,7 +23,7 @@
 #include "target.h"
 #include "term.h"
 
-static char const rcsid[] = "@(#)$Id: loop.c,v 1.31 2003-04-19 00:43:03 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: loop.c,v 1.32 2003-04-19 00:46:54 kalt Exp $";
 
 extern char *myname;
 
@@ -443,7 +443,7 @@ int c;
 	  spawn_mode = SPAWN_CHECK;
 	  break;
       case '+':
-	  if (spawn_mode != SPAWN_MORE;
+	  if (spawn_mode != SPAWN_MORE)
 	      uprint("Will keep spawning commands... (Even if some fail)");
 	      spawn_mode = SPAWN_MORE;
 	  break;
