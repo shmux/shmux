@@ -7,10 +7,11 @@
 
 #include "os.h"
 
-#include "byteset.h"
-#include "ctype.h"
+#include <ctype.h>
 
-static char const rcsid[] = "@(#)$Id: byteset.c,v 1.3 2003-04-19 00:52:56 kalt Exp $";
+#include "byteset.h"
+
+static char const rcsid[] = "@(#)$Id: byteset.c,v 1.4 2003-04-26 01:51:35 kalt Exp $";
 
 extern char *myname;
 
