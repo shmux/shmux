@@ -20,15 +20,24 @@
 #include "term.h"
 #include "units.h"
 
-static char const rcsid[] = "@(#)$Id: analyzer.c,v 1.5 2003-04-20 19:40:38 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: analyzer.c,v 1.6 2003-05-06 01:27:40 kalt Exp $";
 
 extern char *myname;
 
-static int     out_ok, err_ok;
-static regex_t out_re, err_re;
+struct condition
+{
+    int ok;
+    union
+    {
+	regex_t re;
 #if defined(HAVE_PCRE_H)
-static pcre *out_pcre, *err_pcre;
+	pcre *pcre;
 #endif
+    } val;
+};
+
+static struct condition *out, *err;
+
 static char    *run_cmd;
 static u_int	run_timeout;
 
@@ -225,13 +234,13 @@ char *str;
 **	Initialization for the analyzer, called early on.
 */
 int
-analyzer_init(type, out, err)
-char *type, *out, *err;
+analyzer_init(type, outdef, errdef)
+char *type, *outdef, *errdef;
 {
     if (type == NULL)
 	return ANALYZE_NONE;
 
-    if (out == NULL)
+    if (outdef == NULL)
       {
 	fprintf(stderr, "%s: No analysis criteria defined!\n", myname);
 	exit(1);
@@ -239,31 +248,50 @@ char *type, *out, *err;
 	
     if (strcmp(type, "run") == 0)
       {
-	run_cmd = out;
-	if (err == NULL)
+	run_cmd = outdef;
+	if (errdef == NULL)
 	    run_timeout = 15;
 	else
-	    run_timeout = unit_time(err);
+	    run_timeout = unit_time(errdef);
 	return ANALYZE_RUN;
       }
     else if (strcmp(type, "regex") == 0 || strcmp(type, "re") == 0
 	     || strcmp(type, "pcre") == 0)
       {
+	out = (struct condition *) malloc(sizeof(struct condition));
+	if (out == NULL)
+	  {
+	    fprintf(stderr, "%s: malloc() failed: %s",
+		    myname, strerror(errno));
+	    exit(1);
+	  }
 	if (type[0] != 'p')
-	    restr_init((void *) &out_re, compile_re, &out_ok, out);
+	    restr_init((void *) &(out->val.re), compile_re,
+		       &(out->ok), outdef);
 #if defined(HAVE_PCRE_H)
 	else
-	    restr_init((void *) &out_pcre, compile_pcre, &out_ok, out);
+	    restr_init((void *) &(out->val.pcre), compile_pcre,
+		       &(out->ok), outdef);
 #endif
 
+	err = (struct condition *) malloc(sizeof(struct condition));
 	if (err == NULL)
-	    err = "!."; /* Impose sane/useful default */
+	  {
+	    fprintf(stderr, "%s: malloc() failed: %s",
+		    myname, strerror(errno));
+	    exit(1);
+	  }
+
+	if (errdef == NULL)
+	    errdef = "!."; /* Impose sane/useful default */
 
 	if (type[0] != 'p')
-	    restr_init((void *) &err_re, compile_re, &err_ok, err);
+	    restr_init((void *) &(err->val.re), compile_re,
+		       &(err->ok), errdef);
 #if defined(HAVE_PCRE_H)
 	else
-	    restr_init((void *) &err_pcre, compile_pcre, &err_ok, err);
+	    restr_init((void *) &(err->val.pcre), compile_pcre,
+		       &(err->ok), errdef);
 #endif
 
 	if (type[0] != 'p')
@@ -290,10 +318,10 @@ int ofd, efd;
 char *oname, *ename;
 {
     size_t olen, elen;
-    void *out, *err;
+    void *output, *errput;
     int o, e, ok;
 
-    assert( type != ANALYZE_RUN );
+    assert( type == ANALYZE_RE || type == ANALYZE_PCRE );
 
     if (oname == NULL || ename == NULL || ofd == -1 || efd == -1)
       {
@@ -302,91 +330,92 @@ char *oname, *ename;
 	return -1;
       }
 
-
-    out = mapfile(2, ofd, oname, &olen);
-    if (out == NULL)
+    output = mapfile(2, ofd, oname, &olen);
+    if (output == NULL)
 	return -1;
-    err = mapfile(2, efd, ename, &elen);
-    if (err == NULL)
+    errput = mapfile(2, efd, ename, &elen);
+    if (errput == NULL)
       {
-	unmapfile(2, oname, out, olen);
+	unmapfile(2, oname, output, olen);
 	return -1;
       }
     
     ok = 0;
     if (type == ANALYZE_RE)
       {
-	o = regexec(&out_re, (char *) out, 0, NULL, 0);
+	o = regexec(&(out->val.re), (char *) output, 0, NULL, 0);
 	if (o != 0 && o != REG_NOMATCH)
 	  {
 	    char buf[1024];
 	    
-	    if (regerror(o, &out_re, buf, 1024) != 0)
+	    if (regerror(o, &(out->val.re), buf, 1024) != 0)
 		eprint("Fatal error for %s output analysis: regexec() failed with code %s", target_getname(), buf);
 	    else
 		eprint("Fatal error for %s output analysis: regexec() failed with code %d", target_getname(), o);
 	    ok = -1;
 	  }
-	else if ((o == 0 && out_ok != 0)
-		 || (o == REG_NOMATCH && out_ok == 0))
+	else if ((o == 0 && out->ok != 0)
+		 || (o == REG_NOMATCH && out->ok == 0))
 	  {
 	    ok = 1;
-	    dprint("Analysis for %s: out=%d[%d] err=?[%d] ok=%d (REG_NOMATCH=%d)", target_getname(), o, out_ok, err_ok, ok, REG_NOMATCH);
+	    dprint("Analysis for %s: out=%d[%d] err=?[%d] ok=%d (REG_NOMATCH=%d)", target_getname(), o, out->ok, err->ok, ok, REG_NOMATCH);
 	  }
 	else
 	  {
-	    e = regexec(&err_re, (char *) err, 0, NULL, 0);
+	    e = regexec(&(err->val.re), (char *) errput, 0, NULL, 0);
 	    if (e != 0 && e != REG_NOMATCH)
 	      {
 		char buf[1024];
 		
-		if (regerror(e, &err_re, buf, 1024) != 0)
+		if (regerror(e, &(err->val.re), buf, 1024) != 0)
 		    eprint("Fatal error for %s output analysis: regexec() failed with code %s", target_getname(), buf);
 		else
 		    eprint("Fatal error for %s output analysis: regexec() failed with code %d", target_getname(), o);
 		ok = -1;
 	      }
-	    else if ((e == 0 && err_ok != 0)
-		     || (e == REG_NOMATCH && err_ok == 0))
+	    else if ((e == 0 && err->ok != 0)
+		     || (e == REG_NOMATCH && err->ok == 0))
 		ok = 1;
 	    
-	    dprint("Analysis for %s: out=%d[%d] err=%d[%d] ok=%d (REG_NOMATCH=%d)", target_getname(), o, out_ok, e, err_ok, ok, REG_NOMATCH);
+	    dprint("Analysis for %s: out=%d[%d] err=%d[%d] ok=%d (REG_NOMATCH=%d)", target_getname(), o, out->ok, e, err->ok, ok, REG_NOMATCH);
 	  }
       }
 #if defined(HAVE_PCRE_H)
     else
       {
-	o = pcre_exec(out_pcre, NULL, (char *) out, olen, 0, 0, NULL, 0);
+	o = pcre_exec(out->val.pcre, NULL, (char *) output, olen,
+		      0, 0, NULL, 0);
 	if (o < 0 && o != PCRE_ERROR_NOMATCH)
 	  {
 	    eprint("Fatal error for %s output analysis: pcre_exec() failed with code %d", target_getname(), o);
 	    ok = -1;
 	  }
-	else if ((o >= 0 && out_ok != 0)
-		 || (o == PCRE_ERROR_NOMATCH && out_ok == 0))
+	else if ((o >= 0 && out->ok != 0)
+		 || (o == PCRE_ERROR_NOMATCH && out->ok == 0))
 	  {
 	    ok = 1;
-	    dprint("Analysis for %s: out=%d[%d] err=?[%d] ok=%d (PCRE_ERROR_NOMATCH=%d)", target_getname(), o, out_ok, err_ok, ok, PCRE_ERROR_NOMATCH);
+	    dprint("Analysis for %s: out=%d[%d] err=?[%d] ok=%d (PCRE_ERROR_NOMATCH=%d)", target_getname(), o, out->ok, err->ok, ok, PCRE_ERROR_NOMATCH);
 	  }
 	else
 	  {
-	    e = pcre_exec(err_pcre, NULL, (char *) err, elen, 0, 0, NULL, 0);
+	    e = pcre_exec(err->val.pcre, NULL, (char *) errput, elen,
+			  0, 0, NULL, 0);
 	    if (e < 0 && e != PCRE_ERROR_NOMATCH)
 	      {
 		eprint("Fatal error for %s output analysis: pcre_exec() failed with code %d", target_getname(), e);
 		ok = -1;
 	      }
-	    else if ((e >= 0 && err_ok != 0)
-		     || (e == PCRE_ERROR_NOMATCH && err_ok == 0))
+	    else if ((e >= 0 && err->ok != 0)
+		     || (e == PCRE_ERROR_NOMATCH && err->ok == 0))
 		ok = 1;
 	    
-	    dprint("Analysis for %s: out=%d[%d] err=%d[%d] ok=%d (PCRE_ERROR_NOMATCH=%d)", target_getname(), o, out_ok, e, err_ok, ok, PCRE_ERROR_NOMATCH);
+	    dprint("Analysis for %s: out=%d[%d] err=%d[%d] ok=%d (PCRE_ERROR_NOMATCH=%d)", target_getname(), o, out->ok, e, err->ok, ok, PCRE_ERROR_NOMATCH);
 	  }
       }
 #endif
 
-    unmapfile(2, oname, out, olen);
-    unmapfile(2, ename, err, elen);
+    unmapfile(2, oname, output, olen);
+    unmapfile(2, ename, errput, elen);
     
     return ok;
 }
