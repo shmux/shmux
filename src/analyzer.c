@@ -20,7 +20,7 @@
 #include "term.h"
 #include "units.h"
 
-static char const rcsid[] = "@(#)$Id: analyzer.c,v 1.2 2003-03-23 18:34:54 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: analyzer.c,v 1.3 2003-03-23 18:37:37 kalt Exp $";
 
 extern char *myname;
 
@@ -35,7 +35,9 @@ static u_int	run_timeout;
 static void *mapfile(int, int, char *, size_t *);
 static void unmapfile(int, char *, void *, size_t);
 static void re_comp(void *, char *);
+#if defined(HAVE_PCRE_H)
 static void pcre_comp(void *, char *);
+#endif
 static void restr_init(void *, void (*)(void *, char *), int *, char *);
 
 /*
@@ -142,6 +144,7 @@ char *str;
       }
 }
 
+#if defined(HAVE_PCRE_H)
 /*
 ** pcre_comp
 **	Perl Compatible Regular Expression (pcre) initialization
@@ -164,6 +167,7 @@ char *str;
 	exit(1);
       }
 }
+#endif
 
 /*
 ** re_init
