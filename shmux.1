@@ -1,4 +1,4 @@
-.TH SHMUX 8 "$Date: 2002-07-09 00:01:31 $
+.TH SHMUX 8 "$Date: 2002-07-09 21:58:03 $
 .DA July 4, 2002
 .SH NAME
 shmux - Shell Multiplexor
@@ -12,13 +12,13 @@ shmux - Shell Multiplexor
 
 .B shmux
 [
-.B -dDpqstv
+.B -bdpqstv
 ] [
 .B -C \fItimeout\fP
 ] [
 .B -M \fImax\fP
 ] [
-.B -m \fImethod\fP
+.B -r \fIrcmd\fP
 ] [
 .B -o \fIdir\fP
 ] [
@@ -36,7 +36,7 @@ and a shell on the target obtained one of the supported methods: \fIrsh\fP,
 by \fBshmux\fP and either output in turn to the user, or written to files
 for later processing.
 
-The default method may be set by using the \fB-m\fP option, and may be
+The default method may be set by using the \fB-r\fP option, and may be
 overridden for any target by prefixing the target name by the method and a
 colon.  Two special methods, \fIssh1\fP and \fIssh2\fP may be used to
 select the SSH protocol version 1 or 2, respectively.  For the \fIsh\fP
@@ -70,7 +70,7 @@ bounded and this affects \fBshmux\fP in turn.  The most critical resource
 is the maximum number of open files a process may have.  But one should
 also consider the load imposed on the system by the creation of a
 (potentially) large number of processes.
-.IP "\fB-m \fImethod\fP"
+.IP "\fB-r \fIrcmd\fP"
 Defines the default method used to run a shell on targets.
 .IP "\fB-o \fIdir\fP"
 If specified, the directory must already exist and \fBshmux\fP will place
@@ -93,14 +93,14 @@ for failed tests will be displayed to help the user understand what went
 wrong.
 .IP "\fB-T \fItimeout\fP"
 Defines the test timeout in seconds.  (Implies \fB-t\fP.)
+.IP "\fB-b\fP"
+Show the bare output from the executed commands instead of prefixing each
+line by the corresponding target name.
 .IP "\fB-q\fP"
 Suppress the final summary of results.
 .IP "\fB-s\fP"
 Suppress the progress status line.
 .IP "\fB-v\fP"
-Produce a more verbose output by prefixing each line of output with the
-corresponding target name.
-.IP "\fB-d\fP"
 Display internal status messages.
 .IP "\fB-D\fP"
 Display internal debug messages.
@@ -108,21 +108,31 @@ Display internal debug messages.
 .SH ENVIRONMENT
 \fBshmux\fP will use the following environment variables if set:
 
+.IP SHMUX_RCMD
+Specifies the default command used to run a shell on targets.  If the
+\fB-r\fP option is specified, it overrides this variable.
 .IP SHMUX_SH
 Specify the shell to use for targets using the \fIsh\fP method.  (Default
 is "/bin/sh".)
 .IP SHMUX_RSH
 Specify an alternative command to "rsh" to use for targets using the
 \fIrsh\fP method.
-.IP SHMUX_SSH
+.IP "SHMUX_SSH, SHMUX_SSH1, SHMUX_SSH2"
 Specify an alternative command to "ssh" to use for targets using the
-\fIssh\fP, \fIssh1\fP or \fIssh2\fP method
-.IP SHMUX_SSH1
-Specify an alternative command to "ssh" to use for targets using the
-\fIssh1\fP method.  If set, this will override \fISHMUX_SSH\fP.
-.IP SHMUX_SSH2
-Specify an alternative command to "ssh" to use for targets using the
-\fIssh2\fP method.  If set, this will override \fISHMUX_SSH\fP.
+\fIssh\fP, \fIssh1\fP and \fIssh2\fP method (respectively).  The variable
+\fISHMUX_SSH\fP is used for all methods, but superseded by the other
+specific variables.
+.IP "SHMUX_SSH_OPTS, SHMUX_SSH1_OPTS, SHMUX_SSH2_OPTS"
+The variables may be used to specify replace the default "-xa" options
+passed to "ssh", "ssh1" and "ssh2" (respectively).  The variable
+\fISHMUX_SSH_OPTS\fP is used for all methods, but superseded by the other
+specific variables.
+
+The supplied string is passed as one argument and is therefore not suitable
+to pass a complex serie of options.  However, it can be used to suppress
+the default, and or add options such as "-4", "-6", or even "-v".  It is
+recommended to avoid using these variables in favor of tuning the ssh
+configuration file(s).
 
 .SH SEE ALSO
 .IR fping (8),
