@@ -1,4 +1,12 @@
-$Id: CHANGES,v 1.5 2003-03-23 19:08:05 kalt Exp $
+$Id: CHANGES,v 1.6 2003-03-30 22:42:06 kalt Exp $
+
+Changes since 0.6a [2003/03/23]:
+
+- reading the list of targets from the standard input is now supported.
+- added missing variable initialization.
+- fixed installation of mcmd.sh.
+- renamed some functions to avoid names clashes (FreeBSD 4.7).
+- simplified term.c system inclusions (RedHat 7.3 has broken includes).
 
 Changes since 0.5a [2003/01/05]:
 
