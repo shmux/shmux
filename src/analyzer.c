@@ -20,7 +20,7 @@
 #include "term.h"
 #include "units.h"
 
-static char const rcsid[] = "@(#)$Id: analyzer.c,v 1.7 2003-05-07 00:57:07 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: analyzer.c,v 1.8 2003-05-08 00:38:59 kalt Exp $";
 
 extern char *myname;
 
@@ -606,9 +606,9 @@ char *str;
 	    else
 	      {
 		dprint("Analysis for %s: %d[%d] (REG_NOMATCH=%d)", target_getname(), r, list->ok, REG_NOMATCH);
-		if (r == 0 && list->ok != 0)
-		    /* Matched but was not supposed to! */
-		    return 1;
+		if (r == 0)
+		    /* Matched */
+		    return list->ok;
 	      }
 	  }
 #if defined(HAVE_PCRE_H)
@@ -625,9 +625,9 @@ char *str;
 	    else
 	      {
 		dprint("Analysis for %s: %d[%d] (PCRE_ERROR_NOMATCH=%d)", target_getname(), r, list->ok, PCRE_ERROR_NOMATCH);
-		if (r >= 0 && list->ok != 0)
-		    /* Matched but was not supposed to! */
-		    return 1;
+		if (r >= 0)
+		    /* Matched */
+		    return list->ok;
 	      }
 	  }
 #endif
@@ -639,7 +639,7 @@ char *str;
 
     dprint("Analysis for %s: OK!", target_getname());
 
-    return 0;
+    return 2;
 }
 
 /*
