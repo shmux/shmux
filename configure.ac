@@ -1,9 +1,9 @@
 #
-# $Id: configure.ac,v 1.4 2002-10-13 21:12:32 kalt Exp $
+# $Id: configure.ac,v 1.5 2002-10-13 21:14:11 kalt Exp $
 #
 AC_PREREQ(2.53)
 AC_INIT([Shell Multiplexor], [], [shmux-bugs@taranis.org], [shmux])
-AC_REVISION([$Id: configure.ac,v 1.4 2002-10-13 21:12:32 kalt Exp $])
+AC_REVISION([$Id: configure.ac,v 1.5 2002-10-13 21:14:11 kalt Exp $])
 AC_CONFIG_SRCDIR([src/os.h])
 AC_CONFIG_HEADER([src/config.h])
 
@@ -13,6 +13,7 @@ AC_PROG_INSTALL
 
 # Checks for libraries.
 AC_SEARCH_LIBS([tgetent], [termcap curses])
+AC_SEARCH_LIBS([basename], [gen])
 
 # Checks for header files.
 AC_CHECK_HEADERS([paths.h termcap.h curses.h term.h sys/loadavg.h])
