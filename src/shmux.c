@@ -35,7 +35,7 @@
 #include "term.h"
 #include "units.h"
 
-static char const rcsid[] = "@(#)$Id: shmux.c,v 1.28 2004-07-16 01:22:28 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: shmux.c,v 1.29 2004-08-21 00:31:57 kalt Exp $";
 
 extern char *optarg;
 extern int optind, opterr;
@@ -115,8 +115,8 @@ main(int argc, char **argv)
     opt_command = opt_odir = opt_ping = NULL;
     opt_rcmd = getenv("SHMUX_RCMD");
     opt_spawn = NULL;
-    if (getenv("SHMUX_SPAWN") != NULL)
-	opt_spawn = getenv("SHMUX_SPAWN");
+    if (getenv("SHMUX_SPAWNMODE") != NULL)
+	opt_spawn = getenv("SHMUX_SPAWNMODE");
     if (opt_rcmd == NULL)
 	opt_rcmd = DEFAULT_RCMD;
     if (getenv("SHMUX_ERRORCODES") != NULL)
