@@ -20,7 +20,7 @@
 
 #include "term.h"
 
-static char const rcsid[] = "@(#)$Id: term.c,v 1.6 2002-10-13 21:12:45 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: term.c,v 1.7 2003-03-20 01:58:32 kalt Exp $";
 
 extern char *myname;
 
@@ -32,8 +32,10 @@ static char *MD,			/* bold */
 	    *CR,			/* carriage return */
 	    *NL;			/* newline character if not \n */
 static char status[512];
+static FILE *tty;
 
 static int putchar2(int);
+static int putchar3(int);
 static void gprint(char *, char, char *, va_list);
 
 /*
@@ -59,17 +61,27 @@ int maxlen, prefix, progress, internal, debug;
     NL = "\n";
     status[0] = '\0';
 
+    otty = isatty(1);
+    etty = isatty(2);
+
+    if (otty == 1)
+	tty = stdout;
+    else if (etty == 1)
+	tty = stderr;
+    else
+	tty = fopen(/*_PATH_TTY*/ "/dev/tty", "a");
+
     term = getenv("TERM");
     if (term == NULL)
       {
-	if (progress != 0)
+	if (progress != 0 && tty != NULL)
 	    fprintf(stderr, "%*s: TERM variable is not set!\n",
 		    padding, myname);
 	return;
       }
     if (tgetent(termcap, term) < 1)
       {
-	if (progress != 0)
+	if (progress != 0 && tty != NULL)
 	    fprintf(stderr, "%*s: No TERMCAP entry for ``%s''.\n",
 		    padding, myname, term);
 	return;
@@ -95,12 +107,9 @@ int maxlen, prefix, progress, internal, debug;
     CE = tgetstr("ce", &ptr);
     if (progress == 0)
 	CE = NULL;
-    else if (CE == NULL)
+    else if (CE == NULL && progress != 0 && tty != NULL)
 	fprintf(stderr, "%*s: Terminal ``%s'' is too dumb! (no ce)\n",
 		padding, myname, term);
-
-    otty = isatty(1);
-    etty = isatty(2);
 }
 
 /*
@@ -115,7 +124,7 @@ sprint(char *format, ...)
     char *ch;
     int bold;
 
-    if (CE == NULL || otty == 0)
+    if (CE == NULL || tty == NULL)
 	return;
 
     if (format != NULL)
@@ -139,7 +148,7 @@ sprint(char *format, ...)
 	  {
 	    if (otty == 1 && MD != NULL)
 	      {
-		tputs(MD, 0, putchar);
+		tputs(MD, 0, putchar3);
 		bold = 1;
 	      }
 	  }
@@ -147,17 +156,17 @@ sprint(char *format, ...)
 	  {
 	    if (*ch == ' ' && bold == 1)
 	      {
-		tputs(ME, 0, putchar);
+		tputs(ME, 0, putchar3);
 		bold = 0;
 	      }
-	    printf("%c", *ch);
+	    fprintf(tty, "%c", *ch);
 	  }
 	ch += 1;
       }
 
-    tputs(CE, 0, putchar);
-    tputs(CR, 0, putchar);
-    fflush(stdout);
+    tputs(CE, 0, putchar3);
+    tputs(CR, 0, putchar3);
+    fflush(tty);
 }
 
 /*
@@ -169,6 +178,17 @@ putchar2(c)
 int c;
 {
     return fputc(c, stderr);
+}
+
+/*
+** putchar3:
+**	Same as putchar, for tty (either stdout or stderr).
+*/
+static int
+putchar3(c)
+int c;
+{
+    return fputc(c, tty);
 }
 
 /*
