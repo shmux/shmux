@@ -1,16 +1,17 @@
 /*
-** Copyright (C) 2002 Christophe Kalt
+** Copyright (C) 2002, 2003 Christophe Kalt
 **
 ** This file is part of shmux
 ** see the LICENSE file for details on your rights.
 **
-** $Id: term.h,v 1.3 2002-08-09 00:22:42 kalt Exp $
+** $Id: term.h,v 1.4 2003-03-21 20:55:30 kalt Exp $
 */
 
 #if !defined(_TERM_H_)
 # define _TERM_H_
 
 void term_init(int, int, int, int, int);
+void term_size(void);
 void sprint(char *, ...)
 # if ( __GNUC__ == 2 && __GNUC_MINOR__ >= 5 ) || __GNUC__ >= 3
         __attribute__((__format__(__printf__, 1, 2)))

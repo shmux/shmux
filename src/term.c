@@ -1,11 +1,12 @@
 /*
-** Copyright (C) 2002 Christophe Kalt
+** Copyright (C) 2002, 2003 Christophe Kalt
 **
 ** This file is part of shmux,
 ** see the LICENSE file for details on your rights.
 */
 
 #include "os.h"
+#include <sys/ioctl.h>
 
 #if defined(HAVE_TERMCAP_H)
 # include <termcap.h>
@@ -20,12 +21,12 @@
 
 #include "term.h"
 
-static char const rcsid[] = "@(#)$Id: term.c,v 1.8 2003-03-21 14:20:33 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: term.c,v 1.9 2003-03-21 20:55:30 kalt Exp $";
 
 extern char *myname;
 
 static int targets, internalmsgs, debugmsgs, padding;
-static int otty, etty;
+static int otty, etty, CO;
 static char *MD,			/* bold */
 	    *ME,			/* turn off bold (and more) */
 	    *CE,			/* clear to end of line */
@@ -48,6 +49,7 @@ int maxlen, prefix, progress, internal, debug;
 {
     static char termcap[2048], area[1024];
     char *term, *ptr;
+    struct winsize ws;
 
     assert( maxlen != 0 );
 
@@ -91,6 +93,9 @@ int maxlen, prefix, progress, internal, debug;
 
     ptr = area;
 
+    if ((CO = tgetnum("co")) == -1) CO = 80;
+    term_size();
+
     MD = tgetstr("md", &ptr);
     if (MD != NULL)
       {
@@ -112,6 +117,31 @@ int maxlen, prefix, progress, internal, debug;
     else if (CE == NULL && progress != 0 && tty != NULL)
 	fprintf(stderr, "%*s: Terminal ``%s'' is too dumb! (no ce)\n",
 		padding, myname, term);
+}
+
+/*
+** term_size:
+**	Query /dev/tty to find its size
+*/
+void
+term_size(void)
+{
+#if defined(TIOCGWINSZ)
+  struct winsize ws;
+
+  if (tty == NULL)
+      return;
+  if (ioctl(fileno(tty), TIOCGWINSZ, &ws) < 0)
+    {
+      eprint("ioctl(tty, TIOCGWINSZ) failed: %s", strerror(errno));    
+      return;
+    }
+  if (ws.ws_col > 0)
+    {
+      CO = ws.ws_col;
+      dprint("window seems to have %d columns.", CO);
+    }
+#endif
 }
 
 /*
@@ -137,6 +167,7 @@ sprint(char *format, ...)
         va_start(va, format);
         vsnprintf(tmp, 512, format, va);
         va_end(va);
+	tmp[CO-1] = '\0';
 	if (strcmp(tmp, status) == 0)
 	    return;
 	strcpy(status, tmp);
