@@ -20,7 +20,7 @@
 
 #include "term.h"
 
-static char const rcsid[] = "@(#)$Id: term.c,v 1.7 2003-03-20 01:58:32 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: term.c,v 1.8 2003-03-21 14:20:33 kalt Exp $";
 
 extern char *myname;
 
@@ -68,8 +68,10 @@ int maxlen, prefix, progress, internal, debug;
 	tty = stdout;
     else if (etty == 1)
 	tty = stderr;
-    else
+    else if (progress != 0)
 	tty = fopen(/*_PATH_TTY*/ "/dev/tty", "a");
+    else
+	tty = NULL;
 
     term = getenv("TERM");
     if (term == NULL)
