@@ -1,5 +1,5 @@
-.TH SHMUX 8 "$Date: 2003-01-05 20:25:05 $"
-.DA January 5, 2003
+.TH SHMUX 8 "$Date: 2003-03-21 02:07:34 $"
+.DA March 18, 2003
 .SH NAME
 shmux - Shell Multiplexor
 .SH SYNOPSIS
@@ -24,6 +24,10 @@ shmux - Shell Multiplexor
 ] [
 .B -E \fIlist\fP
 ] [
+.B -a \fIanalyzer\fP
+] [
+.B -A \fIcondition\fP
+] [
 .B -o \fIdir\fP
 ] [
 .B -P \fItimeout\fP
@@ -36,9 +40,9 @@ shmux - Shell Multiplexor
 \fBshmux\fP is program for executing the same \fIcommand\fP on many hosts
 in parallel.  For each target, a child process is spawned by \fBshmux\fP,
 and a shell on the target obtained one of the supported methods: \fIrsh\fP,
-\fIssh\fP, or \fIsh\fP.  The output produced by the children is received
-by \fBshmux\fP and either output in turn to the user, or written to files
-for later processing.
+\fIssh\fP, or \fIsh\fP.  The output produced by the children is received by
+\fBshmux\fP and either (optionally) output in turn to the user, or written
+to files for later processing.
 
 The default method may be set by using the \fB-r\fP option, and may be
 overridden for any target by prefixing the target name by the method and a
@@ -55,6 +59,11 @@ ping each target to ensure that it can be reached, and/or run a dummy test
 is possible to execute a \fIcommand\fP on it.  Both these tests are
 typically run with a fairly short timeout to quickly dismiss unavailable
 targets rather than waiting for the standard (longer) network timeout.
+
+After executing the specified \fIcommand\fP, \fBshmux\fP will optionally
+process the output or run a user specified command to determine whether the
+\fIcommand\fP was successful or resulted in an error.  For successful
+targets, the \fIcommand\fP output is suppressed.
 
 .SH OPTIONS
 .IP "\fB-h\fP"
@@ -86,6 +95,34 @@ Defines which \fIcommand\fP exit codes should always be output to the
 screen.  Codes that are considered errors (see the \fB-e\fP option) are
 always shown, but by default, other exit codes are only shown if the
 \fB-v\fP option is specified.  This allows more flexibility.
+.IP "\fB-a \fIanalyzer\fP"
+Defines how output should be analyzed by \fBshmux\fP after the
+\fIcommand\fP completes on a target.  By default, nothing is done.  Valid
+options are: \fIregex\fP, \fIpcre\fP and \fIrun\fP.  This option requires
+\fB-o\fP to be used as well.
+.IP "\fB-A \fIcondition\fP"
+When the \fB-a\fP option is used, it is also necessary to configure the
+chosen analyzer.
+
+For regular expressions, the \fB-A\fP option should be specified twice:
+once for the standard output and once for the standard error output.  This
+option allows defining the expression to be applied to the output.  If the
+\fIcondition\fP starts with the character '=' then a match indicates that
+the \fIcommand\fP completed without error.  If the \fIcondition\fP starts
+with the character '!' then a failure to match indicates that the
+\fIcommand\fP completed without error.  The second character of the
+condition should either be '=' if the regular expression follows or '<' if
+the regular expression should be read from the file which name follows.
+(The '=' characters may be omitted.)
+
+For the \fIrun\fP analyzer, the \fB-A\fP must be specified at least once
+with the name of a program to run, and optionally a second time to specify
+a timeout.  The program will be called after a \fIcommand\fP completes on a
+target unless the \fIcommand\fP exit code is considered an error (see
+\fB-e\fP) with two arguments: the target name and the directory specified
+with the \fB-o\fP option.  The output of the program will always be shown
+to the user.  Exit codes other than 0 indicate that the \fIcommand\fP
+failed for the particular target.
 .IP "\fB-o \fIdir\fP"
 If specified, the directory must already exist and \fBshmux\fP will place
 the output and (for normal terminations) the exit code of the executed
@@ -128,9 +165,9 @@ Display internal debug messages.
 .SH EXIT CODES
 \fBshmux\fP will optionally report the exit code of \fIthe command it
 runs\fP for each target.  For the \fIsh\fP command, this will be the same
-as the \fIcommand\fP itself, but this is the exceptions.  For other
-methods, the exit code reported by \fBshmux\fP really is the code returned
-by the program used to spawn \fIcommand\fP for that method.
+as the \fIcommand\fP itself, but this is the exception.  For other methods,
+the exit code reported by \fBshmux\fP really is the code returned by the
+program used to spawn \fIcommand\fP for that method.
 
 In particular, \fIrsh\fP typically only returns either 0 or 1 while
 different implementations of \fIssh\fP have different behaviours which may
