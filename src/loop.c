@@ -23,7 +23,7 @@
 #include "target.h"
 #include "term.h"
 
-static char const rcsid[] = "@(#)$Id: loop.c,v 1.27 2003-03-29 20:47:35 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: loop.c,v 1.28 2003-04-09 19:39:48 kalt Exp $";
 
 extern char *myname;
 
@@ -600,6 +600,7 @@ u_int ctimeout, utest, test;
 	  {
 	    term_size();
 	    got_sigwin = 0;
+	    status_update();
 	  }
 	      
 	/* read and process children output if any */
