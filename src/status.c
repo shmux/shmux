@@ -16,9 +16,12 @@
 #include "target.h"
 #include "term.h"
 
+#if defined(MAX)
+# undef MAX
+#endif
 #define MAX(a, b) ((a > b) ? a : b)
 
-static char const rcsid[] = "@(#)$Id: status.c,v 1.7 2003-03-19 02:15:36 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: status.c,v 1.8 2003-03-22 01:32:36 kalt Exp $";
 
 static int spawned, inphase[5];
 static time_t changed[5];
