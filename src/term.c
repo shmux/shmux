@@ -21,7 +21,7 @@
 
 #include "term.h"
 
-static char const rcsid[] = "@(#)$Id: term.c,v 1.9 2003-03-21 20:55:30 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: term.c,v 1.10 2003-03-23 02:13:22 kalt Exp $";
 
 extern char *myname;
 
@@ -49,7 +49,6 @@ int maxlen, prefix, progress, internal, debug;
 {
     static char termcap[2048], area[1024];
     char *term, *ptr;
-    struct winsize ws;
 
     assert( maxlen != 0 );
 
