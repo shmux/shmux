@@ -25,7 +25,7 @@
 #include "term.h"
 #include "units.h"
 
-static char const rcsid[] = "@(#)$Id: shmux.c,v 1.16 2003-03-02 22:37:41 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: shmux.c,v 1.17 2003-03-03 02:06:04 kalt Exp $";
 
 extern char *optarg;
 extern int optind, opterr;
@@ -200,28 +200,35 @@ main(int argc, char **argv)
 	exit(1);
       }
 
-    if (opt_mixed == 0 && opt_odir == NULL)
-      {
-	char *tmp;
-
-	tmp = getenv("TMPDIR");
-	sprintf(tdir, "%s/%s.%d.%ld", (tmp != NULL) ? tmp : _PATH_TMP, myname,
-		(int) getpid(), (long) time(NULL));
-	opt_odir = tdir;
-      }
-    else
-	opt_mixed = 1;
+    if (opt_mixed == 0)
+	/* User asked for non-mixed output */
+	if (opt_odir == NULL)
+	  {
+	    /* We'll need a temporary directory */
+	    char *tmp;
+	    
+	    tmp = getenv("TMPDIR");
+	    sprintf(tdir, "%s/%s.%d.%ld", (tmp != NULL) ? tmp : _PATH_TMP,
+		    myname, (int) getpid(), (long) time(NULL));
+	    opt_odir = tdir;
+	  }
+	else
+	    /* Senseless, -o was also specified. */
+	    opt_mixed = 1;
 
     if (opt_odir != NULL && mkdir(opt_odir, 0777) == -1 && errno != EEXIST)
       {
+	/* Create odir if it doesn't already exists */
 	fprintf(stderr, "%s: mkdir(%s): %s\n",
 		myname, opt_odir, strerror(errno));
 	exit(1);
       }
 
+    /* Should test outputs be shown? */
     if (opt_vtest > 1)
 	opt_test *= -1;
 
+    /* Get list of targets */
     longest = strlen(myname);
     while (optind < argc)
       {
@@ -232,12 +239,15 @@ main(int argc, char **argv)
 	    longest = length;
       }
 
+    /* Initialize terminal */
     term_init(longest, opt_prefix, opt_status, opt_internal, opt_debug);
 
+    /* Loop through targets/commands */
     start = time(NULL);
     loop(opt_command, opt_ctimeout, opt_maxworkers,
 	 opt_mixed, opt_odir, opt_ping, opt_test);
 
+    /* odir was temporary, remove it now */
     if (opt_mixed == 0 && rmdir(opt_odir) == -1)
 	&& rmdir(opt_odir) == -1)
       {
@@ -245,6 +255,7 @@ main(int argc, char **argv)
 		myname, opt_odir, strerror(errno));
 	exit(1);
       }
+
     /* Summary of results unless asked to be quiet */
     if (opt_quiet == 0)
       {
