@@ -25,7 +25,7 @@
 #include "term.h"
 #include "units.h"
 
-static char const rcsid[] = "@(#)$Id: shmux.c,v 1.14 2003-01-05 17:40:33 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: shmux.c,v 1.15 2003-01-05 19:43:30 kalt Exp $";
 
 extern char *optarg;
 extern int optind, opterr;
@@ -81,7 +81,7 @@ main(int argc, char **argv)
     int opt_ctimeout, opt_mixed, opt_maxworkers, opt_vtest;
     u_int opt_test;
     char *opt_rcmd, *opt_command, *opt_odir, *opt_ping, tdir[PATH_MAX];
-    int longest, ntargets;
+    int longest;
     time_t start;
 
     myname = basename(argv[0]);
@@ -222,7 +222,6 @@ main(int argc, char **argv)
     if (opt_vtest > 1)
 	opt_test *= -1;
 
-    ntargets = 0;
     longest = strlen(myname);
     while (optind < argc)
       {
@@ -231,7 +230,6 @@ main(int argc, char **argv)
 	length = target_add(argv[optind++]);
 	if (length > longest)
 	    longest = length;
-	ntargets += 1;
       }
 
     term_init(longest, opt_prefix, opt_status, opt_internal, opt_debug);
@@ -250,9 +248,7 @@ main(int argc, char **argv)
     /* Summary of results unless asked to be quiet */
     if (opt_quiet == 0)
       {
-	nprint("%d targets processed in %d seconds.",
-	       ntargets, (int) (time(NULL) - start));
-	target_results();
+	nprint("");
 	target_results((int) (time(NULL) - start));
       }
 

@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2002 Christophe Kalt
+** Copyright (C) 2002, 2003 Christophe Kalt
 **
 ** This file is part of shmux,
 ** see the LICENSE file for details on your rights.
@@ -12,7 +12,7 @@
 
 #include "status.h"
 
-static char const rcsid[] = "@(#)$Id: target.c,v 1.4 2002-07-09 21:45:26 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: target.c,v 1.5 2003-01-05 19:43:30 kalt Exp $";
 
 extern char *myname;
 
@@ -22,6 +22,8 @@ struct target
     int type;		/* 0: sh, 1: rsh, 2: sshv1, 3: sshv2, 4: ssh */
     char status;	/* -1: DEAD 0: unknown 1: ping okay 2: test rsh okay */
     char phase;		/* current phase:      1: ping      2: test   3: cmd */
+    int result;		/* command status: -2: signal, -1: timed out,
+			   		    0: unknown, 1: ok, 2: error */
 };
 
 static struct target *targets = NULL;
@@ -114,6 +116,7 @@ char *name;
       }
     targets[tmax].status = 0;
     targets[tmax].phase = 0;
+    targets[tmax].result = 0;
 
     return strlen(targets[tmax].name);
 }
@@ -300,28 +303,134 @@ int ok;
     if (ok == 1)
 	targets[tcur].status = targets[tcur].phase;
     else
+      {
 	targets[tcur].status = -1;
+	targets[tcur].result = CMD_FAILURE;
+      }
     status_phase(targets[tcur].status, 1);
 }
 
+/*
+** target_cmdstatus
+**	Set the result of the command execution for the current target.
+*/
+void
+target_cmdstatus(status)
+int status;
+{
+    assert( tcur >= 0 && tcur <= tmax );
+    assert( targets[tcur].phase == 3 );
+    assert( status >= -2 && status <= 2 );
+
+    targets[tcur].result = status;
+}
 
 /*
 ** target_results
 **	Show failures.
 */
 void
-target_results(void)
+target_results(seconds)
+int seconds;
 {
     int i, first;
+    int f, t, s, e;
+
+    f = t = s = e = 0;
+    i = 0;
+    while (i <= tmax)
+      {
+	switch (targets[i].result)
+	  {
+	  case -2:
+	      f += 1;
+	      break;
+	  case -1:
+	      t += 1;
+	      break;
+	  case 1:
+	      s += 1;
+	      break;
+	  case 2:
+	      e += 1;
+	      break;
+	  case 0:
+	      assert( targets[i].status == -1 || targets[i].status == 3 );
+	      break;
+	  default:
+	      eprint("Unknown target result found!");
+	      break;
+	  }
+	i += 1;
+      }
+
+    if (seconds >= 0)
+	nprint("%d target%s processed in %d second%s.",
+	       tmax + 1, (tmax > 0) ? "s" : "",
+	       seconds, (seconds > 1) ? "s" : "");
+    else
+	nprint("%d target%s processed.", tmax + 1, (tmax > 0) ? "s" : "");
+
+    if (f + t + s + e > 0)
+      {
+	printf("Summary: ");
+	if (f > 0)
+	    printf("%d failure%s", f, (f > 1) ? "s" : "");
+	if (f > 0 && t + s + e > 0)
+	    printf(", ");
+	if (t > 0)
+	    printf("%d timeout%s", t, (t > 1) ? "s" : "");
+	if (t > 0 && s + e > 0)
+	    printf(", ");
+	if (s > 0)
+	    printf("%d success%s", s, (s > 1) ? "es" : "");
+	if (e > 0)
+	  {
+	    if (s > 0)
+		printf(", ");
+	    printf("%d error%s", e, (e > 1) ? "s" : "");
+	  }
+	nprint("");
+      }
 
     first = 1;
     i = 0;
     while (i <= tmax)
       {
-	if (targets[i].status == -1)
+	if (targets[i].result == CMD_FAILURE)
 	  {
 	    if (first == 1)
-		printf("Failed for: ");
+		printf("Failed   : ");
+	    first = 0;
+	    printf("%s ", targets[i].name);
+	  }
+	i += 1;
+      }
+    nprint("");
+
+    first = 1;
+    i = 0;
+    while (i <= tmax)
+      {
+	if (targets[i].result == CMD_TIMEOUT)
+	  {
+	    if (first == 1)
+		printf("Timed out: ");
+	    first = 0;
+	    printf("%s ", targets[i].name);
+	  }
+	i += 1;
+      }
+    nprint("");
+
+    first = 1;
+    i = 0;
+    while (i <= tmax)
+      {
+	if (targets[i].result == CMD_ERROR)
+	  {
+	    if (first == 1)
+		printf("Error    : ");
 	    first = 0;
 	    printf("%s ", targets[i].name);
 	  }

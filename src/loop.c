@@ -22,7 +22,7 @@
 #include "target.h"
 #include "term.h"
 
-static char const rcsid[] = "@(#)$Id: loop.c,v 1.20 2003-01-05 17:41:25 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: loop.c,v 1.21 2003-01-05 19:43:29 kalt Exp $";
 
 extern char *myname;
 
@@ -533,6 +533,7 @@ u_int ctimeout, test;
 	ping = NULL;
       }
     else
+	/* No fping, let's move on to the next phase then */
 	while (target_next(1) == 0)
 	    target_result(1);
 
@@ -558,7 +559,7 @@ u_int ctimeout, test;
 	  case 0:
 	      break;
 	  case 1:
-	      eprint("Waiting for children to abort..");
+	      eprint("Waiting for existing children to abort..");
 	      got_sigint += 1;
 	      break;
 	  case 2:
@@ -566,7 +567,7 @@ u_int ctimeout, test;
 	  default:
 	      sprint("");
 	      nprint("");
-	      target_results();
+	      target_results(-1);
 	      exit(1);
 	  }
 	      
@@ -871,6 +872,9 @@ u_int ctimeout, test;
 		free(children[idx].efname);
 	      }
 
+	    if (idx > 0)
+		target_setbynum(children[idx].num);
+
 	    /* Check and optionally report the exit status */
 	    if (WIFEXITED(status) != 0)
 	      {
@@ -888,15 +892,22 @@ u_int ctimeout, test;
 		else if (children[idx].execstate == 0)
 		  {
 		    if (byteset_test(BSET_ERROR, WEXITSTATUS(status)) == 0)
+		      {
+			target_cmdstatus(CMD_ERROR);
 			eprint("Child for %s exited with status %d",
 			       what, WEXITSTATUS(status));
-		    else if (byteset_test(BSET_SHOW, WEXITSTATUS(status)) == 0)
-			tprint(myname, MSG_STDOUT,
-			       "Child for %s exited with status %d",
-			       what, WEXITSTATUS(status));
+		      }
 		    else
-			iprint("Child for %s exited (with status %d)",
-			       what, WEXITSTATUS(status));
+		      {
+			target_cmdstatus(CMD_SUCCESS);
+			if (byteset_test(BSET_SHOW, WEXITSTATUS(status)) == 0)
+			    tprint(myname, MSG_STDOUT,
+				   "Child for %s exited with status %d",
+				   what, WEXITSTATUS(status));
+			else
+			    iprint("Child for %s exited (with status %d)",
+				   what, WEXITSTATUS(status));
+		      }
 
 		    if (odir != NULL)
 		      {
@@ -914,18 +925,28 @@ u_int ctimeout, test;
 			  }
 		      }
 		  }
+		else
+		    target_cmdstatus(CMD_FAILURE);
 	      } else {
 		assert( WTERMSIG(status) != 0 );
 		if (WTERMSIG(status) == SIGALRM)
 		    if (children[idx].test == 0)
+		      {
 			eprint("Child for %s timed out", what);
+			if (idx > 0)
+			    target_cmdstatus(CMD_TIMEOUT);
+		      }
 		    else
 			children[idx].passed = -2;
 		else
+		  {
 		    eprint("%s for %s died: %s%s",
 			   (children[idx].test == 0) ? "Child" : "Test", what,
 			   strsignal(WTERMSIG(status)),
 			   (WCOREDUMP(status) != 0) ? " (core dumped)" : "");
+		    if (idx > 0 && children[idx].test == 0)
+			target_cmdstatus(CMD_ERROR);
+		  }
 	      }
 
 	    /* mark the slot as free */
@@ -935,7 +956,6 @@ u_int ctimeout, test;
 		dprint("fping is done");
 	    else
 	      {
-		target_setbynum(children[idx].num);
 		if (children[idx].execstate != 0
 		    || (children[idx].test == 1 && children[idx].passed != 1))
 		  {
