@@ -20,7 +20,7 @@
 #include "term.h"
 #include "units.h"
 
-static char const rcsid[] = "@(#)$Id: analyzer.c,v 1.8 2003-05-08 00:38:59 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: analyzer.c,v 1.9 2003-05-08 01:26:03 kalt Exp $";
 
 extern char *myname;
 
@@ -346,14 +346,13 @@ char *type, *outdef, *errdef;
     if (type == NULL)
 	return ANALYZE_NONE;
 
-    if (outdef == NULL)
-      {
-	fprintf(stderr, "%s: No analysis criteria defined!\n", myname);
-	exit(1);
-      }
-	
     if (strcmp(type, "run") == 0)
       {
+	if (outdef == NULL)
+	  {
+	    fprintf(stderr, "%s: No external analyzer supplied!\n", myname);
+	    exit(1);
+	  }
 	run_cmd = outdef;
 	if (errdef == NULL)
 	    run_timeout = 15;
@@ -364,6 +363,11 @@ char *type, *outdef, *errdef;
     else if (strcmp(type, "regex") == 0 || strcmp(type, "re") == 0
 	     || strcmp(type, "pcre") == 0)
       {
+	if (outdef == NULL)
+	  {
+	    fprintf(stderr, "%s: No analysis criteria defined!\n", myname);
+	    exit(1);
+	  }
 	out = (struct condition *) malloc(sizeof(struct condition));
 	if (out == NULL)
 	  {
@@ -412,8 +416,11 @@ char *type, *outdef, *errdef;
     else if (strcmp(type, "lnregex") == 0 || strcmp(type, "lnre") == 0
 	     || strcmp(type, "lnpcre") == 0)
       {
-	loadfile((type[0] != 'p') ? ANALYZE_LNRE : ANALYZE_LNPCRE,
-		 outdef, &out);
+	if (outdef == NULL)
+	    out = NULL;
+	else
+	    loadfile((type[0] != 'p') ? ANALYZE_LNRE : ANALYZE_LNPCRE,
+		     outdef, &out);
 
 	if (errdef == NULL)
 	    err = NULL;
@@ -449,6 +456,7 @@ char *oname, *ename;
     int o, e, ok;
 
     assert( type == ANALYZE_RE || type == ANALYZE_PCRE );
+    assert( out != NULL && err != NULL );
 
     if (oname == NULL || ename == NULL || ofd == -1 || efd == -1)
       {
@@ -579,13 +587,19 @@ char *str;
     assert( str != NULL );
 
     if (what == ANALYZE_STDOUT)
+      {
 	list = out;
+	/* Special case: no condition defined == any output is good */
+	if (list == NULL)
+	    return 0;
+      }
     else
+      {
 	list = err;
-
-    /* Special case: no condition defined == there can't be any output */
-    if (list == NULL && str[0] != '\0')
-	return 1;
+	/* Special case: no condition defined == there can't be any output */
+	if (list == NULL && str[0] != '\0')
+	    return 1;
+      }
 
     while (list->ok != -1)
       {
