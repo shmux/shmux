@@ -16,6 +16,9 @@
 #endif
 #include <time.h>
 #include <sys/stat.h>
+#if defined(HAVE_PCRE_H)
+# include <pcre.h>
+#endif
 
 #include "version.h"
 
@@ -26,7 +29,7 @@
 #include "term.h"
 #include "units.h"
 
-static char const rcsid[] = "@(#)$Id: shmux.c,v 1.18 2003-03-19 02:15:36 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: shmux.c,v 1.19 2003-03-23 18:34:55 kalt Exp $";
 
 extern char *optarg;
 extern int optind, opterr;
@@ -194,7 +197,12 @@ main(int argc, char **argv)
 	      opt_internal = 1;
 	      break;
 	  case 'V':
+#if !defined(HAVE_PCRE_H)
 	      printf("%s version %s\n", myname, SHMUX_VERSION);
+#else
+	      printf("%s version %s (PCRE version %s)\n",
+		     myname, SHMUX_VERSION, pcre_version());
+#endif
 	      exit(0);
 	  case '?':
 	      badopt += 1;
