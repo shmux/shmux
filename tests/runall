@@ -1,12 +1,19 @@
 #! /bin/sh
 #
-# $Id: runall,v 1.1 2004-04-06 00:36:55 kalt Exp $
+# $Id: runall,v 1.2 2004-06-08 00:54:21 kalt Exp $
 #
 
 echo
 echo "WARNING: It is unfortunately unclear how portable this test suite is."
 echo
 echo "Some of these tests involve timers and are a little slow to complete.."
+echo
+
+unset SHMUX_RCMD
+unset SHMUX_SH
+unset SHMUX_SPAWNMODE
+unset SHMUX_ERRORCODES
+unset SHMUX_SHOWCODES
 
 tests=`grep '#-' *.sh | sort -n -k 2 | sed 's/.sh:.*//'`
 pad=0
