@@ -20,7 +20,7 @@
 #include "term.h"
 #include "units.h"
 
-static char const rcsid[] = "@(#)$Id: analyzer.c,v 1.12 2004-04-05 00:30:03 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: analyzer.c,v 1.13 2004-04-05 00:32:46 kalt Exp $";
 
 extern char *myname;
 
@@ -443,8 +443,8 @@ char *type, *outdef, *errdef;
 	if (type[0] != 'p')
 	    restr_init((void *) &(err->val.re), compile_re,
 		       &(err->ok), errdef);
-#if defined(HAVE_PCRE_H)
 	else
+#if defined(HAVE_PCRE_H)
 	    restr_init((void *) &(err->val.pcre), compile_pcre,
 		       &(err->ok), errdef);
 #else
