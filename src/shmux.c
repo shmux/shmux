@@ -17,7 +17,7 @@
 #include "term.h"
 #include "units.h"
 
-static char const rcsid[] = "@(#)$Id: shmux.c,v 1.6 2002-07-09 21:45:26 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: shmux.c,v 1.7 2002-07-09 21:57:05 kalt Exp $";
 
 extern char *optarg;
 extern int optind, opterr;
@@ -52,17 +52,17 @@ int detailed;
     fprintf(stderr, "  -t            Send test command to verify target health.\n");
     fprintf(stderr, "  -T <seconds>  Time to wait for test answer (Default: %d).\n", DEFAULT_TESTTIMEOUT);
     fprintf(stderr, "\n");
-    fprintf(stderr, "  -v            Verbose output including target names.\n");
+    fprintf(stderr, "  -b            Show bare output without target names.\n");
     fprintf(stderr, "  -s            Suppress progress status.\n");
     fprintf(stderr, "  -q            Suppress final summary.\n");
-    fprintf(stderr, "  -d            Display internal status messages.\n");
+    fprintf(stderr, "  -v            Display internal status messages.\n");
     fprintf(stderr, "  -D            Display internal debug messages.\n");
 }
 
 int
 main(int argc, char **argv)
 {
-    int opt_verbose, opt_status, opt_quiet, opt_internal, opt_debug;
+    int opt_prefix, opt_status, opt_quiet, opt_internal, opt_debug;
     int opt_ctimeout, opt_maxworkers, opt_vtest;
     u_int opt_test;
     char *opt_rcmd, *opt_command, *opt_odir, *opt_ping;
@@ -71,8 +71,8 @@ main(int argc, char **argv)
 
     myname = basename(argv[0]);
 
-    opt_status = 1;
-    opt_verbose = opt_quiet = opt_internal = opt_debug = 0;
+    opt_prefix = opt_status = 1;
+    opt_quiet = opt_internal = opt_debug = 0;
     opt_maxworkers = DEFAULT_MAXWORKERS;
     opt_ctimeout = opt_test = opt_vtest = 0;
     opt_rcmd = getenv("SHMUX_RCMD");
@@ -85,7 +85,7 @@ main(int argc, char **argv)
       {
         int c;
 	
-        c = getopt(argc, argv, "c:C:dDhM:o:pP:qr:stT:vV");
+        c = getopt(argc, argv, "bc:C:DhM:o:pP:qr:stT:vV");
 	
         /* Detect the end of the options. */
         if (c == -1)
@@ -93,14 +93,14 @@ main(int argc, char **argv)
 	
         switch (c)
           {
+	  case 'b':
+	      opt_prefix = 0;
+	      break;
 	  case 'c':
 	      opt_command = optarg;
 	      break;
 	  case 'C':
 	      opt_ctimeout = unit_time(optarg);
-	      break;
-	  case 'd':
-	      opt_internal = 1;
 	      break;
 	  case 'D':
 	      opt_debug = 1;
@@ -141,7 +141,7 @@ main(int argc, char **argv)
 	      opt_vtest += 1;
 	      break;
 	  case 'v':
-	      opt_verbose = 1;
+	      opt_internal = 1;
 	      break;
 	  case 'V':
 	      printf("%s version %s\n", myname, SHMUX_VERSION);
@@ -194,7 +194,7 @@ main(int argc, char **argv)
 	ntargets += 1;
       }
 
-    term_init(longest, opt_verbose, opt_status, opt_internal, opt_debug);
+    term_init(longest, opt_prefix, opt_status, opt_internal, opt_debug);
 
     start = time(NULL);
     loop(opt_command, opt_ctimeout, opt_maxworkers,
