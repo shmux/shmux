@@ -12,7 +12,7 @@
 
 #include "status.h"
 
-static char const rcsid[] = "@(#)$Id: target.c,v 1.19 2004-12-15 00:36:01 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: target.c,v 1.20 2004-12-16 01:18:54 kalt Exp $";
 
 extern char *myname;
 
@@ -232,7 +232,8 @@ void
 target_getcmd(args, cmd)
 char **args, *cmd;
 {
-    char user[32], *at;
+    static char user[32];
+    char *at;
 
     assert( tcur >= 0 && tcur <= tmax );
 
