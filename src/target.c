@@ -12,7 +12,7 @@
 
 #include "status.h"
 
-static char const rcsid[] = "@(#)$Id: target.c,v 1.12 2003-11-08 01:17:28 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: target.c,v 1.13 2003-11-14 00:45:20 kalt Exp $";
 
 extern char *myname;
 
@@ -380,7 +380,7 @@ int status;
 		    || targets[i].result == CMD_TIMEOUT );
 	    uprint(" [%*d] %s: %s", tlen, i,
 		   (targets[i].result == CMD_FAILURE) ?
-		   "            failed" : "         timed out",
+		   "           failed" : "        timed out",
 		   targets[i].name);
 	    any = 1;
 	  }
