@@ -20,7 +20,7 @@
 #include "term.h"
 #include "units.h"
 
-static char const rcsid[] = "@(#)$Id: analyzer.c,v 1.9 2003-05-08 01:26:03 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: analyzer.c,v 1.10 2003-05-13 00:56:09 kalt Exp $";
 
 extern char *myname;
 
@@ -258,7 +258,7 @@ struct condition **list;
     *list = (struct condition *) malloc(max * sizeof(struct condition));
     if (*list == NULL)
       {
-	fprintf(stderr, "%s: malloc() failed: %s", myname, strerror(errno));
+	fprintf(stderr, "%s: malloc() failed: %s\n", myname, strerror(errno));
 	exit(1);
       }
     cond = 0;
@@ -294,7 +294,7 @@ struct condition **list;
 					       max* sizeof(struct condition *));
 	  if (*list == NULL)
 	    {
-	      fprintf(stderr, "%s: realloc() failed: %s", myname,
+	      fprintf(stderr, "%s: realloc() failed: %s\n", myname,
 		      strerror(errno));
 	      exit(1);
 	    }
@@ -309,9 +309,15 @@ struct condition **list;
 	      (*list)[cond].ok = 1;
 	  if (type == ANALYZE_LNRE)
 	      compile_re(0, (void *) &((*list)[cond].val.re), ln + 1);
-#if defined(HAVE_PCRE_H)
 	  else if (type == ANALYZE_LNPCRE)
+#if defined(HAVE_PCRE_H)
 	      compile_pcre(0, (void *) &((*list)[cond].val.pcre), ln + 1);
+#else
+	  {
+	    fprintf(stderr, "%s: This binary was built without PCRE support.\n",
+		    myname);
+	    exit(1);
+	  }
 #endif
 	  else
 	      abort();
@@ -371,7 +377,7 @@ char *type, *outdef, *errdef;
 	out = (struct condition *) malloc(sizeof(struct condition));
 	if (out == NULL)
 	  {
-	    fprintf(stderr, "%s: malloc() failed: %s",
+	    fprintf(stderr, "%s: malloc() failed: %s\n",
 		    myname, strerror(errno));
 	    exit(1);
 	  }
@@ -383,13 +389,17 @@ char *type, *outdef, *errdef;
 	    restr_init((void *) &(out->val.pcre), compile_pcre,
 		       &(out->ok), outdef);
 #else
-	    abort();
+	  {
+	    fprintf(stderr, "%s: This binary was built without PCRE support.\n",
+		    myname);
+	    exit(1);
+	  }
 #endif
 
 	err = (struct condition *) malloc(sizeof(struct condition));
 	if (err == NULL)
 	  {
-	    fprintf(stderr, "%s: malloc() failed: %s",
+	    fprintf(stderr, "%s: malloc() failed: %s\n",
 		    myname, strerror(errno));
 	    exit(1);
 	  }
