@@ -23,7 +23,7 @@
 #include "target.h"
 #include "term.h"
 
-static char const rcsid[] = "@(#)$Id: loop.c,v 1.29 2003-04-11 20:11:15 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: loop.c,v 1.30 2003-04-13 15:39:14 kalt Exp $";
 
 extern char *myname;
 
@@ -41,12 +41,17 @@ struct child
 };
 
 static int got_sigint;
+#define SPAWN_QUIT  0
+#define SPAWN_PAUSE 1
+#define SPAWN_MORE  2
+static int spawn_mode = SPAWN_MORE;
 
 static void shmux_sigint(int);
 static void setup_fdlimit(int, int);
 static void init_child(struct child *);
 static void parse_child(char *, int, int, struct child *, int, char *);
 static void parse_fping(char *);
+static void parse_user(int);
 static int  output_file(char **, char *, char *, char *);
 static void output_show(char *, int, char *, int);
 
@@ -80,7 +85,7 @@ int fdfactor, max;
     ** + 3 for stdin, stdout and stderr for fping
     ** + 3 for pipe creation in exec.c/exec()
     ** + (3 or 5 * max) for children stdin, stdout and stderr
-    ** And we add another 10 as safety margin.
+    ** And we add another 10 as safety margin (2 /dev/tty, and "unknowns")
     */
     if (getrlimit(RLIMIT_NOFILE, &fdlimit) == -1)
       {
@@ -379,6 +384,75 @@ char *line;
 }
 
 /*
+** parse_user
+**	Handle user input
+*/
+static void
+parse_user(c)
+int c;
+{
+    switch (c)
+      {
+      case '?':
+	  uprint("Available commands:");
+	  uprint("      q - Quit");
+	  uprint("      Q - Quit immediately");
+	  uprint("<space> - Pause (e.g. Do not spawn any more children)");
+	  uprint("<enter> - Resume (after a pause)");
+	  uprint("      p - Show pending targets");
+	  uprint("      r - Show running targets");
+	  uprint("      f - Show failed targets");
+	  uprint("      e - Show targets with errors");
+	  uprint("      s - Show successful targets");
+	  uprint("      a - Show status of all targets");
+	  break;
+      case 27: /* escape */
+      case 'q':
+	  spawn_mode = SPAWN_QUIT;
+	  if (spawn_mode != SPAWN_QUIT)
+	      uprint("Waiting for existing children to terminate..");
+	  break;
+      case 'Q':
+	  sprint("");
+	  nprint("");
+	  target_results(-1);
+	  exit(1);
+      case ' ':
+	  spawn_mode = SPAWN_PAUSE;
+	  if (spawn_mode != SPAWN_PAUSE)
+	      uprint("Pausing...");
+	  break;
+      case '\n':
+	  spawn_mode = SPAWN_MORE;
+	  if (spawn_mode != SPAWN_MORE)
+	      uprint("Resuming...");
+	  break;
+      case 'p':
+	  target_status(STATUS_PENDING);
+	  break;
+      case 'r':
+	  target_status(STATUS_ACTIVE);
+	  break;
+      case 'f':
+	  target_status(STATUS_FAILED);
+	  break;
+      case 'e':
+	  target_status(STATUS_ERROR);
+	  break;
+      case 's':
+	  target_status(STATUS_SUCCESS);
+	  break;
+      case 'a':
+	  target_status(STATUS_ALL);
+	  break;
+      default:
+	  uprint("Invalid Command");
+	  dprint("User input = %d", c);
+	  break;
+      }
+}
+
+/*
 ** output_file
 **	Create an output file.
 */
@@ -474,7 +548,7 @@ u_int ctimeout, utest, test;
 {
     struct child *children;
     struct pollfd *pfd;
-    struct sigaction sa;
+    struct sigaction sa, saved_sa;
     int idx;
     char *cargv[10];
 
@@ -505,7 +579,7 @@ u_int ctimeout, utest, test;
     sigemptyset(&sa.sa_mask);
     sa.sa_flags = 0;
     sa.sa_handler = shmux_sigint;
-    sigaction(SIGINT, &sa, NULL);
+    sigaction(SIGINT, &sa, &saved_sa);
     got_sigint = 0;
 
     /* Initialize the status module. */
@@ -530,6 +604,7 @@ u_int ctimeout, utest, test;
 
 	while (target_next(1) == 0)
 	  {
+	    target_start();
 	    count += 1;
 	    write(pfd[0].fd, target_getname(), strlen(target_getname()));
 	    write(pfd[0].fd, "\n", 1);
@@ -543,7 +618,10 @@ u_int ctimeout, utest, test;
     else
 	/* No fping, let's move on to the next phase then */
 	while (target_next(1) == 0)
+	  {
+	    target_start();
 	    target_result(1);
+	  }
 
     /* From here on, it's one big loop. */
     while (1)
@@ -553,6 +631,14 @@ u_int ctimeout, utest, test;
 
 	/* Update the status line before (possibly) pausing in poll() */
 	status_update();
+
+	/* Check (or not) for input */
+	pfd[0].fd = tty_fd();
+	if (pfd[0].fd >= 0)
+	    pfd[0].events = POLLIN;
+	else
+	    pfd[0].events = 0;
+
 	/* Check for data to read/write */
 	pollrc = poll(pfd, (max+2)*3, 250);
 	if (pollrc == -1 && errno != EINTR)
@@ -569,8 +655,9 @@ u_int ctimeout, utest, test;
 	  case 1:
 	      eprint("Waiting for existing children to abort..");
 	      got_sigint += 1;
-	      break;
+	      /* FALLTHRU */
 	  case 2:
+	      spawn_mode = SPAWN_QUIT;
 	      break;
 	  default:
 	      sprint("");
@@ -592,7 +679,9 @@ u_int ctimeout, utest, test;
 		    continue;
 		  }
 
-		if (idx < 3)
+		if (idx == 0)
+		    what = "user";
+		else if (idx < 3)
 		    what = "fping";
 		else
 		  {
@@ -608,45 +697,64 @@ u_int ctimeout, utest, test;
 		       (pfd[idx].revents & POLLERR) != 0,
 		       (pfd[idx].revents & POLLHUP) != 0);
 
-		if (idx % 3 != 0)
+		if (idx % 3 != 0 || idx == 0)
 		  {
-		    /* Stdout or stderr with output ready to be read */
+		    /*
+		    ** Stdout or stderr with output ready to be read,
+		    ** or input to be read from the user.
+		    */
 		    char buffer[8192];
 		    int sz;
 
-		    sz = read(pfd[idx].fd, buffer, 8191);
+		    sz = read(pfd[idx].fd, buffer, (idx == 0) ? 1 : 8191);
 		    dprint("idx=%d[%s] fd=%d(%d) read()=%d",
 			   idx, what, pfd[idx].fd, idx%3, sz);
 		    if (sz > 0)
 		      {
 			buffer[sz] = '\0';
-			parse_child(what, idx<=2, test<0, children+(idx/3),
-				    idx%3, buffer);
+			if (idx == 0)
+			    parse_user(buffer[0]);
+			else
+			    parse_child(what, idx<=2, test<0, children+(idx/3),
+					idx%3, buffer);
 		      }
 		    else
 		      {
-			char **left;
-
-			/*
-			** Child is probably gone, we'll catch that below;
-			** For now, just cleanup.
-			*/
-			if (sz == -1)
-			    eprint("Unexpected read(STD%s) error for %s: %s",
-				   (idx%3 == 1) ? "OUT" : "ERR", what,
-				   strerror(errno));
-			close(pfd[idx].fd); pfd[idx].fd = -1;
-			if (idx%3 == 1)
-			    left = &(children[idx/3].obuf);
-			else
-			    left = &(children[idx/3].ebuf);
-			if (*left != NULL)
+			if (idx == 0)
 			  {
-			    tprint(what, (idx%3 == 1) ? MSG_STDOUTTRUNC
-				   : MSG_STDERRTRUNC, "%s", *left);
-			    eprint("Previous line was incomplete."); /* So? */
-			    free(*left);
-			    *left = NULL;
+			    if (sz == 0)
+				eprint("Unexpected empty read(/dev/tty) result");
+			    else
+				eprint("Unexpected read(/dev/tty) error for: %s",
+				       strerror(errno));
+			    if (sz == 0 || errno != EINTR)
+				tty_restore();
+			  }
+			else
+			  {
+			    char **left;
+
+			    /*
+			    ** Child is probably gone, we'll catch that below;
+			    ** For now, just cleanup.
+			    */
+			    if (sz == -1)
+				eprint("Unexpected read(STD%s) error for %s: %s",
+				       (idx%3 == 1) ? "OUT" : "ERR", what,
+				       strerror(errno));
+			    close(pfd[idx].fd); pfd[idx].fd = -1;
+			    if (idx%3 == 1)
+				left = &(children[idx/3].obuf);
+			    else
+				left = &(children[idx/3].ebuf);
+			    if (*left != NULL)
+			      {
+				tprint(what, (idx%3 == 1) ? MSG_STDOUTTRUNC
+				       : MSG_STDERRTRUNC, "%s", *left);
+				eprint("Previous line was incomplete.");/*So?*/
+				free(*left);
+				*left = NULL;
+			      }
 			  }
 		      }
 		  }
@@ -671,9 +779,9 @@ u_int ctimeout, utest, test;
 	      {
 		/* Available slot to spawn a new child */
 		
-		if (got_sigint != 0)
+		if (spawn_mode == SPAWN_QUIT)
 		  {
-		    /* Don't do it if we're aborting.. */
+		    /* Don't spawn any more children */
 		    idx += 1;
 		    continue;
 		  }
@@ -681,15 +789,25 @@ u_int ctimeout, utest, test;
 		/* Spawn phase 4 ready first */
 		if (idx > 0 && target_next(4) == 0)
 		  {
-		    done = 0;
-
 		    if (utest != ANALYZE_RUN)
 		      {
 			dprint("%s skipped external analyzer",
 			       target_getname());
+			target_start();
 			target_result(1);
 			continue;
 		      }
+
+		    done = 0;
+
+		    if (spawn_mode == SPAWN_PAUSE)
+		      {
+			/* Don't spawn any more children */
+			idx += 1;
+			continue;
+		      }
+
+		    target_start();
 
 		    init_child(&(children[idx]));
 		    children[idx].analyzer = 1;
@@ -741,6 +859,15 @@ u_int ctimeout, utest, test;
 		  {
 		    done = 0;
 
+		    if (spawn_mode == SPAWN_PAUSE)
+		      {
+			/* Don't spawn any more children */
+			idx += 1;
+			continue;
+		      }
+
+		    target_start();
+
 		    init_child(&(children[idx]));
 		    if (odir != NULL)
 		      {
@@ -787,42 +914,50 @@ u_int ctimeout, utest, test;
 		/* Spawn phase 2 ready last */
 		if (idx > 0 && children[idx].pid <= 0 && target_next(2) == 0)
 		  {
-		    done = 0;
-
 		    if (test != 0)
 		      {
-			pfd[idx*3].fd = -1;
-			target_getcmd(cargv, "echo SHMUX.");
-			children[idx].pid = exec(NULL, &(pfd[idx*3+1].fd),
-						 &(pfd[idx*3+2].fd),
-						 target_getname(),
-						 cargv, abs(test));
+			dprint("%s skipped test", target_getname());
+			target_start();
+			target_result(1);
+			continue;
+		      }
 
-			if (children[idx].pid == -1)
-			  {
-			    /* Error message was given by exec() */
-			    eprint("Fatal error for %s", target_getname());
-			    target_result(-1);
-			    continue;
-			  }
+		    done = 0;
 
-			pfd[idx*3+1].events = POLLIN;
-			pfd[idx*3+2].events = POLLIN;
-
-			init_child(&(children[idx]));
-			children[idx].test = 1;
-			dprint("%s, phase 2: pid = %d (idx=%d) %d/%d/%d",
-			       target_getname(), children[idx].pid, idx,
-			       pfd[idx*3].fd, pfd[idx*3+1].fd,pfd[idx*3+2].fd);
+		    if (spawn_mode == SPAWN_PAUSE)
+		      {
+			/* Don't spawn any more children */
 			idx += 1;
 			continue;
 		      }
-		    else
+
+		    target_start();
+
+		    pfd[idx*3].fd = -1;
+		    target_getcmd(cargv, "echo SHMUX.");
+		    children[idx].pid = exec(NULL, &(pfd[idx*3+1].fd),
+					     &(pfd[idx*3+2].fd),
+					     target_getname(),
+					     cargv, abs(test));
+
+		    if (children[idx].pid == -1)
 		      {
-			target_result(1);
-			dprint("%s skipped test", target_getname());
+			/* Error message was given by exec() */
+			eprint("Fatal error for %s", target_getname());
+			target_result(-1);
 			continue;
 		      }
+
+		    pfd[idx*3+1].events = POLLIN;
+		    pfd[idx*3+2].events = POLLIN;
+
+		    init_child(&(children[idx]));
+		    children[idx].test = 1;
+		    dprint("%s, phase 2: pid = %d (idx=%d) %d/%d/%d",
+			   target_getname(), children[idx].pid, idx,
+			   pfd[idx*3].fd, pfd[idx*3+1].fd,pfd[idx*3+2].fd);
+		    idx += 1;
+		    continue;
 		  }
 
 		/* Nothing left to do! */
@@ -907,9 +1042,12 @@ u_int ctimeout, utest, test;
 	    */
 	    if (pfd[idx*3].fd != -1)
 	      {
-		/* Time to close stdin */
-		/* XXX */
-		close(pfd[idx*3].fd); pfd[idx*3].fd = -1;
+		/* Time to close stdin (which we don't use for now anyways) */
+		if (idx != 0)
+		  {
+		    close(pfd[idx*3].fd);
+		    pfd[idx*3].fd = -1;
+		  }
 	      }
 
 	    /*
@@ -1098,10 +1236,8 @@ u_int ctimeout, utest, test;
 	    break;
       }
 
-    sigemptyset(&sa.sa_mask);
-    sa.sa_flags = 0;
-    sa.sa_handler = SIG_DFL;
-    sigaction(SIGINT, &sa, NULL);
+    /* Restore saved SIGINT handler */
+    sigaction(SIGINT, &saved_sa, NULL);
 
     free(children);
     free(pfd);
