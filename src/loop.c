@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2002 Christophe Kalt
+** Copyright (C) 2002, 2003 Christophe Kalt
 **
 ** This file is part of shmux,
 ** see the LICENSE file for details on your rights.
@@ -21,7 +21,7 @@
 #include "target.h"
 #include "term.h"
 
-static char const rcsid[] = "@(#)$Id: loop.c,v 1.16 2002-10-13 20:42:35 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: loop.c,v 1.17 2003-01-01 00:50:34 kalt Exp $";
 
 struct child
 {
@@ -100,6 +100,7 @@ struct child *kid;
 	    continue;
 	  }
 
+	/* Got an end of line, trim \r\n  */
 	if (*(nl-1) == '\r') /* XXX */
 	    *(nl-1) = '\0';
 	else
@@ -134,7 +135,7 @@ struct child *kid;
 	      
 	      if (isfping == 0)
 		{
-		  /* Test or real command */
+		  /* Either a test or real command */
 		  if (kid->test == 1)
 		    {
 		      /*
@@ -156,10 +157,9 @@ struct child *kid;
 		    }
 		  else
 		    {
-		      if (kid->test == 1)
-			  kid->passed = -1;
 		      if (kid->ofile != -1)
 			{
+			  /* Outputing to a file, so need to add \r\n back */
 			  assert( left == NULL || *left == NULL );
 			  *nl = '\n';
 			  if (*(nl-1) == '\0') /* XXX */
@@ -172,6 +172,7 @@ struct child *kid;
 			  return;
 			}
 		      else
+			  /* Outputing to screen */
 			  tprint(name, ((std == 1) ? MSG_STDOUT : MSG_STDERR),
 				 "%s%s", (*left == NULL) ? "" : *left, start);
 		    }
@@ -200,6 +201,7 @@ struct child *kid;
 	  {
 	    if (kid->ofile != -1)
 	      {
+		/* Outputing to a file, so just stuff it there directly */
 		if (write((std == 1) ? kid->ofile : kid->efile,
 			  start, strlen(start)) == -1)
 		    /* Should we do a little more here? */
@@ -208,6 +210,7 @@ struct child *kid;
 	      }
 	    else
 	      {
+		/* Outputing to the screen, so save this for later */
 		char **left;
 
 		if (std == 1)
@@ -534,6 +537,7 @@ u_int ctimeout, test;
 	    exit(1);
 	  }
 
+	/* Abort? */
 	switch (got_sigint)
 	  {
 	  case 0:
@@ -552,6 +556,7 @@ u_int ctimeout, test;
 	  }
 	      
 
+	/* read and process children output if any */
 	if (pollrc > 0)
 	  {
 	    dprint("poll(%d) = %d", (max+2)*3, pollrc);
@@ -625,19 +630,20 @@ u_int ctimeout, test;
 		else
 		  {
 		    /* Stdin ready to be written to */
-		    abort(); /* we don't use this yet, so did we get here? */
+		    abort(); /* we don't use this yet, so how did we get here? */
 		  }
 
 		idx += 1;
 	      }
 	  }
 
-	/* Check for dead children */
+	/* Check on the status of children & spawn more as needed */
 	idx = 0; done = 1;
 	while (idx < max+1)
 	  {
 	    int status, wprc;
 
+	    /* Spawn as many processes as allowed */
 	    if (children[idx].pid <= 0)
 	      {
 		/* Available slot to spawn a new child */
@@ -649,6 +655,7 @@ u_int ctimeout, test;
 		    continue;
 		  }
 
+		/* Spawn phase 3 ready first */
 		if (idx > 0 && target_next(3) == 0)
 		  {
 		    done = 0;
@@ -696,6 +703,7 @@ u_int ctimeout, test;
 		    continue;
 		  }
 
+		/* Spawn phase 2 ready last */
 		if (idx > 0 && children[idx].pid <= 0 && target_next(2) == 0)
 		  {
 		    done = 0;
@@ -739,6 +747,7 @@ u_int ctimeout, test;
 		continue;
 	      }
 
+	    /* Existing child */
 	    done = 0;
 	    if (idx == 0)
 		what = "fping";
@@ -750,14 +759,17 @@ u_int ctimeout, test;
 	    
 	    if (children[idx].status >= 0)
 	      {
+		/* restore saved status */
 		wprc = children[idx].pid;
 		status = children[idx].status;
 	      }
 	    else
+		/* get current status */
 		wprc = waitpid(children[idx].pid, &status, WNOHANG|WUNTRACED);
 
 	    if (wprc <= 0)
 	      {
+		/* child is alive and well */
 		if (wprc == -1)
 		    eprint("waitpid(%d[%s]): %s",
 			   children[idx].pid, what, strerror(errno));
@@ -767,6 +779,11 @@ u_int ctimeout, test;
 
 	    if (WIFSTOPPED(status) != 0)
 	      {
+		/*
+		** Child is stopped/suspended.  This probably isn't normal
+		** or expected, unless it was self inflicted after fork(),
+		** see exec.c
+		*/
 		/*
 		** YYY These could/should be ignored once we've received
 		** some output from the child.
@@ -799,12 +816,21 @@ u_int ctimeout, test;
 		continue;
 	      }
 
+	    /*
+	    ** This point is reached when the child's stdout and stderr
+	    ** have both been closed (following a read()).
+	    */
 	    if (pfd[idx*3].fd != -1)
 	      {
+		/* Time to close stdin */
 		/* XXX */
 		close(pfd[idx*3].fd); pfd[idx*3].fd = -1;
 	      }
 
+	    /*
+	    ** If outputing to a file, clean things up, and optionally
+	    ** show the output on screen.
+	    */
 	    if (children[idx].ofile != -1)
 	      {
 		if (mixed == 0)
@@ -830,6 +856,7 @@ u_int ctimeout, test;
 		free(children[idx].efname);
 	      }
 
+	    /* Check and optionally report the exit status */
 	    if (WIFEXITED(status) != 0)
 	      {
 		if (children[idx].test == 1)
@@ -860,6 +887,7 @@ u_int ctimeout, test;
 			   (WCOREDUMP(status) != 0) ? " (core dumped)" : "");
 	      }
 
+	    /* mark the slot as free */
 	    children[idx].pid = 0;
 
 	    if (idx == 0)
