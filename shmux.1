@@ -1,4 +1,4 @@
-.TH SHMUX 8 "$Date: 2004-09-07 01:54:38 $"
+.TH SHMUX 8 "$Date: 2004-09-14 00:56:59 $"
 .DA November 7, 2003
 .SH NAME
 shmux - Shell Multiplexor
@@ -88,10 +88,11 @@ the defined timeout by sending a TERM signal 5 seconds after the initial
 timeout has expired, and a KILL signal 5 seconds later if the child process
 is still running.  When using the \fIsh\fP method, nothing guarantees that
 all the children will be terminated as \fBshmux\fP is able to send signal
-only to the shell process.  Finally, only commands which terminate
-because of an ALRM signal or because of a TERM or KILL signal after such
-signal has been issued by \fBshmux\fP will be reported as having timed out
-in the final summary report produced by \fBshmux\fP upon exiting.
+only to the shell process (unless you use exec(1)).  Finally, only commands
+which terminate because of an ALRM signal or because of a TERM or KILL
+signal after such signal has been issued by \fBshmux\fP will be reported as
+having timed out in the final summary report produced by \fBshmux\fP upon
+exiting.
 .IP "\fB-M \fImax\fP"
 Defines the maximum number of spawned processes.  While there is no real
 (or hard coded) limitation for this, the system resources are typically
