@@ -23,7 +23,7 @@ extern int	tputs(char *, int, int (*)(int));
 
 #include "term.h"
 
-static char const rcsid[] = "@(#)$Id: term.c,v 1.4 2002-07-07 20:54:35 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: term.c,v 1.5 2002-07-09 21:56:44 kalt Exp $";
 
 extern char *myname;
 
@@ -44,16 +44,16 @@ static void gprint(char *, char, char *, va_list);
 **	Initialize terminal handling system.
 */
 void
-term_init(maxlen, verbose, progress, internal, debug)
-int maxlen, verbose, progress, internal, debug;
+term_init(maxlen, prefix, progress, internal, debug)
+int maxlen, prefix, progress, internal, debug;
 {
     static char termcap[2048], area[1024];
     char *term, *ptr;
 
     assert( maxlen != 0 );
 
-    padding = verbose*maxlen;
-    targets = verbose;
+    padding = prefix*maxlen;
+    targets = prefix;
     internalmsgs = internal;
     debugmsgs = debug;
 
