@@ -24,7 +24,7 @@
 #include "term.h"
 #include "units.h"
 
-static char const rcsid[] = "@(#)$Id: shmux.c,v 1.11 2002-08-09 01:45:29 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: shmux.c,v 1.12 2002-08-09 14:50:35 kalt Exp $";
 
 extern char *optarg;
 extern int optind, opterr;
@@ -181,7 +181,7 @@ main(int argc, char **argv)
 	exit(1);
       }
 
-    if (opt_odir == NULL)
+    if (opt_mixed == 0 && opt_odir == NULL)
       {
 	char *tmp;
 
