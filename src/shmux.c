@@ -29,7 +29,7 @@
 #include "term.h"
 #include "units.h"
 
-static char const rcsid[] = "@(#)$Id: shmux.c,v 1.24 2003-05-03 16:00:05 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: shmux.c,v 1.25 2003-05-04 01:04:51 kalt Exp $";
 
 extern char *optarg;
 extern int optind, opterr;
@@ -314,7 +314,7 @@ main(int argc, char **argv)
 	 opt_outmode, opt_odir, opt_analyzer, opt_ping, opt_test);
 
     /* odir was temporary, remove it now */
-    if ((opt_outmode & OUT_COPY) == 0 && rmdir(opt_odir) == -1)
+    if (opt_odir != NULL && (opt_outmode & OUT_COPY) == 0
 	&& rmdir(opt_odir) == -1)
       {
 	fprintf(stderr, "%s: rmdir(%s): %s\n",
