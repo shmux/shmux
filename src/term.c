@@ -10,16 +10,17 @@
 
 #if defined(HAVE_TERMCAP_H)
 # include <termcap.h>
-#elif defined(HAVE_TERM_H) && defined(sun)
-# include <term.h>
 #elif defined(HAVE_CURSES_H)
 # include <curses.h>
+# if defined(HAVE_TERM_H) && defined(sun)
+#  include <term.h>
+# endif
 #endif
 #include <stdarg.h>
 
 #include "term.h"
 
-static char const rcsid[] = "@(#)$Id: term.c,v 1.11 2003-03-26 01:36:16 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: term.c,v 1.12 2003-03-26 02:02:48 kalt Exp $";
 
 extern char *myname;
 
