@@ -4,7 +4,7 @@
 # This file is part of shmux,
 # see the LICENSE file for details on your rights.
 #
-# $Id: Makefile.in,v 1.8 2003-04-30 01:32:24 kalt Exp $
+# $Id: Makefile.in,v 1.9 2003-04-30 23:46:03 kalt Exp $
 #
 
 SHELL	=	/bin/sh
@@ -34,10 +34,10 @@ clean	:
 distclean: clean
 	/bin/rm -f Makefile config.h shmux
 
-signals.h: signals.awk
+signals.h: signals.awk Makefile
 	@rm -f signals.h
 	cat /usr/include/signal.h /usr/include/sys/signal.h \
-		/usr/include/sys/iso/signal_iso.h | \
+		/usr/include/sys/iso/signal_iso.h \
 		/usr/include/bits/signum.h 2> /dev/null | \
 		awk -f signals.awk > signals.h
 	@chmod 644 signals.h
