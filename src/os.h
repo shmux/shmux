@@ -4,7 +4,7 @@
 ** This file is part of shmux,
 ** see the LICENSE file for details on your rights.
 **
-** $Id: os.h,v 1.1 2002-07-04 21:44:50 kalt Exp $
+** $Id: os.h,v 1.2 2002-10-13 21:05:13 kalt Exp $
 */
 
 #if !defined(_OS_H_)
@@ -29,6 +29,7 @@
 
 #include <sys/param.h>
 #include <sys/types.h>
+#include <limits.h>
 
 #include <string.h>
 
