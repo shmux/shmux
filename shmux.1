@@ -1,5 +1,5 @@
-.TH SHMUX 8 "$Date: 2003-05-05 00:58:12 $"
-.DA May 4, 2003
+.TH SHMUX 8 "$Date: 2003-05-13 01:26:17 $"
+.DA May 8, 2003
 .SH NAME
 shmux - Shell Multiplexor
 .SH SYNOPSIS
@@ -109,22 +109,38 @@ always shown, but by default, other exit codes are only shown if the
 .IP "\fB-a \fIanalyzer\fP"
 Defines how output should be analyzed by \fBshmux\fP after the
 \fIcommand\fP completes on a target.  By default, nothing is done.  Valid
-options are: \fIregex\fP, \fIpcre\fP and \fIrun\fP.  This option requires
-\fB-o\fP to be used as well.
+options are: \fIlnregex\fP, \fIlnpcre\fP, \fIregex\fP, \fIpcre\fP and
+\fIrun\fP.  This option requires \fB-o\fP to be used as well.
 .IP "\fB-A \fIcondition\fP"
 When the \fB-a\fP option is used, it is also necessary to configure the
 chosen analyzer.
 
-For regular expressions, the \fB-A\fP option should be specified twice:
-once for the standard output and once for the standard error output.  This
-option allows defining the expression to be applied to the output.  If the
-\fIcondition\fP starts with the character '=' then a match indicates that
-the \fIcommand\fP completed without error.  If the \fIcondition\fP starts
-with the character '!' then a failure to match indicates that the
-\fIcommand\fP completed without error.  The second character of the
-condition should either be '=' if the regular expression follows or '<' if
-the regular expression should be read from the file which name follows.
-(The '=' characters may be omitted.)
+For line based regular expressions (\fIlnregex\fP and \fIlnpcre\fP), the
+\fB-A\fP option should be specified twice:  once for the standard output
+and once for the standard error output.  In both cases, the argument should
+be the name of a file containing a list of regular expressions, one per
+line.  Each regular expression must be prefixed by the character '=' or
+'!'.  The output of the \fIcommand\fP is analyzed line per line by checking
+whether it matches any of the specified regular expressions.  If the first
+matching regular expression is prefixed by '=', then the \fIcommand\fP is
+considered to be successful (so far).  Any other result (e.g. no match, or
+a match prefixed by '!') indicates an error condition.  The default is to
+consider standard output normal, and standard error output indicative of an
+error.
+
+For other regular expressions (\fIregex\fP and \fIpcre\fP), the \fB-A\fP
+option should be specified twice: once for the standard output and once for
+the standard error output.  This option allows defining the expression to
+be applied to the output.  If the \fIcondition\fP starts with the character
+'=' then a match indicates that the \fIcommand\fP completed without error.
+If the \fIcondition\fP starts with the character '!' then a failure to
+match indicates that the \fIcommand\fP completed without error.  The second
+character of the condition should either be '=' if the regular expression
+follows or '<' if the regular expression should be read from the file which
+name follows.  (The '=' characters may be omitted.)  A \fIcondition\fP must
+be specified for the standard output, but is optional for standard error
+output.  The default for the latter is to consider any output as indicative
+of an error.
 
 For the \fIrun\fP analyzer, the \fB-A\fP must be specified at least once
 with the name of a program to run, and optionally a second time to specify
@@ -169,10 +185,12 @@ line by the corresponding target name.
 Used once, this will suppress the output from successful targets (as
 defined by the use of options options \fB-e\fP, \fB-a\fP and \fB-A\fP.  If
 using the \fIrun\fP analyzer, the output of all targets is suppressed.
-Note that using this option effectively implies \fB-m\fP as failure is
-determined upon completion of the \fIcommand\fP.  When specified twice,
-this option allows to completely suppress output from the \fIcommand\fP run
-on targets.  Using this option (once or twice) requires using \fB-o\fP.
+Note that using this option effectively implies \fB-m\fP in most cases as
+failure is ultimately determined upon completion of the \fIcommand\fP.
+(Only the \fIlnregex\fP and \fIlnpcre\fP analyzers are able to determine
+errors while the \fIcommand\fP is running.)  When specified twice, this
+option allows to completely suppress output from the \fIcommand\fP run on
+targets.  Using this option (once or twice) requires using \fB-o\fP.
 .IP "\fB-Q\fP"
 Suppress the final summary of results.
 .IP "\fB-s\fP"
