@@ -1,9 +1,9 @@
 #
-# $Id: configure.ac,v 1.1 2002-07-04 21:44:44 kalt Exp $
+# $Id: configure.ac,v 1.2 2002-07-06 18:07:56 kalt Exp $
 #
 AC_PREREQ(2.53)
 AC_INIT([Shell Multiplexor], [], [shmux-bugs@taranis.org], [shmux])
-AC_REVISION([$Id: configure.ac,v 1.1 2002-07-04 21:44:44 kalt Exp $])
+AC_REVISION([$Id: configure.ac,v 1.2 2002-07-06 18:07:56 kalt Exp $])
 AC_CONFIG_SRCDIR([src/os.h])
 AC_CONFIG_HEADER([src/config.h])
 
@@ -15,7 +15,7 @@ AC_PROG_INSTALL
 AC_SEARCH_LIBS([tgetent], [termcap curses ncurses])
 
 # Checks for header files.
-AC_CHECK_HEADERS([paths.h termcap.h])
+AC_CHECK_HEADERS([paths.h termcap.h sys/loadavg.h])
 
 # Checks for typedefs, structures, and compiler characteristics.
 #AC_C_CONST
@@ -27,6 +27,7 @@ AC_DECL_SYS_SIGLIST
 #AC_FUNC_MALLOC
 #AC_FUNC_VPRINTF
 #AC_CHECK_FUNCS([alarm memset strcasecmp strchr strdup strerror])
+AC_FUNC_GETLOADAVG
 
 # Check whether this is Solaris, term.h is a mess there..
 AC_MSG_CHECKING([whether this system is running Solaris])
