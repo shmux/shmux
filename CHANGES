@@ -1,8 +1,21 @@
-$Id: CHANGES,v 1.4 2003-01-05 20:28:23 kalt Exp $
+$Id: CHANGES,v 1.5 2003-03-23 19:08:05 kalt Exp $
+
+Changes since 0.5a [2003/01/05]:
+
+- added mcmd.sh sample script.
+- fixed potential crash in target_results() when interrupted.
+- status progress is now truncated to the window width.
+- aggressively try to find a tty to display progress status.
+- terminal initialization logic is now more flexible.
+- added -a and -A options.
+- fixed (very rare) file descriptor leak.
+- minor fix in algorithm spawning new children should speed things up a bit.
+- "exit" files were created for -m rather than -o.
+- added a workaround for Linux's pathetic implementation of strtok().
 
 Changes since 0.4a [2002/08/21]:
 
-- Fixed the sometimes erroneous "Pending" count in status display.
+- fixed the sometimes erroneous "Pending" count in status display.
 - -o options now generates more files per target.
 - final summary report is now more detailed (in part thanks to -e).
 - added -e and -E options.

@@ -1,7 +1,6 @@
 -- shmux status
 
-Here is the fifth public release of shmux.  It is expected to be the last
-alpha release before version 1.0.
+Getting closer to a beta release!
 
 -- shmux dependencies
 
@@ -11,6 +10,11 @@ certain optional features of shmux.  See the man page for details.
 
 + fping: http://www.fping.com/
 + ssh: http://www.fressh.org/, http://www.openssh.org/, ...
+
+Also, if you want Perl Compatible Regular Expression support, you'll need
+the PCRE library:
+
++ pcre: http://www.pcre.org/
 
 Although this package uses autoconf, there is no real attempt to make sure
 it works on older UNIX systems as it relies on a number of somewhat modern
@@ -42,4 +46,4 @@ Consider documentation errors as bugs, and report them as such.  If you
 develop anything pertaining to `shmux' or have suggestions, share your
 findings by writing to `shmux@taranis.org'.
 
--- $Id: INSTALL,v 1.6 2003-01-05 20:28:24 kalt Exp $
+-- $Id: INSTALL,v 1.7 2003-03-23 19:08:05 kalt Exp $
