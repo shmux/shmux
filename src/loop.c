@@ -7,6 +7,7 @@
 
 #include "os.h"
 
+#include <ctype.h>
 #include <fcntl.h>
 #include <dirent.h>
 #include <signal.h>
@@ -19,11 +20,12 @@
 #include "byteset.h"
 #include "exec.h"
 #include "loop.h"
+#include "siglist.h"
 #include "status.h"
 #include "target.h"
 #include "term.h"
 
-static char const rcsid[] = "@(#)$Id: loop.c,v 1.32 2003-04-19 00:46:54 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: loop.c,v 1.33 2003-04-26 01:47:26 kalt Exp $";
 
 extern char *myname;
 
@@ -54,7 +56,7 @@ static void setup_fdlimit(int, int);
 static void init_child(struct child *);
 static void parse_child(char *, int, int, struct child *, int, char *);
 static void parse_fping(char *);
-static void parse_user(int);
+static void parse_user(int, struct child *, int);
 static int  output_file(char **, char *, char *, char *);
 static void output_show(char *, int, char *, int);
 static void set_cmdstatus(int);
@@ -392,9 +394,12 @@ char *line;
 **	Handle user input
 */
 static void
-parse_user(c)
-int c;
+parse_user(c, children, max)
+int c, max;
+struct child *children;
 {
+    char *cmd;
+
     switch (c)
       {
       case 'h':
@@ -413,6 +418,7 @@ int c;
 	  uprint("      e - Show targets with errors");
 	  uprint("      s - Show successful targets");
 	  uprint("      a - Show status of all targets");
+	  uprint("      k - Kill a target");
 	  break;
       case 27: /* escape */
       case 'q':
@@ -479,6 +485,76 @@ int c;
 	  break;
       case 'a':
 	  target_status(STATUS_ALL);
+	  break;
+      case 'k':
+	  cmd = uprompt("kill");
+	  if (cmd != NULL && cmd[0] != '\0')
+	    {
+	      int sig, i;
+	      char *target;
+
+	      dprint("User said to kill \"%s\"", cmd);
+	      if (cmd[0] == '-')
+		{
+		  target = strchr(cmd, ' ');
+		  if (target == NULL || target[1] == '\0')
+		    {
+		      uprint("No target specified.");
+		      break;
+		    }
+		  *target = '\0';
+		  target += 1;
+		  if (isdigit((int) cmd[1]))
+		      sig = atoi(cmd+1);
+		  else
+		      sig = getsignumbyname(cmd+1);
+		  if (sig < 0)
+		    {
+		      uprint("Invalid signal name: %s", cmd);
+		      break;
+		    }
+		}
+	      else
+		{
+		  sig = SIGTERM;
+		  target = cmd;
+		}
+
+	      if (isdigit((int) target[0]))
+		{
+		  if (target_setbynum(atoi(target)) != 0)
+		    {
+		      uprint("Invalid target number: %d", atoi(target));
+		      break;
+		    }
+		}
+	      else
+		{
+		  if (target_setbyname(target) != 0)
+		    {
+		      uprint("Invalid target: %s", target);
+		      break;
+		    }
+		}
+
+	      /* Find the associated child, if any! */
+	      i = 0;
+	      while (i <= max
+		     && (children[i].pid <= 0
+			 || children[i].num != target_getnum()))
+		  i += 1;
+
+	      if (i > max)
+		  uprint("Target %s has no active process.", target_getname());
+	      else
+		{
+		  if (kill(children[i].pid, sig) != 0)
+		      uprint("kill(%s, %d): %s", target_getname(), sig,
+			     strerror(errno));
+		  else
+		      uprint("Sent signal %d to %s...", sig, target_getname());
+		}
+	    }
 	  break;
       default:
 	  uprint("Invalid Command");
@@ -760,7 +836,8 @@ u_int ctimeout, utest, test;
 		    what = "fping";
 		else
 		  {
-		    target_setbynum(children[idx/3].num);
+		    if (target_setbynum(children[idx/3].num) != 0)
+			abort();
 		    what = target_getname();
 		  }
 
@@ -788,7 +865,7 @@ u_int ctimeout, utest, test;
 		      {
 			buffer[sz] = '\0';
 			if (idx == 0)
-			    parse_user(buffer[0]);
+			    parse_user(buffer[0], children, max);
 			else
 			    parse_child(what, idx<=2, test<0, children+(idx/3),
 					idx%3, buffer);
@@ -1049,7 +1126,8 @@ u_int ctimeout, utest, test;
 		what = "fping";
 	    else
 	      {
-		target_setbynum(children[idx].num);
+		if (target_setbynum(children[idx].num) != 0)
+		    abort();
 		what = target_getname();
 	      }
 	    
@@ -1148,7 +1226,8 @@ u_int ctimeout, utest, test;
 	      }
 
 	    if (idx > 0)
-		target_setbynum(children[idx].num);
+		if (target_setbynum(children[idx].num) != 0)
+		    abort();
 
 	    /* Check and optionally report the exit status */
 	    if (WIFEXITED(status) != 0)
