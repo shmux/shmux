@@ -4,15 +4,11 @@
 ** This file is part of shmux,
 ** see the LICENSE file for details on your rights.
 **
-** $Id: os.h,v 1.2 2002-10-13 21:05:13 kalt Exp $
+** $Id: os.h,v 1.3 2002-10-13 21:06:33 kalt Exp $
 */
 
 #if !defined(_OS_H_)
 # define _OS_H_
-
-# if defined(__sun__)
-/*#  define __EXTENSIONS__ 1*/
-# endif
 
 /* get some help from autoconf, it's an evil world out there. */
 
