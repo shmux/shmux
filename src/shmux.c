@@ -17,7 +17,7 @@
 #include "term.h"
 #include "units.h"
 
-static char const rcsid[] = "@(#)$Id: shmux.c,v 1.9 2002-07-10 23:45:42 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: shmux.c,v 1.10 2002-07-27 18:59:19 kalt Exp $";
 
 extern char *optarg;
 extern int optind, opterr;
@@ -63,6 +63,7 @@ int detailed;
 int
 main(int argc, char **argv)
 {
+    int badopt;
     int opt_prefix, opt_status, opt_quiet, opt_internal, opt_debug;
     int opt_ctimeout, opt_maxworkers, opt_vtest;
     u_int opt_test;
@@ -81,7 +82,7 @@ main(int argc, char **argv)
 	opt_rcmd = DEFAULT_RCMD;
     opt_command = opt_odir = opt_ping = NULL;
 
-    opterr = 0;
+    badopt = 0;
     while (1)
       {
         int c;
@@ -148,14 +149,14 @@ main(int argc, char **argv)
 	      printf("%s version %s\n", myname, SHMUX_VERSION);
 	      exit(0);
 	  case '?':
-	      opterr += 1;
+	      badopt += 1;
 	      break;
 	  default:
 	      abort();
 	  }
       }
 
-    if (optind >= argc || opterr > 0 || opt_command == NULL)
+    if (optind >= argc || badopt > 0 || opt_command == NULL)
       {
         usage(0);
         exit(1);
