@@ -20,7 +20,7 @@
 #include "term.h"
 #include "units.h"
 
-static char const rcsid[] = "@(#)$Id: analyzer.c,v 1.14 2004-04-05 00:38:20 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: analyzer.c,v 1.15 2004-04-05 01:28:53 kalt Exp $";
 
 extern char *myname;
 
@@ -508,7 +508,7 @@ char *oname, *ename;
 	return -1;
       }
 
-    if (lseek(ofd, SEEK_END, 0) == -1)
+    if (lseek(ofd, 0, SEEK_END) == -1)
       {
 	eprint("lseek(%s, SEEK_END): %s", oname, strerror(errno));
 	return -1;
@@ -522,7 +522,7 @@ char *oname, *ename;
     if (output == NULL)
 	return -1;
 
-    if (lseek(efd, SEEK_END, 0) == -1)
+    if (lseek(efd, 0, SEEK_END) == -1)
       {
 	eprint("lseek(%s, SEEK_END): %s", ename, strerror(errno));
 	return -1;

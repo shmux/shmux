@@ -25,7 +25,7 @@
 #include "target.h"
 #include "term.h"
 
-static char const rcsid[] = "@(#)$Id: loop.c,v 1.43 2003-11-14 00:46:18 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: loop.c,v 1.44 2004-04-05 01:28:53 kalt Exp $";
 
 extern char *myname;
 
@@ -685,7 +685,7 @@ int fd, type;
 	return;
       }
 
-    if (lseek(fd2, SEEK_SET, 0) != 0)
+    if (lseek(fd2, 0, SEEK_SET) != 0)
       {
 	eprint("lseek(%s, SEEK_SET): %s", fname, strerror(errno));
 	return;
