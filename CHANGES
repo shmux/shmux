@@ -1,4 +1,12 @@
-$Id: CHANGES,v 1.6 2003-03-30 22:42:06 kalt Exp $
+$Id: CHANGES,v 1.7 2003-04-30 23:50:24 kalt Exp $
+
+Changes since 0.7a [2003/03/30]:
+
+- fixed parsing of ranges so that "x-" actually works.
+- added -S option.
+- added minimal interactivity.
+- cleaned up window width tracking.
+- fixed unlikely (so far) bug in target_results().
 
 Changes since 0.6a [2003/03/23]:
 
