@@ -19,7 +19,7 @@
 #include "target.h"
 #include "term.h"
 
-static char const rcsid[] = "@(#)$Id: loop.c,v 1.2 2002-07-06 20:11:17 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: loop.c,v 1.3 2002-07-06 20:53:16 kalt Exp $";
 
 struct child
 {
@@ -32,7 +32,7 @@ struct child
 };
 
 static void init_child(struct child *);
-static void parse_child(char *, int, struct child *, int, char *);
+static void parse_child(char *, int, int, struct child *, int, char *);
 static void parse_fping(char *);
 
 /*
@@ -57,9 +57,9 @@ struct child *kid;
 **	Parse output from children
 */
 static void
-parse_child(name, isfping, kid, std, buffer)
+parse_child(name, isfping, verbose_tests, kid, std, buffer)
 char *name, *buffer;
-int isfping, std;
+int isfping, verbose_tests, std;
 struct child *kid;
 {
     char *start, *nl;
@@ -125,8 +125,12 @@ struct child *kid;
 		      else
 			  kid->passed = -1;
 
-		      dprint("Test output for %s: %s%s",
-			     name, (*left == NULL) ? "" : *left, start);
+		      if (verbose_tests == 1 && kid->passed == -1)
+			  eprint("Test output for %s: %s%s",
+				 name, (*left == NULL) ? "" : *left, start);
+		      else
+			  dprint("Test output for %s: %s%s",
+				 name, (*left == NULL) ? "" : *left, start);
 		    }
 		  else
 		    {
@@ -392,7 +396,7 @@ int max, test;
 		    if (sz > 0)
 		      {
 			buffer[sz] = '\0';
-			parse_child(what, idx<=2, children+(idx/3),
+			parse_child(what, idx<=2, test<0, children+(idx/3),
 				    idx%3, buffer);
 		      }
 		    else
@@ -451,7 +455,7 @@ int max, test;
 			children[idx].pid = exec(NULL, &(pfd[idx*3+1].fd),
 						 &(pfd[idx*3+2].fd),
 						 target_getname(),
-						 cargv, test);
+						 cargv, abs(test));
 
 			if (children[idx].pid == -1)
 			  {

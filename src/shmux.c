@@ -15,7 +15,7 @@
 #include "target.h"
 #include "term.h"
 
-static char const rcsid[] = "@(#)$Id: shmux.c,v 1.2 2002-07-05 16:23:12 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: shmux.c,v 1.3 2002-07-06 20:53:16 kalt Exp $";
 
 extern char *optarg;
 extern int optind, opterr;
@@ -58,7 +58,7 @@ int
 main(int argc, char **argv)
 {
     int opt_verbose, opt_status, opt_quiet, opt_internal, opt_debug;
-    int opt_maxworkers, opt_test;
+    int opt_maxworkers, opt_test, opt_vtest;
     char *opt_method, *opt_command, *opt_ping;
     int longest, ntargets;
     time_t start;
@@ -68,7 +68,7 @@ main(int argc, char **argv)
     opt_status = 1;
     opt_verbose = opt_quiet = opt_internal = opt_debug = 0;
     opt_maxworkers = DEFAULT_MAXWORKERS;
-    opt_test = 0;
+    opt_test = opt_vtest = 0;
     opt_method = getenv("SHMUX_SH");
     if (opt_method == NULL)
 	opt_method = DEFAULT_METHOD;
@@ -123,9 +123,11 @@ main(int argc, char **argv)
 	  case 't':
 	      if (opt_test == 0)
 		  opt_test = DEFAULT_TESTTIMEOUT;
+	      opt_vtest += 1;
 	      break;
 	  case 'T':
 	      opt_test = atoi(optarg);
+	      opt_vtest += 1;
 	      break;
 	  case 'v':
 	      opt_verbose = 1;
@@ -147,6 +149,9 @@ main(int argc, char **argv)
 	fprintf(stderr, "%s: Invalid -M option!\n", myname);
 	exit(1);
       }
+
+    if (opt_vtest > 1)
+	opt_test *= -1;
 
     if (optind >= argc || opterr > 0 || opt_command == NULL)
       {
