@@ -23,7 +23,7 @@ extern int	tputs(char *, int, int (*)(int));
 
 #include "term.h"
 
-static char const rcsid[] = "@(#)$Id: term.c,v 1.1 2002-07-04 21:44:51 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: term.c,v 1.2 2002-07-06 18:45:17 kalt Exp $";
 
 extern char *myname;
 
@@ -36,6 +36,7 @@ static char *MD,			/* bold */
 	    *NL;			/* newline character if not \n */
 static char status[512];
 
+static int putchar2(int);
 static void gprint(char *, char, char *, va_list);
 
 /*
