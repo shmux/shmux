@@ -25,7 +25,7 @@
 #include "target.h"
 #include "term.h"
 
-static char const rcsid[] = "@(#)$Id: loop.c,v 1.34 2003-05-03 01:13:53 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: loop.c,v 1.35 2003-05-03 15:52:57 kalt Exp $";
 
 extern char *myname;
 
@@ -251,7 +251,8 @@ struct child *kid;
 		    }
 		  else
 		    {
-		      if ((kid->output & OUT_MIXED) != 0)
+		      if ((kid->output & OUT_MIXED) != 0
+			  && (kid->output & OUT_IFERR) == 0)
 			  /* Outputing to screen */
 			  tprint(name, ((std == 1) ? MSG_STDOUT : MSG_STDERR),
 				 "%s%s", (*left == NULL) ? "" : *left, start);
@@ -320,7 +321,8 @@ struct child *kid;
 			    eprint("Data lost for %s, write() failed: %s",
 				   name, strerror(errno));
 		      }
-		    if ((kid->output & OUT_MIXED) != 0)
+		    if ((kid->output & OUT_MIXED) != 0
+			&& (kid->output & OUT_IFERR) == 0)
 			/* Outputing to screen */
 			tprint(name,
 			       ((std == 1) ? MSG_STDOUTTRUNC: MSG_STDERRTRUNC),
@@ -1296,8 +1298,7 @@ u_int ctimeout, utest, test;
 
 		    if (byteset_test(BSET_ERROR, WEXITSTATUS(status)) == 0)
 		      {
-			if (utest != ANALYZE_NONE
-			    && (children[idx].output & OUT_IFERR) != 0)
+			if ((children[idx].output & OUT_IFERR) != 0)
 			  {
 			    output_show(what, children[idx].ofile,
 					children[idx].ofname, 1);
