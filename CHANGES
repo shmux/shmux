@@ -1,4 +1,9 @@
-$Id: CHANGES,v 1.14 2004-08-07 01:19:00 kalt Exp $
+$Id: CHANGES,v 1.15 2004-09-21 00:40:59 kalt Exp $
+
+Changes since 1.0b4 [2004/08/07]:
+
+- Use SHMUX_SPAWNMODE environmental variable, as per the manual page.
+- New SHMUX_MAX environmental variable (suggested by Jon Amundsen).
 
 Changes since 1.0b3 [2004/07/06]:
 
