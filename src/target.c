@@ -12,7 +12,7 @@
 
 #include "status.h"
 
-static char const rcsid[] = "@(#)$Id: target.c,v 1.1 2002-07-04 21:44:51 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: target.c,v 1.2 2002-07-05 16:22:38 kalt Exp $";
 
 extern char *myname;
 
@@ -110,7 +110,7 @@ char *name;
     else
       {
 	targets[tmax].name = strdup(name);
-	targets[tmax].type = 4;
+	targets[tmax].type = type;
       }
     targets[tmax].status = 0;
     targets[tmax].phase = 0;
