@@ -25,7 +25,7 @@
 #include "target.h"
 #include "term.h"
 
-static char const rcsid[] = "@(#)$Id: loop.c,v 1.36 2003-05-03 15:55:05 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: loop.c,v 1.37 2003-05-04 01:25:23 kalt Exp $";
 
 extern char *myname;
 
@@ -682,8 +682,8 @@ int result;
 void
 loop(cmd, ctimeout, max, spawn, outmode, odir, utest, ping, test)
 char *cmd, *spawn, *ping, *odir;
-int max, outmode;
-u_int ctimeout, utest, test;
+int max, outmode, test;
+u_int ctimeout, utest;
 {
     struct child *children;
     struct pollfd *pfd;
@@ -1085,7 +1085,7 @@ u_int ctimeout, utest, test;
 		/* Spawn phase 2 ready last */
 		if (idx > 0 && children[idx].pid <= 0 && target_next(2) == 0)
 		  {
-		    if (test != 0)
+		    if (test == 0)
 		      {
 			dprint("%s skipped test", target_getname());
 			target_start();
