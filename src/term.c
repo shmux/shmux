@@ -23,7 +23,7 @@
 
 #include "term.h"
 
-static char const rcsid[] = "@(#)$Id: term.c,v 1.16 2003-04-18 20:45:51 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: term.c,v 1.17 2003-04-26 01:32:17 kalt Exp $";
 
 extern char *myname;
 
@@ -32,6 +32,7 @@ static struct termios origt, shmuxt;
 static int otty, etty, CO, got_sigwin, ttyin;
 static char *MD,			/* bold */
 	    *ME,			/* turn off bold (and more) */
+	    *LE,			/* move cursor left one position */
 	    *CE,			/* clear to end of line */
 	    *CR,			/* carriage return */
 	    *NL;			/* newline character if not \n */
@@ -103,6 +104,7 @@ int maxlen, prefix, progress, internal, debug;
 
     /* Output initializations */
 
+    LE = NULL;
     CE = NULL;
     CR = "\r";
     NL = "\n";
@@ -172,6 +174,7 @@ int maxlen, prefix, progress, internal, debug;
     NL = tgetstr("nl", &ptr);
     if (NL == NULL)
 	NL = "\n"; /* As per specification. */
+    LE = tgetstr("le", &ptr);
     CE = tgetstr("ce", &ptr);
     if (progress == 0)
 	CE = NULL;
@@ -386,12 +389,105 @@ uprint(char *format, ...)
     fprintf(ttyout, ">> ");
     va_start(va, format);
     vfprintf(ttyout, format, va);
-    tputs(NL, 0, putchar3);
     va_end(va);
+    tputs(NL, 0, putchar3);
     fflush(ttyout);
 
     if (CE != NULL)
 	sprint(NULL);
+}
+
+/*
+** uprompt:
+**	prompt the user (e.g. /dev/tty)
+*/
+char *
+uprompt(char *format, ...)
+{
+    va_list va;
+    static char input[1024];
+    int pos;
+
+    if (CE != NULL)
+	tputs(CE, 0, putchar3);
+
+    /* Display the prompt. */
+    fprintf(ttyout, ">> ");
+    va_start(va, format);
+    vfprintf(ttyout, format, va);
+    va_end(va);
+    fprintf(ttyout, " ");
+    fflush(ttyout);
+
+    /* Read/process user input */
+    pos = -1;
+    while (1)
+      {
+	switch (read(ttyin, input+pos+1, 1))
+	  {
+	  case -1:
+	      eprint("Unexpected read(/dev/tty) error: %s", strerror(errno));
+	      pos = -2;
+	      break;
+	  case 0:
+	      eprint("Unexpected empty read(/dev/tty) result");
+	      pos = -2;
+	      break;
+	  default:
+	      pos += 1;
+	      break;
+	  }
+	if (pos < 0)
+	    break;
+
+	if (input[pos] == origt.c_cc[VERASE])
+	  {
+	    pos -= 1;
+	    if (pos >= 0)
+	      {
+		pos -= 1;
+		tputs(LE, 0, putchar3);
+		tputs(CE, 0, putchar3);
+	      }
+	  }
+	else if (input[pos] == origt.c_cc[VKILL])
+	  {
+	    pos -= 1;
+	    while (pos >= 0)
+	      {
+		pos -= 1;
+		tputs(LE, 0, putchar3);
+	      }
+	    tputs(CE, 0, putchar3);
+	  }
+	else if (input[pos] == '\n')
+	  {
+	    input[pos] = '\0';
+	    break;
+	  }
+	else
+	  {
+	    if (pos < 1023)
+	      {
+		fprintf(ttyout, "%c", input[pos]);
+		tputs(CE, 0, putchar3); /* Useful after a multiline VKILL */
+	      }
+	    else
+		pos -= 1;
+	  }
+	fflush(ttyout);
+      }
+
+    tputs(NL, 0, putchar3);
+    fflush(ttyout);
+
+    if (CE != NULL)
+	sprint(NULL);
+
+    if (pos == -2)
+	return NULL;
+    input[pos+1] = '\0';
+    return input;
 }
 
 /*
@@ -501,6 +597,6 @@ nprint(char *format, ...)
 
     va_start(va, format);
     vprintf(format, va);
-    tputs(NL, 0, putchar);
     va_end(va);
+    tputs(NL, 0, putchar);
 }

@@ -4,7 +4,7 @@
 ** This file is part of shmux
 ** see the LICENSE file for details on your rights.
 **
-** $Id: term.h,v 1.5 2003-04-13 15:35:49 kalt Exp $
+** $Id: term.h,v 1.6 2003-04-26 01:32:17 kalt Exp $
 */
 
 #if !defined(_TERM_H_)
@@ -20,6 +20,11 @@ void sprint(char *, ...)
 # endif
 	;
 void uprint(char *, ...)
+# if ( __GNUC__ == 2 && __GNUC_MINOR__ >= 5 ) || __GNUC__ >= 3
+        __attribute__((__format__(__printf__, 1, 2)))
+# endif
+	;
+char *uprompt(char *, ...)
 # if ( __GNUC__ == 2 && __GNUC_MINOR__ >= 5 ) || __GNUC__ >= 3
         __attribute__((__format__(__printf__, 1, 2)))
 # endif
