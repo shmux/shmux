@@ -12,7 +12,7 @@
 
 #include "status.h"
 
-static char const rcsid[] = "@(#)$Id: target.c,v 1.2 2002-07-05 16:22:38 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: target.c,v 1.3 2002-07-06 20:22:38 kalt Exp $";
 
 extern char *myname;
 
@@ -196,20 +196,28 @@ char **args, *cmd;
     switch (targets[tcur].type)
       {
       case 0:
-	  args[0] = "/bin/sh";
+	  args[0] = getenv("SHMUX_SH");
+	  if (args[0] == NULL)
+	      args[0] = "/bin/sh";
 	  args[1] = "-c";
 	  args[2] = cmd;
 	  args[3] = NULL;
 	  break;
       case 1:
-	  args[0] = "rsh";
+	  args[0] = getenv("SHMUX_RSH");
+	  if (args[0] == NULL)
+	      args[0] = "rsh";
 	  args[1] = "-n";
 	  args[2] = targets[tcur].name;
 	  args[3] = cmd;
 	  args[4] = NULL;
 	  break;
       case 2:
-	  args[0] = "ssh";
+	  args[0] = getenv("SHMUX_SSH1");
+	  if (args[0] == NULL)
+	      args[0] = getenv("SHMUX_SSH");
+	  if (args[0] == NULL)
+	      args[0] = "ssh";
 	  args[1] = "-o";
 	  args[2] = "BatchMode=yes";
 	  args[3] = "-1";
@@ -219,7 +227,11 @@ char **args, *cmd;
 	  args[7] = NULL;
 	  break;
       case 3:
-	  args[0] = "ssh";
+	  args[0] = getenv("SHMUX_SSH2");
+	  if (args[0] == NULL)
+	      args[0] = getenv("SHMUX_SSH");
+	  if (args[0] == NULL)
+	      args[0] = "ssh";
 	  args[1] = "-o";
 	  args[2] = "BatchMode=yes";
 	  args[3] = "-2";
@@ -229,7 +241,9 @@ char **args, *cmd;
 	  args[7] = NULL;
 	  break;
       case 4:
-	  args[0] = "ssh";
+	  args[0] = getenv("SHMUX_SSH");
+	  if (args[0] == NULL)
+	      args[0] = "ssh";
 	  args[1] = "-o";
 	  args[2] = "BatchMode=yes";
 	  args[3] = "-n";
