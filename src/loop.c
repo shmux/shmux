@@ -22,7 +22,7 @@
 #include "target.h"
 #include "term.h"
 
-static char const rcsid[] = "@(#)$Id: loop.c,v 1.19 2003-01-05 17:40:33 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: loop.c,v 1.20 2003-01-05 17:41:25 kalt Exp $";
 
 extern char *myname;
 
@@ -897,6 +897,22 @@ u_int ctimeout, test;
 		    else
 			iprint("Child for %s exited (with status %d)",
 			       what, WEXITSTATUS(status));
+
+		    if (odir != NULL)
+		      {
+			int fd;
+			char *fn;
+
+			fd = output_file(&fn, odir, what, "exit");
+			if (fd >= 0)
+			  {
+			    char buf[4];
+			    sprintf(buf, "%u", WEXITSTATUS(status));
+			    write(fd, buf, strlen(buf));
+			    close(fd);
+			    free(fn);
+			  }
+		      }
 		  }
 	      } else {
 		assert( WTERMSIG(status) != 0 );
