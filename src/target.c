@@ -12,7 +12,7 @@
 
 #include "status.h"
 
-static char const rcsid[] = "@(#)$Id: target.c,v 1.13 2003-11-14 00:45:20 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: target.c,v 1.14 2003-11-28 20:16:11 kalt Exp $";
 
 extern char *myname;
 
@@ -525,7 +525,8 @@ int seconds;
 	  }
 	i += 1;
       }
-    nprint("");
+    if (first == 0)
+	nprint("");
 
     first = 1;
     i = 0;
@@ -540,7 +541,8 @@ int seconds;
 	  }
 	i += 1;
       }
-    nprint("");
+    if (first == 0)
+	nprint("");
 
     first = 1;
     i = 0;
@@ -555,5 +557,6 @@ int seconds;
 	  }
 	i += 1;
       }
-    nprint("");
+    if (first == 0)
+	nprint("");
 }
