@@ -12,7 +12,7 @@
 
 #include "status.h"
 
-static char const rcsid[] = "@(#)$Id: target.c,v 1.18 2004-12-15 00:34:54 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: target.c,v 1.19 2004-12-15 00:36:01 kalt Exp $";
 
 extern char *myname;
 
@@ -172,7 +172,7 @@ char *name;
       {
         char *hname;
 
-        hname = index(targets[tcur].name, '@');
+        hname = strchr(targets[tcur].name, '@');
         if (hname == NULL)
             hname = targets[tcur].name;
         else
@@ -251,7 +251,7 @@ char **args, *cmd;
 	  if (args[0] == NULL)
 	      args[0] = "rsh";
 	  args[1] = "-n";
-          at = index(targets[tcur].name, '@');
+          at = strchr(targets[tcur].name, '@');
           if (at == NULL)
             {
               args[2] = targets[tcur].name;
@@ -430,7 +430,7 @@ char *name;
             break;
 
         /* Find the specific name */
-        hname = index(targets[tcur].name, '@');
+        hname = strchr(targets[tcur].name, '@');
         if (hname == NULL)
             hname = targets[tcur].name;
         else

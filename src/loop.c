@@ -29,7 +29,7 @@
 #include "target.h"
 #include "term.h"
 
-static char const rcsid[] = "@(#)$Id: loop.c,v 1.48 2004-12-15 00:32:17 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: loop.c,v 1.49 2004-12-15 00:36:01 kalt Exp $";
 
 extern char *myname;
 
@@ -703,7 +703,7 @@ int fd, type;
     cont = 0;
     while (fgets(buffer, 8192, f) != NULL)
       {
-	nl = index(buffer, '\n');
+	nl = strchr(buffer, '\n');
 	if (nl != NULL)
 	    *nl = '\0';
 
@@ -836,7 +836,7 @@ u_int ctimeout, utest;
 
 		target_start();
 		count += 1;
-                tname = index(target_getname(), '@');
+                tname = strchr(target_getname(), '@');
                 if (tname == NULL)
                     tname = target_getname();
                 else

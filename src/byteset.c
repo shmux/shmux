@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2003 Christophe Kalt
+** Copyright (C) 2003, 2004 Christophe Kalt
 **
 ** This file is part of shmux,
 ** see the LICENSE file for details on your rights.
@@ -11,7 +11,7 @@
 
 #include "byteset.h"
 
-static char const rcsid[] = "@(#)$Id: byteset.c,v 1.5 2003-11-08 01:17:27 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: byteset.c,v 1.6 2004-12-15 00:36:01 kalt Exp $";
 
 extern char *myname;
 
@@ -48,7 +48,7 @@ char *definition;
 	    i = -1;
 
 	j = i;
-	dash = index(tok, '-');
+	dash = strchr(tok, '-');
 	if (dash != NULL)
 	  {
 	    if (*(dash + 1) != '\0')
