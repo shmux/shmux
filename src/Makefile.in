@@ -1,10 +1,10 @@
 #
-# Copyright (C) 2002 Christophe Kalt
+# Copyright (C) 2002, 2003 Christophe Kalt
 #
 # This file is part of shmux,
 # see the LICENSE file for details on your rights.
 #
-# $Id: Makefile.in,v 1.2 2002-07-07 03:54:18 kalt Exp $
+# $Id: Makefile.in,v 1.3 2003-01-05 17:40:32 kalt Exp $
 #
 
 SHELL	=	/bin/sh
@@ -14,7 +14,7 @@ CFLAGS	=	@CFLAGS@
 LDFLAGS	=	@LDFLAGS@
 LIBS	=	@LIBS@
 
-OBJS	=	exec.o loop.o shmux.o status.o target.o term.o units.o
+OBJS	=	byteset.o exec.o loop.o shmux.o status.o target.o term.o units.o
 SRCS	=	$(OBJS:%.o=%.c)
 
 shmux	: $(OBJS)

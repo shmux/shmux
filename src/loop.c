@@ -15,13 +15,16 @@
 #include <sys/resource.h>
 #include <poll.h>
 
+#include "byteset.h"
 #include "exec.h"
 #include "loop.h"
 #include "status.h"
 #include "target.h"
 #include "term.h"
 
-static char const rcsid[] = "@(#)$Id: loop.c,v 1.18 2003-01-01 23:27:41 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: loop.c,v 1.19 2003-01-05 17:40:33 kalt Exp $";
+
+extern char *myname;
 
 struct child
 {
@@ -874,14 +877,24 @@ u_int ctimeout, test;
 		if (children[idx].test == 1)
 		    dprint("Test for %s exited with status %d",
 			   what, WEXITSTATUS(status));
-		else
+		else if (idx == 0)
 		  {
-		    if (WEXITSTATUS(status) != 0
-			&& children[idx].execstate == 0
-			&& (idx > 0 || WEXITSTATUS(status) > 2))
+		    /* fping */
+		    if (WEXITSTATUS(status) > 2
+			&& children[idx].execstate == 0)
 			eprint("Child for %s exited with status %d",
 			       what, WEXITSTATUS(status));
-		    else if (idx > 0 && children[idx].execstate == 0)
+		  } 
+		else if (children[idx].execstate == 0)
+		  {
+		    if (byteset_test(BSET_ERROR, WEXITSTATUS(status)) == 0)
+			eprint("Child for %s exited with status %d",
+			       what, WEXITSTATUS(status));
+		    else if (byteset_test(BSET_SHOW, WEXITSTATUS(status)) == 0)
+			tprint(myname, MSG_STDOUT,
+			       "Child for %s exited with status %d",
+			       what, WEXITSTATUS(status));
+		    else
 			iprint("Child for %s exited (with status %d)",
 			       what, WEXITSTATUS(status));
 		  }
