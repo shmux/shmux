@@ -21,7 +21,7 @@
 #include "target.h"
 #include "term.h"
 
-static char const rcsid[] = "@(#)$Id: loop.c,v 1.17 2003-01-01 00:50:34 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: loop.c,v 1.18 2003-01-01 23:27:41 kalt Exp $";
 
 struct child
 {
@@ -38,6 +38,7 @@ struct child
 static int got_sigint;
 
 static void shmux_sigint(int);
+static void setup_fdlimit(int, int);
 static void init_child(struct child *);
 static void parse_child(char *, int, int, struct child *, int, char *);
 static void parse_fping(char *);
@@ -53,6 +54,80 @@ shmux_sigint(sig)
 int sig;
 {
   got_sigint += 1;
+}
+
+/*
+** setup_fdlimit
+**	Since there's a limit on the number of open file descriptors a
+**	process may have, we do some math and try to avoid running into
+**	it which could be unpleasant depending on what we're trying to
+**	achieve when we run out.
+*/
+void
+setup_fdlimit(fdfactor, max)
+int fdfactor, max;
+{
+    struct rlimit fdlimit;
+
+    /*
+    ** The assumptions are:
+    ** + 3 for stdin, stdout and stderr (our own)
+    ** + 3 for stdin, stdout and stderr for fping
+    ** + 3 for pipe creation in exec.c/exec()
+    ** + (3 or 5 * max) for children stdin, stdout and stderr
+    ** And we add another 10 as safety margin.
+    */
+    if (getrlimit(RLIMIT_NOFILE, &fdlimit) == -1)
+      {
+	eprint("getrlimit(RLIMIT_NOFILE): %s", strerror(errno));
+	exit(1);
+      }
+    if (fdlimit.rlim_cur < (max + 3) * fdfactor + 10)
+      {
+	fdlimit.rlim_cur = (max + 3) * fdfactor + 10;
+	if (fdlimit.rlim_cur > fdlimit.rlim_max)
+	    fdlimit.rlim_cur = fdlimit.rlim_max;
+
+	if (setrlimit(RLIMIT_NOFILE, &fdlimit) == -1)
+	    eprint("setrlimit(RLIMIT_NOFILE, %d): %s",
+		   (int) fdlimit.rlim_cur, strerror(errno));
+
+	if (getrlimit(RLIMIT_NOFILE, &fdlimit) == -1)
+	  {
+	    eprint("getrlimit(RLIMIT_NOFILE): %s", strerror(errno));
+	    eprint("Unable to validate parallelism factor.");
+	  }
+	else if (fdlimit.rlim_cur < (max + 3) * fdfactor + 10)
+	  {
+	    int old;
+
+	    old = max;
+	    max = ((fdlimit.rlim_cur - 10) / fdfactor) - 3;
+	    eprint("Reducing parallelism factor to %d (from %d) because of system limitation.", max, old);
+	  }
+      }
+	
+#if defined(__NetBSD__)
+    /* See NetBSD PR#17507 */
+    {
+      int i, *fds;
+      
+      fds = (int *) malloc(fdlimit.rlim_cur * sizeof(int));
+      if (fds == NULL)
+	{
+	  perror("malloc failed");
+	  exit(1);
+	}
+      i = -1;
+      do
+	  fds[++i] = dup(0);
+      while (i < fdlimit.rlim_cur && fds[i] != -1);
+      dprint("Duped %d fds to get around NetBSD's broken poll(2)", i);
+      while (i >= 0)
+	  close(fds[i--]);
+      free(fds);
+    }
+#endif
 }
 
 /*
@@ -391,76 +466,13 @@ char *cmd, *ping, *odir;
 int max, mixed;
 u_int ctimeout, test;
 {
-    int fdfactor;
-    struct rlimit fdlimit;
     struct child *children;
     struct pollfd *pfd;
     struct sigaction sa;
     char *cargv[10];
 
-    /*
-    ** Since there's a limit on the number of open file descriptors a
-    ** process may have, we do some math and try to avoid running into
-    ** it which could be unpleasant depending on what we're trying to
-    ** achieve when we run out.  The assumptions are:
-    ** + 3 for stdin, stdout and stderr (our own)
-    ** + 3 for stdin, stdout and stderr for fping
-    ** + 3 for pipe creation in exec.c/exec()
-    ** + (3 or 5 * max) for children stdin, stdout and stderr
-    ** And we add another 10 as safety margin.
-    */
-    fdfactor = (odir == NULL) ? 3 : 5;
-    if (getrlimit(RLIMIT_NOFILE, &fdlimit) == -1)
-      {
-	eprint("getrlimit(RLIMIT_NOFILE): %s", strerror(errno));
-	exit(1);
-      }
-    if (fdlimit.rlim_cur < (max + 3) * fdfactor + 10)
-      {
-	fdlimit.rlim_cur = (max + 3) * fdfactor + 10;
-	if (fdlimit.rlim_cur > fdlimit.rlim_max)
-	    fdlimit.rlim_cur = fdlimit.rlim_max;
-
-	if (setrlimit(RLIMIT_NOFILE, &fdlimit) == -1)
-	    eprint("setrlimit(RLIMIT_NOFILE, %d): %s",
-		   (int) fdlimit.rlim_cur, strerror(errno));
-
-	if (getrlimit(RLIMIT_NOFILE, &fdlimit) == -1)
-	  {
-	    eprint("getrlimit(RLIMIT_NOFILE): %s", strerror(errno));
-	    eprint("Unable to validate parallelism factor.");
-	  }
-	else if (fdlimit.rlim_cur < (max + 3) * fdfactor + 10)
-	  {
-	    int old;
-
-	    old = max;
-	    max = ((fdlimit.rlim_cur - 10) / fdfactor) - 3;
-	    eprint("Reducing parallelism factor to %d (from %d) because of system limitation.", max, old);
-	  }
-      }
-	
-#if defined(__NetBSD__)
-    /* See NetBSD PR#17507 */
-    {
-      int i, *fds;
-      
-      fds = (int *) malloc(fdlimit.rlim_cur * sizeof(int));
-      if (fds == NULL)
-	{
-	  perror("malloc failed");
-	  exit(1);
-	}
-      i = -1;
-      do
-	  fds[++i] = dup(0);
-      while (i < fdlimit.rlim_cur && fds[i] != -1);
-      dprint("Duped %d fds to get around NetBSD's broken poll(2)", i);
-      while (i >= 0)
-	  close(fds[i--]);
-      free(fds);
-    }
-#endif
+    /* review process fd limit */
+    setup_fdlimit((odir == NULL) ? 3 : 5, max);
 
     /* Allocate the control structures */
     pfd = (struct pollfd *) malloc((max+2)*3 * sizeof(struct pollfd));
@@ -555,7 +567,6 @@ u_int ctimeout, test;
 	      exit(1);
 	  }
 	      
-
 	/* read and process children output if any */
 	if (pollrc > 0)
 	  {
@@ -707,6 +718,7 @@ u_int ctimeout, test;
 		if (idx > 0 && children[idx].pid <= 0 && target_next(2) == 0)
 		  {
 		    done = 0;
+
 		    if (test != 0)
 		      {
 			pfd[idx*3].fd = -1;
