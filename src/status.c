@@ -13,7 +13,7 @@
 #include "target.h"
 #include "term.h"
 
-static char const rcsid[] = "@(#)$Id: status.c,v 1.1 2002-07-04 21:44:50 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: status.c,v 1.2 2002-07-05 14:59:38 kalt Exp $";
 
 static int spawned, inphase[4];
 static time_t changed[4];
@@ -54,13 +54,14 @@ status_phase(phase, count)
 int phase, count;
 {
     assert( phase >= -1 && phase < 4 );
+    assert( inphase[0] != -1 );
 
+    while (inphase[phase] == -1)
+	phase -= 1;
     if (phase == 0)
 	return;
     if (phase == -1)
 	phase = 0;
-    while (inphase[phase] == -1)
-	phase -= 1;
     inphase[phase] += count;
     changed[phase] = time(NULL);
 }
