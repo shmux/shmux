@@ -1,4 +1,11 @@
-$Id: CHANGES,v 1.10 2003-11-28 20:36:50 kalt Exp $
+$Id: CHANGES,v 1.11 2004-04-06 00:43:46 kalt Exp $
+
+Changes since 0.11a [2003/11/28]:
+
+- added test suite.
+- fixed various minor problems with parsing of -A for regex/pcre analyzers.
+- fixed fatal regex analyzer initialization problem.
+- fixed mmap() usage.
 
 Changes since 0.10a [2003/06/22]:
 

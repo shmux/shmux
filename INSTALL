@@ -2,7 +2,8 @@
 
 As of version 0.11a, the only thing holding shmux back from a beta release
 towards the 1.0 release is lack of thorough testing (of advanced features
-as well as on more OSes) and the lack of user feedback.
+as well as on more OSes) and the lack of user feedback.  Version 0.12b
+includes a test suite which should help.
 
 Version 0.9a introduces the following usage changes:
 
@@ -53,4 +54,4 @@ Consider documentation errors as bugs, and report them as such.  If you
 develop anything pertaining to `shmux' or have suggestions, share them
 by writing to `shmux@taranis.org'.
 
--- $Id: INSTALL,v 1.10 2003-11-28 20:36:51 kalt Exp $
+-- $Id: INSTALL,v 1.11 2004-04-06 00:43:46 kalt Exp $
