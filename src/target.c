@@ -12,7 +12,7 @@
 
 #include "status.h"
 
-static char const rcsid[] = "@(#)$Id: target.c,v 1.7 2003-03-22 01:30:58 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: target.c,v 1.8 2003-04-09 11:32:01 kalt Exp $";
 
 extern char *myname;
 
@@ -387,7 +387,7 @@ int seconds;
     else
 	nprint("%d target%s processed.", tmax + 1, (tmax > 0) ? "s" : "");
 
-    if (f + t + s + e > 0)
+    if (f + t + u + s + e > 0)
       {
 	printf("Summary: ");
 	if (f > 0)
