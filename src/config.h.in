@@ -10,6 +10,9 @@
    */
 #undef GETLOADAVG_PRIVILEGED
 
+/* Define to 1 if you have the <curses.h> header file. */
+#undef HAVE_CURSES_H
+
 /* Define to 1 if you have the `getloadavg' function. */
 #undef HAVE_GETLOADAVG
 
@@ -67,6 +70,9 @@
 /* Define to 1 if you have the <termcap.h> header file. */
 #undef HAVE_TERMCAP_H
 
+/* Define to 1 if you have the <term.h> header file. */
+#undef HAVE_TERM_H
+
 /* Define to 1 if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H
 
@@ -88,9 +94,6 @@
 
 /* Define to the version of this package. */
 #undef PACKAGE_VERSION
-
-/* Define if the system is running Sun Solaris */
-#undef SOLARIS
 
 /* Define to 1 if you have the ANSI C header files. */
 #undef STDC_HEADERS

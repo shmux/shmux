@@ -7,23 +7,20 @@
 
 #include "os.h"
 
-#if !defined(SOLARIS)
-# if defined(HAVE_TERMCAP_H)
-#  include <termcap.h>
-# else
+#if defined(HAVE_TERMCAP_H)
+# include <termcap.h>
+#endif
+#if defined(HAVE_CURSES_H)
+# include <curses.h>
+# if defined(HAVE_TERM_H)
 #  include <term.h>
 # endif
-#else
-extern int	tgetent(char *, char *);
-extern char *	tgetstr(char [2], char **);
-
-extern int	tputs(char *, int, int (*)(int));
 #endif
 #include <stdarg.h>
 
 #include "term.h"
 
-static char const rcsid[] = "@(#)$Id: term.c,v 1.5 2002-07-09 21:56:44 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: term.c,v 1.6 2002-10-13 21:12:45 kalt Exp $";
 
 extern char *myname;
 
