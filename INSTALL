@@ -1,0 +1,38 @@
+-- shmux status
+
+This is the first public release of shmux, so you should be prepared for
+the unexpected as things have not yet been polished as much as they need to
+be.  A number of features are also missing and will be added in future
+releases.  What is documented (in the manual page) is implemented and
+should be working, but the behaviour may slightly change.
+
+-- shmux dependencies
+
+shmux will make use of the following programs if they are available on the
+system (and found in the PATH).  They are not required but allow using
+certain optional features of shmux.  See the man page for details.
+
++ fping: http://www.fping.com/
++ ssh: http://www.fressh.org/, http://www.openssh.org/, ...
+
+-- shmux installation notes
+
+(1) ./configure
+(2) make
+(3) make test
+(4) make install
+
+-- shmux contact
+
+Send bug reports to `shmux-bugs@taranis.org'.  A bug report is an adequate
+description of the environment (versions of this package, the OS, fping and
+ssh) and of the problem: your input, what you expected, what you got, and
+why you believe it to be wrong.  Diffs are welcome, but they only describe
+a solution, from which the problem might be difficult to infer.
+
+Your feedback will help to make a better and more portable package.
+Consider documentation errors as bugs, and report them as such.  If you
+develop anything pertaining to `shmux' or have suggestions, let us know and
+share your findings by writing at `shmux-forum@taranis.org'.
+
+-- $Id: INSTALL,v 1.1 2002-07-04 21:44:43 kalt Exp $

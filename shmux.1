@@ -1,0 +1,88 @@
+.TH SHMUX 8 "$Date: 2002-07-04 21:44:45 $
+.DA July 4, 2002
+.SH NAME
+shmux - Shell Multiplexor
+.SH SYNOPSIS
+.B shmux
+[
+.B -h
+|
+.B -V
+]
+
+.B shmux
+[
+.B -dDpqstv
+] [
+.B -M \fImax\fP
+] [
+.B -P \fItimeout\fP
+] [
+.B -T \fItimeout\fP
+]
+.B -c \fIcommand\fP \fItargets...\fP
+
+.SH DESCRIPTION
+\fBshmux\fP is program for executing the same command on many hosts in
+parallel.  For each target, a child process is spawned by \fBshmux\fP, and
+a shell on the target obtained one of the supported methods: \fIrsh\fP,
+\fIssh\fP, or \fIsh\fP.  The output produced by the children is received
+and output in turn by \fBshmux\fP.
+
+The default method may be set by using the \fB-m\fP option, and may be
+overridden for any target by prefixing the target name by the method and a
+colon.  Two special methods, \fIssh1\fP and \fIssh2\fP may be used to
+select the SSH protocol version 1 or 2, respectively.  For the \fIsh\fP
+method, it is up to the specified command to contact the target.  In order
+for the executed command to know which target it is being invoked for, the
+\fISHMUX_TARGET\fP environment variable is set by \fBshmux\fP.
+
+Before executing the specified command, \fBshmux\fP will optionally ping
+each target to ensure that it can be reached, and/or run a dummy test
+command to make sure that the target not only is alive, but that it is
+possible to execute a command on it.  Both these tests are typically run
+with a fairly short timeout to quickly dismiss unavailable targets rather
+than waiting for the standard (longer) network timeout.
+
+.SH OPTIONS
+.IP "\fB-h\fP"
+Display a brief help message.
+.IP "\fB-V\fP"
+Display the version information.
+.IP "\fB-m \fImethod\fP"
+Defines the default method used to run a shell on targets.
+.IP "\fB-M \fImax\fP"
+Defines the maximum number of spawned processes.
+.IP "\fB-p\fP"
+Ping targets to verify they are alive before doing anything.
+.IP "\fB-P \fItimeout\fP"
+Defines the initial target ping timeout in milliseconds, see \fIfping(8)\fP.
+.IP "\fB-t\fP"
+Run a simple test for each target to verify that a shell can indeed be
+obtained and behaves as expected.
+.IP "\fB-T \fItimeout\fP"
+Defines the test timeout in seconds.
+.IP "\fB-q\fP"
+Suppress the final summary of results.
+.IP "\fB-s\fP"
+Suppress the progress status line.
+.IP "\fB-v\fP"
+Produce a more verbose output by prefixing each line of output with the
+corresponding target name.
+.IP "\fB-d\fP"
+Display internal status messages.
+.IP "\fB-D\fP"
+Display internal debug messages.
+
+.SH SEE ALSO
+.IR fping (8),
+.IR sh (1),
+.IR rsh (1),
+.IR ssh (1).
+
+.SH AVAILABILITY
+The latest official release of \fBshmux\fP is available on the web.
+The home page is http://web.taranis.org/shmux/
+
+.SH AUTHOR
+Christophe Kalt <kalt@taranis.org>

@@ -1,0 +1,6 @@
+exec.o: exec.c os.h config.h exec.h term.h Makefile
+loop.o: loop.c os.h config.h exec.h loop.h status.h target.h term.h Makefile
+shmux.o: shmux.c os.h config.h version.h loop.h target.h term.h Makefile
+status.o: status.c os.h config.h status.h target.h term.h Makefile
+target.o: target.c os.h config.h target.h term.h status.h Makefile
+term.o: term.c os.h config.h term.h Makefile
