@@ -1,9 +1,9 @@
 #
-# $Id: configure.ac,v 1.2 2002-07-06 18:07:56 kalt Exp $
+# $Id: configure.ac,v 1.3 2002-07-08 23:57:35 kalt Exp $
 #
 AC_PREREQ(2.53)
 AC_INIT([Shell Multiplexor], [], [shmux-bugs@taranis.org], [shmux])
-AC_REVISION([$Id: configure.ac,v 1.2 2002-07-06 18:07:56 kalt Exp $])
+AC_REVISION([$Id: configure.ac,v 1.3 2002-07-08 23:57:35 kalt Exp $])
 AC_CONFIG_SRCDIR([src/os.h])
 AC_CONFIG_HEADER([src/config.h])
 
@@ -20,7 +20,6 @@ AC_CHECK_HEADERS([paths.h termcap.h sys/loadavg.h])
 # Checks for typedefs, structures, and compiler characteristics.
 #AC_C_CONST
 AC_TYPE_PID_T
-AC_DECL_SYS_SIGLIST
 
 # Checks for library functions.
 #AC_FUNC_FORK

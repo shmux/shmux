@@ -98,9 +98,6 @@
 /* Define to 1 on System V Release 4. */
 #undef SVR4
 
-/* Define to 1 if `sys_siglist' is declared by <signal.h> or <unistd.h>. */
-#undef SYS_SIGLIST_DECLARED
-
 /* Define to 1 for Encore UMAX. */
 #undef UMAX
 
