@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2002 Christophe Kalt
+** Copyright (C) 2002, 2003 Christophe Kalt
 **
 ** This file is part of shmux,
 ** see the LICENSE file for details on your rights.
@@ -20,7 +20,7 @@
 #include "exec.h"
 #include "term.h"
 
-static char const rcsid[] = "@(#)$Id: exec.c,v 1.6 2003-03-18 14:54:52 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: exec.c,v 1.7 2003-05-03 23:22:40 kalt Exp $";
 
 pid_t
 exec(fd0, fd1, fd2, target, argv, timeout)
@@ -117,8 +117,25 @@ char *target, **argv;
       }
     else
       {
+	struct sigaction sa;
 	int fd;
 	char error[1024];
+
+	/*
+	** Reset signal handlers as they are not appropriate for children.
+	** Only SIGTSTP and SIGCONT really need to get reset as they are
+	** used to notify the parent if something goes wrong.
+	*/
+	sigemptyset(&sa.sa_mask);
+	sa.sa_flags = 0;
+	sa.sa_handler = SIG_DFL;
+	sigaction(SIGINT, &sa, NULL);
+	sigaction(SIGQUIT, &sa, NULL);
+	sigaction(SIGABRT, &sa, NULL);
+	sigaction(SIGTERM, &sa, NULL);
+	sigaction(SIGTSTP, &sa, NULL);
+	sigaction(SIGCONT, &sa, NULL);
+	sigaction(SIGWINCH, &sa, NULL);
 
 	/* For simplicity later on */
 	if (fd2 == NULL)
