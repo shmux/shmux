@@ -22,7 +22,7 @@
 #include "target.h"
 #include "term.h"
 
-static char const rcsid[] = "@(#)$Id: loop.c,v 1.21 2003-01-05 19:43:29 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: loop.c,v 1.22 2003-03-03 01:46:08 kalt Exp $";
 
 extern char *myname;
 
@@ -909,7 +909,7 @@ u_int ctimeout, test;
 				   what, WEXITSTATUS(status));
 		      }
 
-		    if (odir != NULL)
+		    if (odir != NULL && mixed != 0)
 		      {
 			int fd;
 			char *fn;
