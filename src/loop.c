@@ -21,7 +21,7 @@
 #include "target.h"
 #include "term.h"
 
-static char const rcsid[] = "@(#)$Id: loop.c,v 1.11 2002-07-09 21:40:55 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: loop.c,v 1.12 2002-07-11 00:53:43 kalt Exp $";
 
 struct child
 {
@@ -34,10 +34,24 @@ struct child
     int		status;		/* waitpid(status) */
 };
 
+static int got_sigint;
+
+static void shmux_sigint(int);
 static void init_child(struct child *);
 static void parse_child(char *, int, int, struct child *, int, char *);
 static void parse_fping(char *);
 static int output_file(char *, char *, char *);
+
+/*
+** shmux_sigint
+**	SIGINT handler
+*/
+static void
+shmux_sigint(sig)
+int sig;
+{
+  got_sigint += 1;
+}
 
 /*
 ** init_child
@@ -299,6 +313,7 @@ u_int ctimeout, test;
     struct rlimit fdlimit;
     struct child *children;
     struct pollfd *pfd;
+    struct sigaction sa;
     char *cargv[10];
 
     /*
@@ -381,6 +396,13 @@ u_int ctimeout, test;
       }
     memset((void *) children, 0, (max+1)*sizeof(struct child));
 
+    /* Setup SIGINT handler */
+    sigemptyset(&sa.sa_mask);
+    sa.sa_flags = 0;
+    sa.sa_handler = shmux_sigint;
+    sigaction(SIGINT, &sa, NULL);
+    got_sigint = 0;
+
     /* Initialize the status module. */
     status_init(ping != NULL, test != 0);
 
@@ -432,6 +454,24 @@ u_int ctimeout, test;
 	    perror("poll");
 	    exit(1);
 	  }
+
+	switch (got_sigint)
+	  {
+	  case 0:
+	      break;
+	  case 1:
+	      eprint("Waiting for children to abort..");
+	      got_sigint += 1;
+	      break;
+	  case 2:
+	      break;
+	  default:
+	      sprint("");
+	      nprint("");
+	      target_results();
+	      exit(1);
+	  }
+	      
 
 	if (pollrc > 0)
 	  {
@@ -522,6 +562,14 @@ u_int ctimeout, test;
 	    if (children[idx].pid <= 0)
 	      {
 		/* Available slot to spawn a new child */
+		
+		if (got_sigint != 0)
+		  {
+		    /* Don't do it if we're aborting.. */
+		    idx += 1;
+		    continue;
+		  }
+
 		if (idx > 0 && target_next(3) == 0)
 		  {
 		    done = 0;
@@ -745,6 +793,11 @@ u_int ctimeout, test;
 	if (done == 1)
 	    break;
       }
+
+    sigemptyset(&sa.sa_mask);
+    sa.sa_flags = 0;
+    sa.sa_handler = SIG_DFL;
+    sigaction(SIGINT, &sa, NULL);
 
     free(children);
     free(pfd);
