@@ -16,7 +16,7 @@
 #include "target.h"
 #include "term.h"
 
-static char const rcsid[] = "@(#)$Id: status.c,v 1.3 2002-07-06 18:08:00 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: status.c,v 1.5 2003-01-05 20:11:34 kalt Exp $";
 
 static int spawned, inphase[4];
 static time_t changed[4];
@@ -80,7 +80,7 @@ status_update(void)
     char loadavg[20];
 #if defined(HAVE_GETLOADAVG) && !defined(GETLOADAVG_PRIVILEGED)
     double load[3];
-    static erroronce = 1;
+    static int erroronce = 1;
 
     loadavg[0] = '\0';
     if (getloadavg(load, 3) == -1)
@@ -96,11 +96,11 @@ status_update(void)
 #else
     loadavg[0] = '\0';
 #endif
-	
+
     now = time(NULL);
     if (inphase[1] == -1 && inphase[2] == -1)
 	sprint("-- %d Active, %d Pending/%s%d Failed/%s%d Done -- %s",
-	       spawned, target_getmax() - inphase[0] - inphase[3],
+	       spawned, target_getmax() - spawned - inphase[0] - inphase[3],
 	       (now - changed[0] < 2) ? "\a" : "", inphase[0],
 	       (now - changed[3] < 2) ? "\a" : "", inphase[3],
 	       loadavg);
