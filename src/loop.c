@@ -25,7 +25,7 @@
 #include "target.h"
 #include "term.h"
 
-static char const rcsid[] = "@(#)$Id: loop.c,v 1.35 2003-05-03 15:52:57 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: loop.c,v 1.36 2003-05-03 15:55:05 kalt Exp $";
 
 extern char *myname;
 
@@ -1264,9 +1264,15 @@ u_int ctimeout, utest, test;
 		    dprint("Analyzer for %s exited with status %d",
 			   what, WEXITSTATUS(status));
 		    if (WEXITSTATUS(status) == 0)
+		      {
+			iprint("Analysis of %s output indicates a success", what);
 			set_cmdstatus(CMD_SUCCESS);
+		      }
 		    else
+		      {
+			eprint("Analysis of %s output indicates an error", what);
 			set_cmdstatus(CMD_ERROR);
+		      }
 		  }
 		else if (idx == 0)
 		  {
