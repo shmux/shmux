@@ -20,7 +20,7 @@
 #include "term.h"
 #include "units.h"
 
-static char const rcsid[] = "@(#)$Id: analyzer.c,v 1.15 2004-04-05 01:28:53 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: analyzer.c,v 1.16 2004-04-05 23:19:48 kalt Exp $";
 
 extern char *myname;
 
@@ -185,7 +185,7 @@ char *str;
 #endif
 
 /*
-** re_init
+** restr_init
 **	Regular expression initialization routine
 */
 static void
@@ -203,14 +203,17 @@ char *str;
     fd = -1;
     len = 0;
     *ok = 0;
-    if (str[0] == '=' || str[0] == '!')
+    if (str[0] == '=' || str[0] == '!' || str[0] == '<')
       {
 	if (str[0] == '!')
 	    *ok = 1;
-	str += 1;
+        if (str[0] != '<')
+            str += 1;
 	if (str[0] == '=')
 	    rbuf = str + 1; /* expression follows */
-	else if (str[0] == '<')
+        else if (str[0] != '<')
+            rbuf = str; /* = characters are optional */
+	else
 	  {
 	    /* Expression is in a file */
 	    fname = str+1;
