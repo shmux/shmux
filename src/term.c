@@ -9,7 +9,6 @@
 
 #include <fcntl.h>
 #include <sys/ioctl.h>
-#include <termios.h>
 #if defined(HAVE_TERMCAP_H)
 # include <termcap.h>
 #elif defined(HAVE_CURSES_H)
@@ -18,12 +17,13 @@
 #  include <term.h>
 # endif
 #endif
+#include <termios.h>
 #include <signal.h>
 #include <stdarg.h>
 
 #include "term.h"
 
-static char const rcsid[] = "@(#)$Id: term.c,v 1.15 2003-04-13 15:35:48 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: term.c,v 1.16 2003-04-18 20:45:51 kalt Exp $";
 
 extern char *myname;
 
