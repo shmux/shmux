@@ -10,7 +10,7 @@
 #include "byteset.h"
 #include "ctype.h"
 
-static char const rcsid[] = "@(#)$Id: byteset.c,v 1.2 2003-01-08 00:47:06 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: byteset.c,v 1.3 2003-04-19 00:52:56 kalt Exp $";
 
 extern char *myname;
 
@@ -48,12 +48,17 @@ char *definition;
 
 	j = i;
 	dash = index(tok, '-');
-	if (dash != NULL && *(dash + 1) != '\0')
+	if (dash != NULL)
 	  {
-	    if (isdigit((int) *(dash + 1)) != 0)
-		j = atoi(dash + 1);
+	    if (*(dash + 1) != '\0')
+	      {
+		if (isdigit((int) *(dash + 1)) != 0)
+		    j = atoi(dash + 1);
+		else
+		    j = -1;
+	      }
 	    else
-		j = -1;
+		j = 255;
 	  }
 
 	if (i < 0 || i > 255 || j < 0 || j > 255 || j < i) {
