@@ -25,7 +25,7 @@
 #include "target.h"
 #include "term.h"
 
-static char const rcsid[] = "@(#)$Id: loop.c,v 1.38 2003-05-08 00:27:58 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: loop.c,v 1.39 2003-06-18 00:26:55 kalt Exp $";
 
 extern char *myname;
 
@@ -753,8 +753,6 @@ u_int ctimeout, utest;
     struct sigaction sa, saved_sa;
     int idx;
     char *cargv[10];
-
-    assert( (outmode & OUT_MIXED) != 0 || (outmode & OUT_ATEND) != 0 );
 
     /* check spawn */
     if (strcmp(spawn, "all") == 0)
