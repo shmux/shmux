@@ -1,6 +1,6 @@
 #! /bin/sh
 #
-# $Id: timers.sh,v 1.1 2004-04-06 00:36:55 kalt Exp $
+# $Id: timers.sh,v 1.2 2004-04-06 00:57:24 kalt Exp $
 #- 4
 ## This simple set exercises the implementation of timeouts
 #
@@ -23,7 +23,7 @@ elif [ $SHMUX_TARGET = 3 ]; then
     sleep 15
 fi
 
-exit 0' 0 1 2 3 2>&1 | grep -v second | sed 's/timed out.*/timed out/`
+exit 0' 0 1 2 3 2>&1 | grep -v second | sed 's/timed out.*/timed out/'`
 test $? != 0 && exit 0
 
 if [ "$test" = "    0: Slumber.. mmm!
