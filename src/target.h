@@ -4,7 +4,7 @@
 ** This file is part of shmux
 ** see the LICENSE file for details on your rights.
 **
-** $Id: target.h,v 1.2 2003-01-05 19:43:30 kalt Exp $
+** $Id: target.h,v 1.3 2003-04-13 15:25:27 kalt Exp $
 */
 
 #if !defined(_TARGET_H_)
@@ -19,13 +19,22 @@ char *target_getname(void);
 int target_getnum(void);
 void target_getcmd(char **, char*);
 int target_next(int);
+void target_start(void);
 void target_result(int);
 void target_cmdstatus(int);
+void target_status(int);
 void target_results(int);
 
 #define CMD_FAILURE	-2
 #define CMD_TIMEOUT	-1
 #define CMD_SUCCESS	 1
 #define CMD_ERROR	 2
+
+#define STATUS_ALL	0xFF
+#define STATUS_PENDING	0x01
+#define STATUS_ACTIVE	0x02
+#define STATUS_FAILED	0x10
+#define STATUS_ERROR	0x20
+#define STATUS_SUCCESS	0x40
 
 #endif

@@ -12,7 +12,7 @@
 
 #include "status.h"
 
-static char const rcsid[] = "@(#)$Id: target.c,v 1.8 2003-04-09 11:32:01 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: target.c,v 1.9 2003-04-13 15:25:27 kalt Exp $";
 
 extern char *myname;
 
@@ -286,14 +286,26 @@ int phase;
     while (tcur <= tmax)
       {
 	if (targets[tcur].status == phase-1
+	    /* && targets[tcur].status==targets[tcur].phase true,unnecessary */
 	    && targets[tcur].phase != phase)
-	  {
-	    targets[tcur].phase = phase;
 	    return 0;
-	  }
 	tcur += 1;
       }
     return -1;
+}
+
+/*
+** target_start
+**	Start new phase for current target.
+*/
+void
+target_start(void)
+{
+    assert( tcur >= 0 && tcur <= tmax );
+    assert( targets[tcur].status == targets[tcur].phase );
+    assert( targets[tcur].phase >= 0 && targets[tcur].phase < 4 );
+
+    targets[tcur].phase = targets[tcur].phase + 1;
 }
 
 /*
@@ -339,6 +351,85 @@ int status;
     assert( status >= -2 && status <= 2 );
 
     targets[tcur].result = status;
+}
+
+/*
+** target_status
+**	Report current status of all targets
+*/
+void
+target_status(status)
+int status;
+{
+    int i, any;
+
+    assert( status == STATUS_ALL     || status == STATUS_PENDING ||
+	    status == STATUS_ACTIVE  || status == STATUS_FAILED  ||
+	    status == STATUS_ERROR   || status == STATUS_SUCCESS );
+
+    any = 0;
+    i = 0;
+    while (i <= tmax)
+      {
+	if (targets[i].result < 0 && (status & STATUS_FAILED) != 0)
+	  {
+	    assert( targets[i].result == CMD_FAILURE
+		    || targets[i].result == CMD_TIMEOUT );
+	    uprint("%s: %s",
+		   (targets[i].result == CMD_FAILURE) ?
+		   "            failed" : "         timed out",
+		   targets[i].name);
+	    any = 1;
+	  }
+	else if (targets[i].result == CMD_ERROR
+		 && (status & STATUS_ERROR) != 0)
+	  {
+	    uprint("             error: %s", targets[i].name);
+	    any = 1;
+	  }
+	else if (targets[i].result == CMD_SUCCESS
+		 && (status & STATUS_SUCCESS) != 0)
+	  {
+	    uprint("           success: %s", targets[i].name);
+	    any = 1;
+	  }
+	else if (targets[i].status != targets[i].phase
+		 && (status & STATUS_ACTIVE) != 0)
+	  {
+	    char *what;
+
+	    switch (targets[i].phase)
+	      {
+	      case 1:
+		  what = "  [pinging] active";
+		  break;
+	      case 2:
+		  what = "  [testing] active";
+		  break;
+	      case 3:
+		  what = "  [running] active";
+		  break;
+	      case 4:
+		  what = "[analyzing] active";
+		  break;
+	      default:
+		  abort();
+	      }
+
+	    uprint("%s: %s", what, targets[i].name);
+	    any = 1;
+	  }
+	else if (targets[i].phase < 3
+		 && (status & STATUS_PENDING) != 0)
+	  {
+	    uprint("           pending: %s", targets[i].name);
+	    any = 1;
+	  }
+	i += 1;
+      }
+
+    if (any == 0)
+	uprint("no such target.");
 }
 
 /*
