@@ -1,4 +1,4 @@
-.TH SHMUX 8 "$Date: 2003-04-13 18:38:54 $"
+.TH SHMUX 8 "$Date: 2003-04-19 00:43:02 $"
 .DA March 18, 2003
 .SH NAME
 shmux - Shell Multiplexor
@@ -19,6 +19,8 @@ shmux - Shell Multiplexor
 .B -M \fImax\fP
 ] [
 .B -r \fIrcmd\fP
+] [
+.B -S \fImode\fP
 ] [
 .B -e \fIlist\fP
 ] [
@@ -86,6 +88,14 @@ also consider the load imposed on the system by the creation of a
 (potentially) large number of processes.
 .IP "\fB-r \fIrcmd\fP"
 Defines the default method used to run a shell on targets.
+.IP "\fB-S \fImode\fP"
+This options defines the strategy used by \fBshmux\fP when spawning
+children to run the \fIcommand\fP on targets.  If the \fImode\fP is set to
+"all", then processes will be spawned as fast as possible.  When set to
+"check", processes will be spawned as long as \fIcommand\fPs succeed.
+Finally, the default \fImode\fP, "one", is to spawn only one process at
+first, and wait for it to succeed, at which point \fBshmux\fP will switch
+to the "check" mode.
 .IP "\fB-e \fIlist\fP"
 Defines which \fIcommand\fP exit codes should be considered errors and
 reported as such.  The \fIlist\fP should be a comma separated list of
@@ -191,9 +201,16 @@ children.  These will typically abort, and \fBshmux\fP terminate in a
 cleaner fashion.
 .IP "space"
 Initiate a pause, this prevents \fBshmux\fP from spawning any more children
-to do its work.
+to do its work.  The following three commands may be used to resume work.
+.IP "1"
+This is equivalent to specifying "\fB-S \fImore\fP" on the command line,
+but may be used anytime.
 .IP "return"
-Resumes work following a pause.
+This is equivalent to specifying "\fB-S \fIcheck\fP" on the command line,
+but may be used anytime.
+.IP "+"
+This is equivalent to specifying "\fB-S \fIall\fP" on the command line,
+but may be used anytime.
 .IP "\fBp\fP"
 Display the list of pending targets.
 .IP "\fBr\fP"
@@ -239,6 +256,9 @@ to pass a complex serie of options.  However, it can be used to suppress
 the default, and or add options such as "-4", "-6", or even "-v".  It is
 recommended to avoid using these variables in favor of tuning the ssh
 configuration file(s).
+.IP SHMUX_SPAWNMODE
+Specified the default spawn mode.  If the \fB-S\fP option is specified, it
+overrides this variable.
 .IP SHMUX_ERRORCODES
 Specifies the default list of exit codes to be considered errors.  If the
 \fB-e\fP option is specified, it overrides this variable.

@@ -29,7 +29,7 @@
 #include "term.h"
 #include "units.h"
 
-static char const rcsid[] = "@(#)$Id: shmux.c,v 1.21 2003-04-05 18:05:52 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: shmux.c,v 1.22 2003-04-19 00:43:04 kalt Exp $";
 
 extern char *optarg;
 extern int optind, opterr;
@@ -42,6 +42,7 @@ char *myname;
 #define	DEFAULT_MAXWORKERS 10
 #define DEFAULT_PINGTIMEOUT "500"
 #define DEFAULT_RCMD "ssh"
+#define DEFAULT_SPAWNMODE "one"
 #define DEFAULT_TESTTIMEOUT 15
 
 static void usage(int);
@@ -67,6 +68,7 @@ int detailed;
     fprintf(stderr, "  -t            Send test command to verify target health.\n");
     fprintf(stderr, "  -T <seconds>  Time to wait for test answer (Default: %d).\n", DEFAULT_TESTTIMEOUT);
     fprintf(stderr, "\n");
+    fprintf(stderr, "  -S <mode>     Spawn strategy (Default: \"%s\")\n", DEFAULT_SPAWNMODE);
     fprintf(stderr, "  -e <range>    Exit codes to consider errors (Default: \"%s\")\n", DEFAULT_ERRORCODES);
     fprintf(stderr, "  -E <range>    Exit codes to always display (Default: \"%s\")\n", DEFAULT_ERRORCODES);
     fprintf(stderr, "  -a <type>     Analysis type (Default: %s)\n", DEFAULT_ANALYSIS);
@@ -89,7 +91,7 @@ main(int argc, char **argv)
     int opt_ctimeout, opt_mixed, opt_maxworkers, opt_vtest;
     u_int opt_test, opt_analyzer;
     char *opt_analyze, *opt_outanalysis, *opt_erranalysis;
-    char *opt_command, *opt_odir, *opt_ping, *opt_rcmd;
+    char *opt_spawn, *opt_command, *opt_odir, *opt_ping, *opt_rcmd;
     char tdir[PATH_MAX];
     int longest;
     time_t start;
@@ -104,6 +106,9 @@ main(int argc, char **argv)
     opt_analyze = opt_outanalysis = opt_erranalysis = NULL;
     opt_command = opt_odir = opt_ping = NULL;
     opt_rcmd = getenv("SHMUX_RCMD");
+    opt_spawn = DEFAULT_SPAWNMODE;
+    if (getenv("SHMUX_SPAWN") != NULL)
+	opt_spawn = getenv("SHMUX_SPAWN");
     if (opt_rcmd == NULL)
 	opt_rcmd = DEFAULT_RCMD;
     if (getenv("SHMUX_ERRORCODES") != NULL)
@@ -120,7 +125,7 @@ main(int argc, char **argv)
       {
         int c;
 	
-        c = getopt(argc, argv, "a:A:bc:C:De:E:hmM:o:pP:qr:stT:vV");
+        c = getopt(argc, argv, "a:A:bc:C:De:E:hmM:o:pP:qr:sS:tT:vV");
 	
         /* Detect the end of the options. */
         if (c == -1)
@@ -183,6 +188,9 @@ main(int argc, char **argv)
 	      break;
 	  case 's':
 	      opt_status = 0;
+	      break;
+	  case 'S':
+	      opt_spawn = optarg;
 	      break;
 	  case 't':
 	      if (opt_test == 0)
@@ -291,7 +299,7 @@ main(int argc, char **argv)
 
     /* Loop through targets/commands */
     start = time(NULL);
-    loop(opt_command, opt_ctimeout, opt_maxworkers,
+    loop(opt_command, opt_ctimeout, opt_maxworkers, opt_spawn,
 	 opt_mixed, opt_odir, opt_analyzer, opt_ping, opt_test);
 
     /* odir was temporary, remove it now */

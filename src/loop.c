@@ -23,7 +23,7 @@
 #include "target.h"
 #include "term.h"
 
-static char const rcsid[] = "@(#)$Id: loop.c,v 1.30 2003-04-13 15:39:14 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: loop.c,v 1.31 2003-04-19 00:43:03 kalt Exp $";
 
 extern char *myname;
 
@@ -43,8 +43,11 @@ struct child
 static int got_sigint;
 #define SPAWN_QUIT  0
 #define SPAWN_PAUSE 1
-#define SPAWN_MORE  2
-static int spawn_mode = SPAWN_MORE;
+#define SPAWN_CHECK 2
+#define SPAWN_NONE  3
+#define SPAWN_ONE   4
+#define SPAWN_MORE  5
+static int spawn_mode;
 
 static void shmux_sigint(int);
 static void setup_fdlimit(int, int);
@@ -54,6 +57,7 @@ static void parse_fping(char *);
 static void parse_user(int);
 static int  output_file(char **, char *, char *, char *);
 static void output_show(char *, int, char *, int);
+static void set_cmdstatus(int);
 
 /*
 ** shmux_sigint
@@ -393,12 +397,16 @@ int c;
 {
     switch (c)
       {
+      case 'h':
       case '?':
 	  uprint("Available commands:");
 	  uprint("      q - Quit");
 	  uprint("      Q - Quit immediately");
 	  uprint("<space> - Pause (e.g. Do not spawn any more children)");
-	  uprint("<enter> - Resume (after a pause)");
+	  uprint("      1 - Spawn one command, and pause if unsuccessful");
+	  uprint("<enter> - Keep spawning commands until one fails");
+	  uprint("      + - Always spawn more commands, even if some fail");
+	  uprint("      S - Show current spawn strategy");
 	  uprint("      p - Show pending targets");
 	  uprint("      r - Show running targets");
 	  uprint("      f - Show failed targets");
@@ -418,14 +426,41 @@ int c;
 	  target_results(-1);
 	  exit(1);
       case ' ':
-	  spawn_mode = SPAWN_PAUSE;
 	  if (spawn_mode != SPAWN_PAUSE)
 	      uprint("Pausing...");
+	  spawn_mode = SPAWN_PAUSE;
+	  break;
+      case '1':
+	  if (spawn_mode != SPAWN_ONE)
+	      uprint("Will spawn one command... (And pause on error)");
+	  if (spawn_mode != SPAWN_NONE)
+	      spawn_mode = SPAWN_ONE;
 	  break;
       case '\n':
-	  spawn_mode = SPAWN_MORE;
-	  if (spawn_mode != SPAWN_MORE)
-	      uprint("Resuming...");
+      case '-':
+	  if (spawn_mode != SPAWN_CHECK)
+	      uprint("Resuming... (Will pause on error)");
+	  spawn_mode = SPAWN_CHECK;
+	  break;
+      case '+':
+	  if (spawn_mode != SPAWN_MORE;
+	      uprint("Will keep spawning commands... (Even if some fail)");
+	      spawn_mode = SPAWN_MORE;
+	  break;
+      case 'S':
+	  if (spawn_mode == SPAWN_QUIT)
+	      uprint("Will quit once current children complete...");
+	  else if (spawn_mode == SPAWN_PAUSE)
+	      uprint("Paused");
+	  else if (spawn_mode == SPAWN_CHECK)
+	      uprint("Will pause if a target fails...");
+	  else if (spawn_mode == SPAWN_NONE || spawn_mode == SPAWN_ONE)
+	      uprint("Will spawn only one target until it succeeds...");
+	  else if (spawn_mode == SPAWN_MORE)
+	      uprint("Spawning as fast as possible...");
+	  else
+	      uprint("Uh-oh, i don't seem to know what i'm doing! [%d]",
+		     spawn_mode);
 	  break;
       case 'p':
 	  target_status(STATUS_PENDING);
@@ -536,13 +571,37 @@ int fd, type;
 }
 
 /*
+** set_cmdstatus
+**	Use to define whether a command was successful or not.
+*/
+static void
+set_cmdstatus(result)
+int result;
+{
+    assert( spawn_mode != SPAWN_ONE );
+
+    if (result == CMD_SUCCESS)
+      {
+	if (spawn_mode == SPAWN_NONE)
+	    spawn_mode = SPAWN_CHECK;
+      }
+    else
+      {
+	if (spawn_mode == SPAWN_NONE || spawn_mode == SPAWN_CHECK)
+	    spawn_mode = SPAWN_PAUSE;
+      }
+    target_cmdstatus(result);
+}
+
+
+/*
 ** loop
 **	Main loop.  Takes care of (optionally) pinging targets, testing
 **	targets with a simple echo command, and finally running a command.
 */
 void
-loop(cmd, ctimeout, max, mixed, odir, utest, ping, test)
-char *cmd, *ping, *odir;
+loop(cmd, ctimeout, max, spawn, mixed, odir, utest, ping, test)
+char *cmd, *spawn, *ping, *odir;
 int max, mixed;
 u_int ctimeout, utest, test;
 {
@@ -551,6 +610,19 @@ u_int ctimeout, utest, test;
     struct sigaction sa, saved_sa;
     int idx;
     char *cargv[10];
+
+    /* check spawn */
+    if (strcmp(spawn, "all") == 0)
+	spawn_mode = SPAWN_MORE;
+    else if (strcmp(spawn, "check") == 0)
+	spawn_mode = SPAWN_CHECK;
+    else if (strcmp(spawn, "one") == 0)
+	spawn_mode = SPAWN_ONE;
+    else
+      {
+	fprintf(stderr, "%s: Invalid spawn strategy \"%s\"\n", myname, spawn);
+	exit(1);
+      }
 
     /* review process fd limit */
     setup_fdlimit((odir == NULL) ? 3 : 5, max);
@@ -637,7 +709,10 @@ u_int ctimeout, utest, test;
 	if (pfd[0].fd >= 0)
 	    pfd[0].events = POLLIN;
 	else
+	  {
 	    pfd[0].events = 0;
+	    spawn_mode = SPAWN_MORE;
+	  }
 
 	/* Check for data to read/write */
 	pollrc = poll(pfd, (max+2)*3, 250);
@@ -859,12 +934,15 @@ u_int ctimeout, utest, test;
 		  {
 		    done = 0;
 
-		    if (spawn_mode == SPAWN_PAUSE)
+		    if (spawn_mode == SPAWN_PAUSE || spawn_mode == SPAWN_NONE)
 		      {
 			/* Don't spawn any more children */
 			idx += 1;
 			continue;
 		      }
+
+		    if (spawn_mode == SPAWN_ONE)
+			spawn_mode = SPAWN_NONE;
 
 		    target_start();
 
@@ -1087,9 +1165,9 @@ u_int ctimeout, utest, test;
 		    dprint("Analyzer for %s exited with status %d",
 			   what, WEXITSTATUS(status));
 		    if (WEXITSTATUS(status) == 0)
-			target_cmdstatus(CMD_SUCCESS);
+			set_cmdstatus(CMD_SUCCESS);
 		    else
-			target_cmdstatus(CMD_ERROR);
+			set_cmdstatus(CMD_ERROR);
 		  }
 		else if (idx == 0)
 		  {
@@ -1127,14 +1205,14 @@ u_int ctimeout, utest, test;
 			    output_show(what, children[idx].efile,
 					children[idx].ofname, 2);
 			  }
-			target_cmdstatus(CMD_ERROR);
+			set_cmdstatus(CMD_ERROR);
 			eprint("Child for %s exited with status %d",
 			       what, WEXITSTATUS(status));
 		      }
 		    else
 		      {
 			if (utest == ANALYZE_NONE || utest == ANALYZE_RUN)
-			    target_cmdstatus(CMD_SUCCESS);
+			    set_cmdstatus(CMD_SUCCESS);
 			else
 			  {
 			    /*
@@ -1146,14 +1224,14 @@ u_int ctimeout, utest, test;
 					     children[idx].ofname,
 					     children[idx].efile,
 					     children[idx].efname) == 0)
-				target_cmdstatus(CMD_SUCCESS);
+				set_cmdstatus(CMD_SUCCESS);
 			    else
 			      {
 				output_show(what, children[idx].ofile,
 					    children[idx].ofname, 1);
 				output_show(what, children[idx].efile,
 					    children[idx].ofname, 2);
-				target_cmdstatus(CMD_ERROR);
+				set_cmdstatus(CMD_ERROR);
 			      }
 			  }
 			if (byteset_test(BSET_SHOW, WEXITSTATUS(status)) == 0)
@@ -1166,7 +1244,7 @@ u_int ctimeout, utest, test;
 		      }
 		  }
 		else
-		    target_cmdstatus(CMD_FAILURE);
+		    set_cmdstatus(CMD_FAILURE);
 
 		/* If outputing to a file, clean things up. */
 		if (children[idx].ofile != -1)
@@ -1190,7 +1268,7 @@ u_int ctimeout, utest, test;
 			       (children[idx].analyzer == 0) ? "Child"
 			       : "Analyzer", what);
 			if (idx > 0)
-			    target_cmdstatus(CMD_TIMEOUT);
+			    set_cmdstatus(CMD_TIMEOUT);
 		      }
 		    else
 			children[idx].passed = -2;
@@ -1203,7 +1281,7 @@ u_int ctimeout, utest, test;
 			   strsignal(WTERMSIG(status)),
 			   (WCOREDUMP(status) != 0) ? " (core dumped)" : "");
 		    if (idx > 0 && children[idx].test == 0)
-			target_cmdstatus(CMD_ERROR);
+			set_cmdstatus(CMD_ERROR);
 		  }
 	      }
 
