@@ -12,7 +12,7 @@
 
 #include "status.h"
 
-static char const rcsid[] = "@(#)$Id: target.c,v 1.5 2003-01-05 19:43:30 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: target.c,v 1.6 2003-03-19 02:15:36 kalt Exp $";
 
 extern char *myname;
 
@@ -20,8 +20,16 @@ struct target
 {
     char *name;		/* target (host)name */
     int type;		/* 0: sh, 1: rsh, 2: sshv1, 3: sshv2, 4: ssh */
-    char status;	/* -1: DEAD 0: unknown 1: ping okay 2: test rsh okay */
-    char phase;		/* current phase:      1: ping      2: test   3: cmd */
+    			/* code	current phase	status
+			** -1	N/A		DEAD
+			**  0   N/A		Unknown
+			**  1	ping		ping okay
+			**  2	test		test okay
+			**  3	cmd		cmd done, exit status okay
+			**  4   analyzer	all done
+			*/    
+    char status;
+    char phase;
     int result;		/* command status: -2: signal, -1: timed out,
 			   		    0: unknown, 1: ok, 2: error */
 };
@@ -33,8 +41,8 @@ static int  type,	/* default type */
 	    tsz = 0;	/* size of targets array */
 
 /*
-** target_add
-**	add a target to the list
+** target_default
+**	Configure default method
 */
 void
 target_default(cmd)
@@ -262,16 +270,17 @@ char **args, *cmd;
 /*
 ** target_next
 **	Find the next target available for a specific phase
-**		1 -> Ping  <=>  status == 0
-**		2 -> Test  <=>  status == 1
-**		3 -> Exec  <=>  status == 2
+**		1 -> Ping  	<=>  status == 0
+**		2 -> Test  	<=>  status == 1
+**		3 -> Exec  	<=>  status == 2
+**		4 -> Analyzer	<=>  status == 3
 **	Return 0 if there is such a target, -1 otherwise
 */
 int
 target_next(phase)
 int phase;
 {
-    assert( phase > 0 && phase < 4 );
+    assert( phase > 0 && phase < 5 );
 
     tcur = 0;
     while (tcur <= tmax)
@@ -296,12 +305,19 @@ target_result(ok)
 int ok;
 {
     assert( tcur >= 0 && tcur <= tmax );
-    assert( targets[tcur].status >= -1 && targets[tcur].status < 3 );
-    assert( targets[tcur].phase > 0 && targets[tcur].phase <= 3 );
+    assert( targets[tcur].status >= -1 && targets[tcur].status < 4 );
+    assert( targets[tcur].phase > 0 && targets[tcur].phase <= 4 );
 
     status_phase(targets[tcur].status, -1);
     if (ok == 1)
+      {
+	if (targets[tcur].result == CMD_ERROR)
+	  {
+	    assert( targets[tcur].phase >= 3 );
+	    targets[tcur].phase = 4;
+	  }
 	targets[tcur].status = targets[tcur].phase;
+      }
     else
       {
 	targets[tcur].status = -1;
@@ -319,7 +335,7 @@ target_cmdstatus(status)
 int status;
 {
     assert( tcur >= 0 && tcur <= tmax );
-    assert( targets[tcur].phase == 3 );
+    assert( targets[tcur].phase == 3 || targets[tcur].phase == 4 );
     assert( status >= -2 && status <= 2 );
 
     targets[tcur].result = status;
@@ -355,7 +371,7 @@ int seconds;
 	      e += 1;
 	      break;
 	  case 0:
-	      assert( targets[i].status == -1 || targets[i].status == 3 );
+	      assert( targets[i].status == -1 || targets[i].status == 4 );
 	      break;
 	  default:
 	      eprint("Unknown target result found!");

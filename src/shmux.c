@@ -19,13 +19,14 @@
 
 #include "version.h"
 
+#include "analyzer.h"
 #include "byteset.h"
 #include "loop.h"
 #include "target.h"
 #include "term.h"
 #include "units.h"
 
-static char const rcsid[] = "@(#)$Id: shmux.c,v 1.17 2003-03-03 02:06:04 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: shmux.c,v 1.18 2003-03-19 02:15:36 kalt Exp $";
 
 extern char *optarg;
 extern int optind, opterr;
@@ -33,11 +34,12 @@ extern int optind, opterr;
 char *myname;
 
 /* Miscellaneous default settings */
+#define DEFAULT_ANALYSIS "regex"
+#define DEFAULT_ERRORCODES "1-"
 #define	DEFAULT_MAXWORKERS 10
 #define DEFAULT_PINGTIMEOUT "500"
-#define DEFAULT_TESTTIMEOUT 15
 #define DEFAULT_RCMD "ssh"
-#define DEFAULT_ERRORCODES "1-"
+#define DEFAULT_TESTTIMEOUT 15
 
 static void usage(int);
 
@@ -55,7 +57,7 @@ int detailed;
     fprintf(stderr, "  -c <command>  Command to execute on targets.\n");
     fprintf(stderr, "  -C <timeout>  Set a command timeout.\n");
     fprintf(stderr, "\n");
-    fprintf(stderr, "  -M            Maximum number of simultaneous processes (Default: %u).\n", DEFAULT_MAXWORKERS);
+    fprintf(stderr, "  -M <max>      Maximum number of simultaneous processes (Default: %u).\n", DEFAULT_MAXWORKERS);
     fprintf(stderr, "  -r <rcmd>     Set the default method (Default: %s).\n", DEFAULT_RCMD);
     fprintf(stderr, "  -p            Ping targets to check for life.\n");
     fprintf(stderr, "  -P <millisec> Initial target timeout given to fping (Default: %s).\n", DEFAULT_PINGTIMEOUT);
@@ -64,6 +66,9 @@ int detailed;
     fprintf(stderr, "\n");
     fprintf(stderr, "  -e <range>    Exit codes to consider errors (Default: \"%s\")\n", DEFAULT_ERRORCODES);
     fprintf(stderr, "  -E <range>    Exit codes to always display (Default: \"%s\")\n", DEFAULT_ERRORCODES);
+    fprintf(stderr, "  -a <type>     Analysis type (Default: %s)\n", DEFAULT_ANALYSIS);
+    fprintf(stderr, "  -A <test>     Analyze output to determine success from failure.\n");
+    fprintf(stderr, "\n");
     fprintf(stderr, "  -o <dir>      Send the output to files under the specified directory.\n");
     fprintf(stderr, "  -m            Don't mix target outputs.\n");
     fprintf(stderr, "  -b            Show bare output without target names.\n");
@@ -79,8 +84,10 @@ main(int argc, char **argv)
     int badopt;
     int opt_prefix, opt_status, opt_quiet, opt_internal, opt_debug;
     int opt_ctimeout, opt_mixed, opt_maxworkers, opt_vtest;
-    u_int opt_test;
-    char *opt_rcmd, *opt_command, *opt_odir, *opt_ping, tdir[PATH_MAX];
+    u_int opt_test, opt_analyzer;
+    char *opt_analyze, *opt_outanalysis, *opt_erranalysis;
+    char *opt_command, *opt_odir, *opt_ping, *opt_rcmd;
+    char tdir[PATH_MAX];
     int longest;
     time_t start;
 
@@ -91,10 +98,11 @@ main(int argc, char **argv)
     opt_mixed = 1;
     opt_maxworkers = DEFAULT_MAXWORKERS;
     opt_ctimeout = opt_test = opt_vtest = 0;
+    opt_analyze = opt_outanalysis = opt_erranalysis = NULL;
+    opt_command = opt_odir = opt_ping = NULL;
     opt_rcmd = getenv("SHMUX_RCMD");
     if (opt_rcmd == NULL)
 	opt_rcmd = DEFAULT_RCMD;
-    opt_command = opt_odir = opt_ping = NULL;
     if (getenv("SHMUX_ERRORCODES") != NULL)
 	byteset_init(BSET_ERROR, getenv("SHMUX_ERRORCODES"));
     else
@@ -109,7 +117,7 @@ main(int argc, char **argv)
       {
         int c;
 	
-        c = getopt(argc, argv, "bc:C:De:E:hmM:o:pP:qr:stT:vV");
+        c = getopt(argc, argv, "a:A:bc:C:De:E:hmM:o:pP:qr:stT:vV");
 	
         /* Detect the end of the options. */
         if (c == -1)
@@ -117,6 +125,15 @@ main(int argc, char **argv)
 	
         switch (c)
           {
+	  case 'a':
+	      opt_analyze = optarg;
+	      break;
+	  case 'A':
+	      if (opt_outanalysis == NULL)
+		  opt_outanalysis = optarg;
+	      else
+		  opt_erranalysis = optarg;
+	      break;
 	  case 'b':
 	      opt_prefix = 0;
 	      break;
@@ -200,7 +217,16 @@ main(int argc, char **argv)
 	exit(1);
       }
 
+    opt_analyzer = analyzer_init(opt_analyze, opt_outanalysis,opt_erranalysis);
+    /* -A requires -o, to avoid dangerous/reckless invocations. */
+    if (opt_analyzer != ANALYZE_NONE && opt_odir == NULL)
+      {
+	fprintf(stderr, "%s: -o option required when using -A!\n", myname);
+	exit(1);
+      }
+
     if (opt_mixed == 0)
+      {
 	/* User asked for non-mixed output */
 	if (opt_odir == NULL)
 	  {
@@ -215,6 +241,7 @@ main(int argc, char **argv)
 	else
 	    /* Senseless, -o was also specified. */
 	    opt_mixed = 1;
+      }
 
     if (opt_odir != NULL && mkdir(opt_odir, 0777) == -1 && errno != EEXIST)
       {
@@ -245,7 +272,7 @@ main(int argc, char **argv)
     /* Loop through targets/commands */
     start = time(NULL);
     loop(opt_command, opt_ctimeout, opt_maxworkers,
-	 opt_mixed, opt_odir, opt_ping, opt_test);
+	 opt_mixed, opt_odir, opt_analyzer, opt_ping, opt_test);
 
     /* odir was temporary, remove it now */
     if (opt_mixed == 0 && rmdir(opt_odir) == -1)

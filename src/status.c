@@ -16,25 +16,30 @@
 #include "target.h"
 #include "term.h"
 
-static char const rcsid[] = "@(#)$Id: status.c,v 1.6 2003-01-05 20:15:25 kalt Exp $";
+#define MAX(a, b) ((a > b) ? a : b)
 
-static int spawned, inphase[4];
-static time_t changed[4];
+static char const rcsid[] = "@(#)$Id: status.c,v 1.7 2003-03-19 02:15:36 kalt Exp $";
+
+static int spawned, inphase[5];
+static time_t changed[5];
 
 /*
 ** status_init
 **	Initialize things..
 */
 void
-status_init(pings, tests)
-int pings, tests;
+status_init(pings, tests, analyzer)
+int pings, tests, analyzer;
 {
-    spawned = inphase[0] = inphase[1] = inphase[2] = inphase[3] = 0;
+    spawned = 0;
+    inphase[0] = inphase[1] = inphase[2] = inphase[3] = inphase[4] = 0;
     changed[0] = changed[1] = changed[2] = changed[3] = 0;
     if (pings == 0)
 	inphase[1] = -1;
     if (tests == 0)
 	inphase[2] = -1;
+    if (analyzer == 0)
+	inphase[4] = -1;
 }
 
 /*
@@ -56,7 +61,7 @@ void
 status_phase(phase, count)
 int phase, count;
 {
-    assert( phase >= -1 && phase < 4 );
+    assert( phase >= -1 && phase < 5 );
     assert( inphase[0] != -1 );
 
     while (inphase[phase] == -1)
@@ -77,7 +82,7 @@ void
 status_update(void)
 {
     time_t now;
-    char loadavg[20];
+    char tmp[4][80], loadavg[20];
 #if defined(HAVE_GETLOADAVG) && !defined(GETLOADAVG_PRIVILEGED)
     double load[3];
     static int erroronce = 1;
@@ -98,33 +103,37 @@ status_update(void)
 #endif
 
     now = time(NULL);
-    if (inphase[1] == -1 && inphase[2] == -1)
-	sprint("-- %d Active, %d Pending/%s%d Failed/%s%d Done -- %s",
-	       spawned, target_getmax() - spawned - inphase[0] - inphase[3],
-	       (now - changed[0] < 2) ? "\a" : "", inphase[0],
-	       (now - changed[3] < 2) ? "\a" : "", inphase[3],
-	       loadavg);
-    else if (inphase[2] == -1)
-	sprint("-- %d Active, %d Pending/%s%d Failed/%s%d Alive/%s%d Done -- %s",
-	       spawned, target_getmax() - inphase[0] - inphase[1] - inphase[3],
-	       (now - changed[0] < 2) ? "\a" : "", inphase[0],
-	       (now - changed[1] < 2) ? "\a" : "", inphase[1],
-	       (now - changed[3] < 2) ? "\a" : "", inphase[3],
-	       loadavg);
-    else if (inphase[1] == -1)
-	sprint("-- %d Active, %d Pending/%s%d Failed/%s%d OK/%s%d Done -- %s",
-	       spawned, target_getmax() - inphase[0] - inphase[2] - inphase[3],
-	       (now - changed[0] < 2) ? "\a" : "", inphase[0],
-	       (now - changed[2] < 2) ? "\a" : "", inphase[2],
-	       (now - changed[3] < 2) ? "\a" : "", inphase[3],
-	       loadavg);
+
+    if (inphase[1] >= 0)
+	sprintf(tmp[0], "%s%d Alive/",
+		(now - changed[1] < 2) ? "\a" : "", inphase[1]);
     else
-	sprint("-- %d Active, %d Pending/%s%d Failed/%s%d Alive/%s%d OK/%s%d Done -- %s",
-	       spawned, target_getmax() - inphase[0] - inphase[1] - inphase[2]
-	       - inphase[3],
-	       (now - changed[0] < 2) ? "\a" : "", inphase[0],
-	       (now - changed[1] < 2) ? "\a" : "", inphase[1],
-	       (now - changed[2] < 2) ? "\a" : "", inphase[2],
-	       (now - changed[3] < 2) ? "\a" : "", inphase[3],
-	       loadavg);
+	tmp[0][0] = '\0';
+
+    if (inphase[2] >= 0)
+	sprintf(tmp[1], "%s%d OK/",
+		(now - changed[2] < 2) ? "\a" : "", inphase[2]);
+    else
+	tmp[1][0] = '\0';
+
+    if (inphase[4] >= 0)
+      {
+	sprintf(tmp[2], "%s%d Run/",
+		(now - changed[3] < 2) ? "\a" : "", inphase[3]);
+	sprintf(tmp[3], "%s%d Done",
+		(now - changed[4] < 2) ? "\a" : "", inphase[4]);
+      }
+    else
+      {
+	sprintf(tmp[2], "%s%d Done",
+		(now - changed[3] < 2) ? "\a" : "", inphase[3]);
+	tmp[3][0] = '\0';
+      }
+
+    sprint("-- %d Active, %d Pending/%s%d Failed/%s%s%s%s -- %s",
+	   spawned,
+	   target_getmax() - inphase[0] - MAX(0, inphase[1])
+	   - MAX(0, inphase[2]) - inphase[3] - MAX(0, inphase[4]),
+	   (now - changed[0] < 2) ? "\a" : "", inphase[0],
+	   tmp[0], tmp[1], tmp[2], tmp[3], loadavg);
 }

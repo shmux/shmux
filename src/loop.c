@@ -15,6 +15,7 @@
 #include <sys/resource.h>
 #include <poll.h>
 
+#include "analyzer.h"
 #include "byteset.h"
 #include "exec.h"
 #include "loop.h"
@@ -22,7 +23,7 @@
 #include "target.h"
 #include "term.h"
 
-static char const rcsid[] = "@(#)$Id: loop.c,v 1.24 2003-03-18 16:02:01 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: loop.c,v 1.25 2003-03-19 02:15:35 kalt Exp $";
 
 extern char *myname;
 
@@ -31,6 +32,7 @@ struct child
     pid_t	pid;		/* Process ID */
     int		num;		/* target number */
     int		test, passed;	/* test?, passed? */
+    int		analyzer;	/* analyzer? */
     int		execstate;	/* exec() status: 0=ok, 1=failed? 2=failed */
     char	*obuf, *ebuf;	/* stdout/stderr truncated buffer */
     char	*ofname, *efname; /* stdout/stderr file names */
@@ -143,6 +145,7 @@ struct child *kid;
 {
     kid->num = target_getnum();
     kid->test = kid->passed = 0;
+    kid->analyzer = 0;
     kid->execstate = 0;
     kid->obuf = kid->ebuf = NULL;
     kid->ofname = kid->efname = NULL;
@@ -464,10 +467,10 @@ int fd, type;
 **	targets with a simple echo command, and finally running a command.
 */
 void
-loop(cmd, ctimeout, max, mixed, odir, ping, test)
+loop(cmd, ctimeout, max, mixed, odir, utest, ping, test)
 char *cmd, *ping, *odir;
 int max, mixed;
-u_int ctimeout, test;
+u_int ctimeout, utest, test;
 {
     struct child *children;
     struct pollfd *pfd;
@@ -501,7 +504,7 @@ u_int ctimeout, test;
     got_sigint = 0;
 
     /* Initialize the status module. */
-    status_init(ping != NULL, test != 0);
+    status_init(ping != NULL, test != 0, utest != ANALYZE_NONE);
 
     /* Run fping if requested */
     if (ping != NULL)
@@ -670,7 +673,65 @@ u_int ctimeout, test;
 		    continue;
 		  }
 
-		/* Spawn phase 3 ready first */
+		/* Spawn phase 4 ready first */
+		if (idx > 0 && target_next(4) == 0)
+		  {
+		    done = 0;
+
+		    if (utest != ANALYZE_RUN)
+		      {
+			dprint("%s skipped external analyzer",
+			       target_getname());
+			target_result(1);
+			continue;
+		      }
+
+		    init_child(&(children[idx]));
+		    children[idx].analyzer = 1;
+		    assert( odir != NULL );
+		    children[idx].ofile = output_file(&children[idx].ofname, odir, target_getname(), "analyzer.stdout");
+		    if (children[idx].ofile == -1)
+		      {
+			eprint("Fatal error for %s", target_getname());
+			target_result(-1);
+			continue;
+		      }
+		    children[idx].efile = output_file(&children[idx].efname, odir, target_getname(), "analyzer.stderr");
+		    if (children[idx].efile == -1)
+		      {
+			close(children[idx].efile);
+			eprint("Fatal error for %s", target_getname());
+			target_result(-1);
+			continue;
+		      }
+		    pfd[idx*3].fd = -1;
+		    cargv[0] = analyzer_cmd();
+		    cargv[1] = target_getname();
+		    cargv[2] = odir;
+		    cargv[3] = NULL;
+		    children[idx].pid = exec(NULL, &(pfd[idx*3+1].fd),
+					     &(pfd[idx*3+2].fd),
+					     target_getname(), cargv,
+					     analyzer_timeout());
+		    if (children[idx].pid == -1)
+			  {
+			    /* Error message was given by exec() */
+			    eprint("Fatal error for %s", target_getname());
+			    target_result(-1);
+			    continue;
+			  }
+
+		    pfd[idx*3+1].events = POLLIN;
+		    pfd[idx*3+2].events = POLLIN;
+
+		    dprint("%s, phase 4: pid = %d (idx=%d) %d/%d/%d",
+			   target_getname(), children[idx].pid, idx,
+			   pfd[idx*3].fd, pfd[idx*3+1].fd, pfd[idx*3+2].fd);
+		    idx += 1;
+		    continue;
+		  }
+
+		/* Spawn phase 3 ready */
 		if (idx > 0 && target_next(3) == 0)
 		  {
 		    done = 0;
@@ -815,7 +876,9 @@ u_int ctimeout, test;
 		  }
 		else
 		    eprint("%s for %s stopped: %s!?",
-			   (children[idx].test == 0) ? "Child" : "Test", what,
+			   (children[idx].test == 0) ? 
+			   (children[idx].analyzer == 0 ) ? "Child"
+			   : "Analyzer" : "Test", what,
 			   strsignal(WSTOPSIG(status)));
 		idx += 1;
 		continue;
@@ -845,32 +908,22 @@ u_int ctimeout, test;
 	      }
 
 	    /*
-	    ** If outputing to a file, clean things up, and optionally
+	    ** If user asked for a non-mixed output, now's a good time to
 	    ** show the output on screen.
 	    */
-	    if (children[idx].ofile != -1)
+	    if (children[idx].ofile != -1 && mixed == 0)
 	      {
-		if (mixed == 0)
-		    output_show(what, children[idx].ofile,
-				children[idx].ofname, 1);
-		close(children[idx].ofile);
-		if (mixed == 0 && unlink(children[idx].ofname) == -1)
+		output_show(what, children[idx].ofile, children[idx].ofname,1);
+		if (unlink(children[idx].ofname) == -1)
 		    eprint("unlink(%s): %s",
 			   children[idx].ofname, strerror(errno));
-		assert( children[idx].ofname != NULL );
-		free(children[idx].ofname);
 	      }
-	    if (children[idx].efile != -1)
+	    if (children[idx].efile != -1 && mixed == 0)
 	      {
-		if (mixed == 0)
-		    output_show(what, children[idx].efile,
-				children[idx].ofname, 2);
-		close(children[idx].efile);
-		if (mixed == 0 && unlink(children[idx].efname) == -1)
+		output_show(what, children[idx].efile, children[idx].ofname,2);
+		if (unlink(children[idx].efname) == -1)
 		    eprint("unlink(%s): %s",
 			   children[idx].efname, strerror(errno));
-		assert( children[idx].efname != NULL );
-		free(children[idx].efname);
 	      }
 
 	    if (idx > 0)
@@ -882,6 +935,19 @@ u_int ctimeout, test;
 		if (children[idx].test == 1)
 		    dprint("Test for %s exited with status %d",
 			   what, WEXITSTATUS(status));
+		else if (children[idx].analyzer == 1)
+		  {
+		    output_show(what, children[idx].ofile,
+				children[idx].ofname, 1);
+		    output_show(what, children[idx].efile,
+				children[idx].ofname, 2);
+		    dprint("Analyzer for %s exited with status %d",
+			   what, WEXITSTATUS(status));
+		    if (WEXITSTATUS(status) == 0)
+			target_cmdstatus(CMD_SUCCESS);
+		    else
+			target_cmdstatus(CMD_ERROR);
+		  }
 		else if (idx == 0)
 		  {
 		    /* fping */
@@ -892,24 +958,7 @@ u_int ctimeout, test;
 		  } 
 		else if (children[idx].execstate == 0)
 		  {
-		    if (byteset_test(BSET_ERROR, WEXITSTATUS(status)) == 0)
-		      {
-			target_cmdstatus(CMD_ERROR);
-			eprint("Child for %s exited with status %d",
-			       what, WEXITSTATUS(status));
-		      }
-		    else
-		      {
-			target_cmdstatus(CMD_SUCCESS);
-			if (byteset_test(BSET_SHOW, WEXITSTATUS(status)) == 0)
-			    tprint(myname, MSG_STDOUT,
-				   "Child for %s exited with status %d",
-				   what, WEXITSTATUS(status));
-			else
-			    iprint("Child for %s exited (with status %d)",
-				   what, WEXITSTATUS(status));
-		      }
-
+		    /* save exit status */
 		    if (odir != NULL && mixed != 0)
 		      {
 			int fd;
@@ -925,15 +974,78 @@ u_int ctimeout, test;
 			    free(fn);
 			  }
 		      }
+
+		    if (byteset_test(BSET_ERROR, WEXITSTATUS(status)) == 0)
+		      {
+			if (utest != ANALYZE_NONE)
+			  {
+			    output_show(what, children[idx].ofile,
+					children[idx].ofname, 1);
+			    output_show(what, children[idx].efile,
+					children[idx].ofname, 2);
+			  }
+			target_cmdstatus(CMD_ERROR);
+			eprint("Child for %s exited with status %d",
+			       what, WEXITSTATUS(status));
+		      }
+		    else
+		      {
+			if (utest == ANALYZE_NONE || utest == ANALYZE_RUN)
+			    target_cmdstatus(CMD_SUCCESS);
+			else
+			  {
+			    /*
+			    ** Analyze the output to tell success from failure
+			    ** based on user supplied criteria.
+			    */
+			    if (analyzer_run(utest,
+					     children[idx].ofile,
+					     children[idx].ofname,
+					     children[idx].efile,
+					     children[idx].efname) == 0)
+				target_cmdstatus(CMD_SUCCESS);
+			    else
+			      {
+				output_show(what, children[idx].ofile,
+					    children[idx].ofname, 1);
+				output_show(what, children[idx].efile,
+					    children[idx].ofname, 2);
+				target_cmdstatus(CMD_ERROR);
+			      }
+			  }
+			if (byteset_test(BSET_SHOW, WEXITSTATUS(status)) == 0)
+			    tprint(myname, MSG_STDOUT,
+				   "Child for %s exited with status %d",
+				   what, WEXITSTATUS(status));
+			else
+			    iprint("Child for %s exited (with status %d)",
+				   what, WEXITSTATUS(status));
+		      }
 		  }
 		else
 		    target_cmdstatus(CMD_FAILURE);
+
+		/* If outputing to a file, clean things up. */
+		if (children[idx].ofile != -1)
+		  {
+		    close(children[idx].ofile);
+		    assert( children[idx].ofname != NULL );
+		    free(children[idx].ofname);
+		  }
+		if (children[idx].efile != -1)
+		  {
+		    close(children[idx].efile);
+		    assert( children[idx].efname != NULL );
+		    free(children[idx].efname);
+		  }
 	      } else {
 		assert( WTERMSIG(status) != 0 );
 		if (WTERMSIG(status) == SIGALRM)
 		    if (children[idx].test == 0)
 		      {
-			eprint("Child for %s timed out", what);
+			eprint("%s for %s timed out",
+			       (children[idx].analyzer == 0) ? "Child"
+			       : "Analyzer", what);
 			if (idx > 0)
 			    target_cmdstatus(CMD_TIMEOUT);
 		      }
@@ -942,7 +1054,9 @@ u_int ctimeout, test;
 		else
 		  {
 		    eprint("%s for %s died: %s%s",
-			   (children[idx].test == 0) ? "Child" : "Test", what,
+			   (children[idx].test == 0) ? 
+			   (children[idx].analyzer == 0 ) ? "Child"
+			   : "Analyzer" : "Test", what,
 			   strsignal(WTERMSIG(status)),
 			   (WCOREDUMP(status) != 0) ? " (core dumped)" : "");
 		    if (idx > 0 && children[idx].test == 0)
