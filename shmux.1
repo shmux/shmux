@@ -1,4 +1,4 @@
-.TH SHMUX 8 "$Date: 2003-03-30 02:52:06 $"
+.TH SHMUX 8 "$Date: 2003-04-13 18:38:54 $"
 .DA March 18, 2003
 .SH NAME
 shmux - Shell Multiplexor
@@ -174,6 +174,42 @@ In particular, \fIrsh\fP typically only returns either 0 or 1 while
 different implementations of \fIssh\fP have different behaviours which may
 include returning the actual exit code of the remotely executed command or
 not.
+
+.SH INTERACTIVE MODE
+When running, \fBshmux\fP offers a minimal "interactive mode":  it reads
+commands from the terminal and acts upon them accordingly.  The following
+commands are currently recognized:
+
+.IP "\fBq\fP"
+Prevent \fBshmux\fP from spawning any more children, wen for active
+children to complete, and then quit.
+.IP "\fBQ\fP"
+Quit immediately, not waiting for any active children to terminate.  This
+isn't recommended as the children are left running.  A better alternative
+is to press control-C which will be received by \fBshmux\fP and all running
+children.  These will typically abort, and \fBshmux\fP terminate in a
+cleaner fashion.
+.IP "space"
+Initiate a pause, this prevents \fBshmux\fP from spawning any more children
+to do its work.
+.IP "return"
+Resumes work following a pause.
+.IP "\fBp\fP"
+Display the list of pending targets.
+.IP "\fBr\fP"
+Display the list of targets for which a children process is currently
+running.
+.IP "\fBf\fP"
+Display the list of targets for which \fBshmux\fP failed to run the
+\fIcommand\fP.
+.IP "\fBe\fP"
+Display the list of targets for which the \fIcommand\fP completed with
+error(s).
+.IP "\fBs\fP"
+Display the list of targets for which the \fIcommand\fP completed
+successfully.
+.IP "\fBa\fP"
+Display the list of all targets with their status.
 
 .SH ENVIRONMENT
 \fBshmux\fP will use the following environment variables if set:
