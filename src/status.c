@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2002 Christophe Kalt
+** Copyright (C) 2002, 2003 Christophe Kalt
 **
 ** This file is part of shmux,
 ** see the LICENSE file for details on your rights.
@@ -16,7 +16,7 @@
 #include "target.h"
 #include "term.h"
 
-static char const rcsid[] = "@(#)$Id: status.c,v 1.5 2003-01-05 20:11:34 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: status.c,v 1.6 2003-01-05 20:15:25 kalt Exp $";
 
 static int spawned, inphase[4];
 static time_t changed[4];
