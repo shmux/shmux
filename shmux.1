@@ -1,4 +1,4 @@
-.TH SHMUX 8 "$Date: 2003-11-08 01:17:21 $"
+.TH SHMUX 8 "$Date: 2004-04-01 00:54:14 $"
 .DA November 7, 2003
 .SH NAME
 shmux - Shell Multiplexor
@@ -124,8 +124,8 @@ For line based regular expressions (\fIlnregex\fP and \fIlnpcre\fP), the
 \fB-A\fP option should be specified twice:  once for the standard output
 and once for the standard error output.  In both cases, the argument should
 be the name of a file containing a list of regular expressions, one per
-line.  Each regular expression must be prefixed by the character '=' or
-'!'.  The output of the \fIcommand\fP is analyzed line per line by checking
+line.  Each regular expression must be prefixed by the character '=' or '!'.
+The output of the \fIcommand\fP is analyzed line per line by checking
 whether it matches any of the specified regular expressions.  If the first
 matching regular expression is prefixed by '=', then the \fIcommand\fP is
 considered to be successful (so far).  Any other result (e.g. no match, or
@@ -136,8 +136,8 @@ error.
 For other regular expressions (\fIregex\fP and \fIpcre\fP), the \fB-A\fP
 option should be specified twice: once for the standard output and once for
 the standard error output.  This option allows defining the expression to
-be applied to the output.  If the \fIcondition\fP starts with the character
-'=' then a match indicates that the \fIcommand\fP completed without error.
+be applied to the output.  If the \fIcondition\fP starts with the character '='
+then a match indicates that the \fIcommand\fP completed without error.
 If the \fIcondition\fP starts with the character '!' then a failure to
 match indicates that the \fIcommand\fP completed without error.  The second
 character of the condition should either be '=' if the regular expression
