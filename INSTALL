@@ -1,5 +1,9 @@
 -- shmux NEWS
 
+As of version 0.11a, the only thing holding shmux back from a beta release
+towards the 1.0 release is lack of thorough testing (of advanced features
+as well as on more OSes) and the lack of user feedback.
+
 Version 0.9a introduces the following usage changes:
 
 o The old -q option is now -Q
@@ -46,7 +50,7 @@ a solution, from which the problem might be difficult to infer.
 
 Your feedback will help to make a better and more portable package.
 Consider documentation errors as bugs, and report them as such.  If you
-develop anything pertaining to `shmux' or have suggestions, share your
-findings by writing to `shmux@taranis.org'.
+develop anything pertaining to `shmux' or have suggestions, share them
+by writing to `shmux@taranis.org'.
 
--- $Id: INSTALL,v 1.9 2003-05-05 00:58:11 kalt Exp $
+-- $Id: INSTALL,v 1.10 2003-11-28 20:36:51 kalt Exp $
