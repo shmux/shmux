@@ -20,7 +20,7 @@
 #include "term.h"
 #include "units.h"
 
-static char const rcsid[] = "@(#)$Id: analyzer.c,v 1.3 2003-03-23 18:37:37 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: analyzer.c,v 1.4 2003-03-26 01:35:34 kalt Exp $";
 
 extern char *myname;
 
@@ -34,9 +34,9 @@ static u_int	run_timeout;
 
 static void *mapfile(int, int, char *, size_t *);
 static void unmapfile(int, char *, void *, size_t);
-static void re_comp(void *, char *);
+static void compile_re(void *, char *);
 #if defined(HAVE_PCRE_H)
-static void pcre_comp(void *, char *);
+static void compile_pcre(void *, char *);
 #endif
 static void restr_init(void *, void (*)(void *, char *), int *, char *);
 
@@ -119,11 +119,11 @@ size_t len;
 }
 
 /*
-** re_comp
+** compile_re
 **	Regular expression (regex_t) initialization
 */
 void
-re_comp(reptr, str)
+compile_re(reptr, str)
 void *reptr;
 char *str;
 {
@@ -146,11 +146,11 @@ char *str;
 
 #if defined(HAVE_PCRE_H)
 /*
-** pcre_comp
+** compile_pcre
 **	Perl Compatible Regular Expression (pcre) initialization
 */
 void
-pcre_comp(pcreptr, str)
+compile_pcre(pcreptr, str)
 void *pcreptr;
 char *str;
 {
@@ -250,20 +250,20 @@ char *type, *out, *err;
 	     || strcmp(type, "pcre") == 0)
       {
 	if (type[0] != 'p')
-	    restr_init((void *) &out_re, re_comp, &out_ok, out);
+	    restr_init((void *) &out_re, compile_re, &out_ok, out);
 #if defined(HAVE_PCRE_H)
 	else
-	    restr_init((void *) &out_pcre, pcre_comp, &out_ok, out);
+	    restr_init((void *) &out_pcre, compile_pcre, &out_ok, out);
 #endif
 
 	if (err == NULL)
 	    err = "!."; /* Impose sane/useful default */
 
 	if (type[0] != 'p')
-	    restr_init((void *) &err_re, re_comp, &err_ok, err);
+	    restr_init((void *) &err_re, compile_re, &err_ok, err);
 #if defined(HAVE_PCRE_H)
 	else
-	    restr_init((void *) &err_pcre, pcre_comp, &err_ok, err);
+	    restr_init((void *) &err_pcre, compile_pcre, &err_ok, err);
 #endif
 
 	if (type[0] != 'p')
