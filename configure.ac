@@ -1,9 +1,9 @@
 #
-# $Id: configure.ac,v 1.7 2003-04-26 01:39:49 kalt Exp $
+# $Id: configure.ac,v 1.8 2003-05-27 00:30:56 kalt Exp $
 #
 AC_PREREQ(2.53)
 AC_INIT([Shell Multiplexor], [], [shmux-bugs@taranis.org], [shmux])
-AC_REVISION([$Id: configure.ac,v 1.7 2003-04-26 01:39:49 kalt Exp $])
+AC_REVISION([$Id: configure.ac,v 1.8 2003-05-27 00:30:56 kalt Exp $])
 AC_CONFIG_SRCDIR([src/os.h])
 AC_CONFIG_HEADER([src/config.h])
 
@@ -12,7 +12,7 @@ AC_PROG_CC
 AC_PROG_INSTALL
 
 # 
-AC_ARG_WITH([pcre], AC_HELP_STRING([[[--with-pcre[=DIR]]]], [support Perl Compatible Regular Expressions (default)]))
+AC_ARG_WITH([pcre], AC_HELP_STRING([--with-pcre=DIR], [Support Perl Compatible Regular Expressions (default)]))
 AC_ARG_WITH([pcre], AC_HELP_STRING([--without-pcre], [Do not support Perl Compatible Regular Expressions]))
 if test "x$with_pcre" != "xno"; then
    if test "x$with_pcre" != "xyes" -a "x$with_pcre" != "x"; then
