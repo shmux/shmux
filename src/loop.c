@@ -22,7 +22,7 @@
 #include "target.h"
 #include "term.h"
 
-static char const rcsid[] = "@(#)$Id: loop.c,v 1.22 2003-03-03 01:46:08 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: loop.c,v 1.23 2003-03-18 15:50:28 kalt Exp $";
 
 extern char *myname;
 
@@ -755,6 +755,7 @@ u_int ctimeout, test;
 		      {
 			target_result(1);
 			dprint("%s skipped test", target_getname());
+			continue;
 		      }
 		  }
 
