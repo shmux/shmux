@@ -1,4 +1,4 @@
-.TH SHMUX 8 "$Date: 2002-07-04 21:44:45 $
+.TH SHMUX 8 "$Date: 2002-07-06 20:22:25 $
 .DA July 4, 2002
 .SH NAME
 shmux - Shell Multiplexor
@@ -23,6 +23,7 @@ shmux - Shell Multiplexor
 .B -c \fIcommand\fP \fItargets...\fP
 
 .SH DESCRIPTION
+
 \fBshmux\fP is program for executing the same command on many hosts in
 parallel.  For each target, a child process is spawned by \fBshmux\fP, and
 a shell on the target obtained one of the supported methods: \fIrsh\fP,
@@ -45,6 +46,7 @@ with a fairly short timeout to quickly dismiss unavailable targets rather
 than waiting for the standard (longer) network timeout.
 
 .SH OPTIONS
+
 .IP "\fB-h\fP"
 Display a brief help message.
 .IP "\fB-V\fP"
@@ -73,6 +75,25 @@ corresponding target name.
 Display internal status messages.
 .IP "\fB-D\fP"
 Display internal debug messages.
+
+.SH ENVIRONMENT
+\fBshmux\fP will use the following environment variables if set:
+
+.IP SHMUX_SH
+Specify the shell to use for targets using the \fIsh\fP method.  (Default
+is "/bin/sh".)
+.IP SHMUX_RSH
+Specify an alternative command to "rsh" to use for targets using the
+\fIrsh\fP method.
+.IP SHMUX_SSH
+Specify an alternative command to "ssh" to use for targets using the
+\fIssh\fP, \fIssh1\fP or \fIssh2\fP method
+.IP SHMUX_SSH1
+Specify an alternative command to "ssh" to use for targets using the
+\fIssh1\fP method.  If set, this will override \fISHMUX_SSH\fP.
+.IP SHMUX_SSH2
+Specify an alternative command to "ssh" to use for targets using the
+\fIssh2\fP method.  If set, this will override \fISHMUX_SSH\fP.
 
 .SH SEE ALSO
 .IR fping (8),
