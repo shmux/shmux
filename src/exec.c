@@ -20,7 +20,7 @@
 #include "exec.h"
 #include "term.h"
 
-static char const rcsid[] = "@(#)$Id: exec.c,v 1.8 2004-07-06 18:41:30 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: exec.c,v 1.9 2004-07-08 00:07:47 kalt Exp $";
 
 pid_t
 exec(fd0, fd1, fd2, target, argv, timeout)
@@ -134,7 +134,6 @@ char *target, **argv;
 	sigaction(SIGABRT, &sa, NULL);
 	sigaction(SIGTERM, &sa, NULL);
 	sigaction(SIGTSTP, &sa, NULL);
-	sigaction(SIGTTIN, &sa, NULL);
 	sigaction(SIGCONT, &sa, NULL);
 	sigaction(SIGWINCH, &sa, NULL);
 

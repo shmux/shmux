@@ -23,7 +23,7 @@
 
 #include "term.h"
 
-static char const rcsid[] = "@(#)$Id: term.c,v 1.21 2004-07-06 18:41:30 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: term.c,v 1.22 2004-07-08 00:07:47 kalt Exp $";
 
 extern char *myname;
 
@@ -234,82 +234,42 @@ tty_init(void)
 	eprint("tcgetattr() failed: %s", strerror(errno));
 	ttyin = -1;
       }
+    else if (tcgetpgrp(ttyin) != getpgrp())
+        ttyin = -1;
     else
       {
-        int flags;
-
-        flags = fcntl(ttyin, F_GETFL, 0);
-        if (flags == -1)
-          {
-            eprint("fcntl(F_GETFL) failed: %s", strerror(errno));
-            ttyin = -1;
-          }
-        else if (fcntl(ttyin, F_SETFL, flags | O_NONBLOCK) < 0)
-          {
-            eprint("fcntl(F_SETFL, O_NONBLOCK) failed: %s", strerror(errno));
-            ttyin = -1;
-          }
-        else
+        shmuxt = origt;
+        shmuxt.c_lflag &= ~(ICANON|ECHO); /* no echo or canonical processing */
+        shmuxt.c_cc[VMIN] = 1; /* no buffering */
+        shmuxt.c_cc[VTIME] = 0; /* no delaying */
+        if (tcsetattr(ttyin, TCSANOW, &shmuxt) == 0)
           {
             struct sigaction sa;
-            char ch;
+
+            atexit(tty_restore);
 
             /*
-            ** Ignore SIGTTIN to make sure we won't hang on the read()
-            ** call because we are part of a background process group.
+            ** Catch signals which require reinitializing or restoring
+            ** tty settings
             */
             sigemptyset(&sa.sa_mask);
             sa.sa_flags = 0;
-            sa.sa_handler = SIG_IGN;
-            sigaction(SIGTTIN, &sa, NULL);
-            if (read(ttyin, &ch, 1) == -1 && errno == EIO)
-              {
-                dprint("read(ttyin) indicates background state.");
-                ttyin = -1;
-              }
-            else if (fcntl(ttyin, F_SETFL, flags) < 0)
-              {
-                eprint("fcntl(F_SETFL) failed: %s", strerror(errno));
-                ttyin = -1;
-              }
-            else
-              {
-                shmuxt = origt;
-                /* no echo or canonical processing */
-                shmuxt.c_lflag &= ~(ICANON|ECHO);
-                shmuxt.c_cc[VMIN] = 1; /* no buffering */
-                shmuxt.c_cc[VTIME] = 0; /* no delaying */
-                if (tcsetattr(ttyin, TCSANOW, &shmuxt) == 0)
-                  {
-                    atexit(tty_restore);
+            sa.sa_handler = shmux_signal;
+            sigaction(SIGTSTP, &sa, NULL);
+            /* Only need to catch the following signals once, then we die. */
+            sa.sa_flags = SA_RESETHAND;
+            sigaction(SIGINT, &sa, NULL);
+            sigaction(SIGQUIT, &sa, NULL);
+            sigaction(SIGABRT, &sa, NULL);
+            sigaction(SIGTERM, &sa, NULL);
                     
-                    /*
-                    ** Catch signals which require reinitializing or restoring
-                    ** tty settings
-                    */
-                    sigemptyset(&sa.sa_mask);
-                    sa.sa_flags = 0;
-                    sa.sa_handler = shmux_signal;
-                    sigaction(SIGTSTP, &sa, NULL);
-                    /*
-                    ** Only need to catch the following signals once,
-                    ** then we die.
-                    */
-                    sa.sa_flags = SA_RESETHAND;
-                    sigaction(SIGINT, &sa, NULL);
-                    sigaction(SIGQUIT, &sa, NULL);
-                    sigaction(SIGABRT, &sa, NULL);
-                    sigaction(SIGTERM, &sa, NULL);
-                    
-                    dprint("Input tty initialized (0x%X -> 0x%X)",
-                           origt.c_lflag, shmuxt.c_lflag);
-                  }
-                else
-                  {
-                    eprint("tcsetattr() failed: %s", strerror(errno));
-                    ttyin = -1;
-                  }
-              }
+            dprint("Input tty initialized (0x%X -> 0x%X)",
+                   origt.c_lflag, shmuxt.c_lflag);
+          }
+        else
+          {
+            eprint("tcsetattr() failed: %s", strerror(errno));
+            ttyin = -1;
           }
       }
 
