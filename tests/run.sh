@@ -1,6 +1,6 @@
 #! /bin/sh
 #
-# $Id: run.sh,v 1.1 2004-04-06 00:36:55 kalt Exp $
+# $Id: run.sh,v 1.2 2004-07-20 00:13:09 kalt Exp $
 #- 7
 ## This simple set exercises the "run" analyzer
 #
@@ -24,6 +24,19 @@ shmux! Analyzer for 3 timed out
 Summary: 1 timeout, 2 errors
 Timed out: 3 
 Error    : 1 2 " ]; then
+    ok=`expr $ok + 1`
+elif [ "`uname -o 2> /dev/null`" = "Cygwin" \
+       -a "$test" = "    1: stdout
+shmux! Child for 1 exited with status 1
+    2: stdout
+    2: run(2, odir)...
+shmux! Analysis of 2 output indicates an error
+    3: stdout
+    3: run(3, odir)...
+shmux! Analysis of 3 output indicates an error
+
+Summary: 3 errors
+Error    : 1 2 3 " ]; then
     ok=`expr $ok + 1`
 fi
 printf "$ok/1"
