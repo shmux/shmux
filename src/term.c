@@ -23,7 +23,7 @@
 
 #include "term.h"
 
-static char const rcsid[] = "@(#)$Id: term.c,v 1.18 2003-05-03 23:23:33 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: term.c,v 1.19 2003-06-19 02:01:02 kalt Exp $";
 
 extern char *myname;
 
@@ -505,6 +505,12 @@ gprint(char *prefix, char separator, char *format, va_list va)
     FILE *std;
     int (*pc)(int);
 
+    if (CE != NULL)
+      {
+	tputs(CE, 0, putchar3);
+	fflush(ttyout);
+      }
+
     std = stdout; pc = putchar;
     if (separator == MSG_STDERR || separator == MSG_STDERRTRUNC)
       {
@@ -512,9 +518,6 @@ gprint(char *prefix, char separator, char *format, va_list va)
 	if (etty == 1 && MD != NULL)
 	    tputs(MD, 0, pc);
       }
-
-    if (CE != NULL)
-	tputs(CE, 0, pc);
 
     if ((prefix != NULL && targets != 0) || (prefix == myname))
 	fprintf(std, "%*s%c ", padding, prefix, separator);
