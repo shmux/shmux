@@ -25,7 +25,7 @@
 #include "target.h"
 #include "term.h"
 
-static char const rcsid[] = "@(#)$Id: loop.c,v 1.42 2003-11-08 01:17:27 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: loop.c,v 1.43 2003-11-14 00:46:18 kalt Exp $";
 
 extern char *myname;
 
@@ -1087,11 +1087,11 @@ u_int ctimeout, utest;
 		  }
 
 		/* Spawn phase 3 ready */
-		if (idx > 0 && target_next(3) == 0)
+		if (idx > 0 && spawn_mode != SPAWN_NONE && target_next(3) == 0)
 		  {
 		    done = 0;
 
-		    if (spawn_mode == SPAWN_PAUSE || spawn_mode == SPAWN_NONE)
+		    if (spawn_mode == SPAWN_PAUSE)
 		      {
 			/* Don't spawn any more children */
 			idx += 1;
