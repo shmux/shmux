@@ -16,16 +16,17 @@
 #  include <term.h>
 # endif
 #endif
+#include <signal.h>
 #include <stdarg.h>
 
 #include "term.h"
 
-static char const rcsid[] = "@(#)$Id: term.c,v 1.13 2003-03-29 20:53:26 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: term.c,v 1.14 2003-04-11 20:11:16 kalt Exp $";
 
 extern char *myname;
 
 static int targets, internalmsgs, debugmsgs, padding;
-static int otty, etty, CO;
+static int otty, etty, CO, got_sigwin;
 static char *MD,			/* bold */
 	    *ME,			/* turn off bold (and more) */
 	    *CE,			/* clear to end of line */
@@ -34,9 +35,22 @@ static char *MD,			/* bold */
 static char status[512];
 static FILE *tty;
 
+static void shmux_signal(int);
 static int putchar2(int);
 static int putchar3(int);
 static void gprint(char *, char, char *, va_list);
+
+/*
+** shmux_signal
+**	SIGWINCH/SIGCONT handler
+*/
+static void
+shmux_signal(sig)
+int sig;
+{
+    if (sig == SIGWINCH || sig == SIGCONT)
+	got_sigwin += 1;
+}
 
 /*
 ** term_init:
@@ -48,6 +62,7 @@ int maxlen, prefix, progress, internal, debug;
 {
     static char termcap[2048], area[1024];
     char *term, *ptr;
+    struct sigaction sa;
 
     assert( maxlen != 0 );
 
@@ -96,7 +111,14 @@ int maxlen, prefix, progress, internal, debug;
 
     ptr = area;
 
+    /* Get terminal width and setup signal handler to keep track of it. */
     if ((CO = tgetnum("co")) == -1) CO = 80;
+    sigemptyset(&sa.sa_mask);
+    sa.sa_flags = 0;
+    sa.sa_handler = shmux_signal;
+    sigaction(SIGWINCH, &sa, NULL);
+    sigaction(SIGCONT, &sa, NULL);
+    got_sigwin = 0;
     term_size();
 
     MD = tgetstr("md", &ptr);
@@ -161,6 +183,12 @@ sprint(char *format, ...)
 
     if (CE == NULL || tty == NULL)
 	return;
+
+    if (got_sigwin > 0)
+      {
+	got_sigwin = 0;
+	term_size();
+      }
 
     if (format != NULL)
       {

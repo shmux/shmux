@@ -23,7 +23,7 @@
 #include "target.h"
 #include "term.h"
 
-static char const rcsid[] = "@(#)$Id: loop.c,v 1.28 2003-04-09 19:39:48 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: loop.c,v 1.29 2003-04-11 20:11:15 kalt Exp $";
 
 extern char *myname;
 
@@ -40,10 +40,9 @@ struct child
     int		status;		/* waitpid(status) */
 };
 
-static int got_sigint, got_sigwin;
+static int got_sigint;
 
 static void shmux_sigint(int);
-static void shmux_sigwin(int);
 static void setup_fdlimit(int, int);
 static void init_child(struct child *);
 static void parse_child(char *, int, int, struct child *, int, char *);
@@ -60,17 +59,6 @@ shmux_sigint(sig)
 int sig;
 {
   got_sigint += 1;
-}
-
-/*
-** shmux_sigwin
-**	SIGWINCH/SIGCONT handler
-*/
-static void
-shmux_sigwin(sig)
-int sig;
-{
-  got_sigwin += 1;
 }
 
 /*
@@ -519,10 +507,6 @@ u_int ctimeout, utest, test;
     sa.sa_handler = shmux_sigint;
     sigaction(SIGINT, &sa, NULL);
     got_sigint = 0;
-    sa.sa_handler = shmux_sigwin;
-    sigaction(SIGWINCH, &sa, NULL);
-    sigaction(SIGCONT, &sa, NULL);
-    got_sigwin = 0;
 
     /* Initialize the status module. */
     status_init(ping != NULL, test != 0, utest != ANALYZE_NONE);
@@ -595,14 +579,6 @@ u_int ctimeout, utest, test;
 	      exit(1);
 	  }
 
-	/* Window may have been resized */
-	if (got_sigwin > 0)
-	  {
-	    term_size();
-	    got_sigwin = 0;
-	    status_update();
-	  }
-	      
 	/* read and process children output if any */
 	if (pollrc > 0)
 	  {
