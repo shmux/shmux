@@ -4,7 +4,7 @@
 # This file is part of shmux,
 # see the LICENSE file for details on your rights.
 #
-# $Id: Makefile.in,v 1.4 2003-03-23 18:52:56 kalt Exp $
+# $Id: Makefile.in,v 1.5 2003-03-27 00:55:43 kalt Exp $
 #
 
 INSTALL	= @INSTALL@
@@ -33,7 +33,7 @@ install: shmux
 	$(INSTALL) -d -m 0755 $(mandir)/man1
 	$(INSTALL) -m 644 shmux.1 $(mandir)/man1
 	$(INSTALL) -d -m 0755 $(sharedir)
-	$(INSTALL) -m 644 shmux.1 $(sharedir)
+	$(INSTALL) -m 644 mcmd.sh $(sharedir)
 	@echo ; echo "Done!"
 
 clean:
