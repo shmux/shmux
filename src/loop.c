@@ -21,7 +21,7 @@
 #include "target.h"
 #include "term.h"
 
-static char const rcsid[] = "@(#)$Id: loop.c,v 1.14 2002-08-17 01:15:10 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: loop.c,v 1.15 2002-08-17 02:12:07 kalt Exp $";
 
 struct child
 {
@@ -209,25 +209,38 @@ struct child *kid;
 	    else
 	      {
 		char **left;
+
 		if (std == 1)
 		    left = &(kid->obuf); /* stdout */
 		else
 		    left = &(kid->ebuf); /* stderr */
 
-		if (*left != NULL)
+		if (*left == NULL)
+		    *left = strdup(start);
+		else
 		  {
-		    /*
-		    ** This is a little weak, but then again it shouldn't
-		    ** happen often either..  Who just said "Never say
-		    ** never!"?  i swear i just heard someone say that...
-		    */
-		    tprint(name,
-			   ((std == 1) ? MSG_STDOUTTRUNC : MSG_STDERRTRUNC),
-			   "%s", *left);
-		    free(*left);
+		    int leftlen;
+		    leftlen = strlen(*left);
+
+		    if (leftlen > 1024)
+		      {
+			tprint(name,
+			       ((std == 1) ? MSG_STDOUTTRUNC :MSG_STDERRTRUNC),
+			       "%s", *left);
+			free(*left);
+			*left = NULL;
+		      }
+		    else
+		      {
+			char *old;
+
+			old = *left;
+			*left = (char *) malloc(strlen(start) + leftlen + 1);
+			strcpy(*left, old);
+			free(old);
+			strcpy((*left) + leftlen, start);
+		      }
 		  }
-	    
-		*left = strdup(start);
 	      }
 	  }
 	else
