@@ -23,7 +23,7 @@ extern int	tputs(char *, int, int (*)(int));
 
 #include "term.h"
 
-static char const rcsid[] = "@(#)$Id: term.c,v 1.3 2002-07-06 20:06:22 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: term.c,v 1.4 2002-07-07 20:54:35 kalt Exp $";
 
 extern char *myname;
 
@@ -118,7 +118,7 @@ sprint(char *format, ...)
     char *ch;
     int bold;
 
-    if (CE == NULL)
+    if (CE == NULL || otty == 0)
 	return;
 
     if (format != NULL)
