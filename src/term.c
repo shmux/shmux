@@ -23,7 +23,7 @@
 
 #include "term.h"
 
-static char const rcsid[] = "@(#)$Id: term.c,v 1.19 2003-06-19 02:01:02 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: term.c,v 1.20 2003-11-06 01:19:12 kalt Exp $";
 
 extern char *myname;
 
@@ -119,10 +119,8 @@ int maxlen, prefix, progress, internal, debug;
 	ttyout = stdout;
     else if (etty == 1)
 	ttyout = stderr;
-    else if (progress != 0)
-	ttyout = fopen("/dev/tty", "a");
     else
-	ttyout = NULL;
+	ttyout = fopen("/dev/tty", "a");
 
     term = getenv("TERM");
 
@@ -180,9 +178,9 @@ int maxlen, prefix, progress, internal, debug;
     CE = tgetstr("ce", &ptr);
     if (progress == 0)
 	CE = NULL;
-    else if (CE == NULL && progress != 0 && ttyout != NULL)
-	fprintf(stderr, "%*s: Terminal ``%s'' is too dumb! (no ce)\n",
-		padding, myname, term);
+
+    if (CE == NULL && progress != 0 && ttyout != NULL)
+	fprintf(stderr, "%*s: Terminal ``%s'' is too dumb for the progress status bar! (no ce)\n", padding, myname, term);
 
     tty_init();
 }
@@ -387,6 +385,8 @@ uprint(char *format, ...)
 {
     va_list va;
 
+    assert( ttyout != NULL );
+
     if (CE != NULL)
 	tputs(CE, 0, putchar3);
 
@@ -397,8 +397,7 @@ uprint(char *format, ...)
     tputs(NL, 0, putchar3);
     fflush(ttyout);
 
-    if (CE != NULL)
-	sprint(NULL);
+    sprint(NULL);
 }
 
 /*
@@ -412,8 +411,7 @@ uprompt(char *format, ...)
     static char input[1024];
     int pos;
 
-    if (CE != NULL)
-	tputs(CE, 0, putchar3);
+    if (CE != NULL) tputs(CE, 0, putchar3);
 
     /* Display the prompt. */
     fprintf(ttyout, ">> ");
@@ -450,8 +448,8 @@ uprompt(char *format, ...)
 	    if (pos >= 0)
 	      {
 		pos -= 1;
-		tputs(LE, 0, putchar3);
-		tputs(CE, 0, putchar3);
+		if (LE != NULL) tputs(LE, 0, putchar3);
+		if (CE != NULL) tputs(CE, 0, putchar3);
 	      }
 	  }
 	else if (input[pos] == origt.c_cc[VKILL])
@@ -460,9 +458,9 @@ uprompt(char *format, ...)
 	    while (pos >= 0)
 	      {
 		pos -= 1;
-		tputs(LE, 0, putchar3);
+		if (LE != NULL) tputs(LE, 0, putchar3);
 	      }
-	    tputs(CE, 0, putchar3);
+	    if (CE != NULL) tputs(CE, 0, putchar3);
 	  }
 	else if (input[pos] == '\n')
 	  {
@@ -474,7 +472,7 @@ uprompt(char *format, ...)
 	    if (pos < 1023)
 	      {
 		fprintf(ttyout, "%c", input[pos]);
-		tputs(CE, 0, putchar3); /* Useful after a multiline VKILL */
+		if (CE != NULL) tputs(CE, 0, putchar3); /* Useful after a multiline VKILL */
 	      }
 	    else
 		pos -= 1;
@@ -485,8 +483,7 @@ uprompt(char *format, ...)
     tputs(NL, 0, putchar3);
     fflush(ttyout);
 
-    if (CE != NULL)
-	sprint(NULL);
+    sprint(NULL);
 
     if (pos == -2)
 	return NULL;
@@ -527,8 +524,7 @@ gprint(char *prefix, char separator, char *format, va_list va)
     tputs(NL, 0, pc);
     fflush(std);
 
-    if (CE != NULL)
-	sprint(NULL);
+    sprint(NULL);
 }
 
 /*
