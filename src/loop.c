@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2002, 2003, 2004 Christophe Kalt
+** Copyright (C) 2002, 2003, 2004, 2005 Christophe Kalt
 **
 ** This file is part of shmux,
 ** see the LICENSE file for details on your rights.
@@ -29,7 +29,7 @@
 #include "target.h"
 #include "term.h"
 
-static char const rcsid[] = "@(#)$Id: loop.c,v 1.49 2004-12-15 00:36:01 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: loop.c,v 1.50 2005-05-29 18:58:53 kalt Exp $";
 
 extern char *myname;
 
@@ -1242,17 +1242,33 @@ u_int ctimeout, utest;
 		status = children[idx].status;
 	      }
 	    else
+              {
 		/* get current status */
+                int saved;
+
 		wprc = waitpid(children[idx].pid, &status, WNOHANG|WUNTRACED);
+                saved = errno;
+		if (wprc == -1)
+                  {
+		    eprint("waitpid(%d[%s]): %s",
+                           children[idx].pid, what, strerror(saved));
+                    if (saved == ECHILD)
+                      {
+                        /* this shouldn't happen, but has been seen. */
+                        eprint("Lost track of %s: exit status unavailable!",
+                               what);
+                        wprc = children[idx].pid;
+                        status = 0;
+                      }
+                  }
+                else
+                    dprint("waitpid(%d[%s]) = %d",
+                           children[idx].pid, what, wprc);
+              }
 
 	    if (wprc <= 0)
 	      {
-		/* child is alive and well */
-		if (wprc == -1)
-		    eprint("waitpid(%d[%s]): %s",
-			   children[idx].pid, what, strerror(errno));
-
-		/* timeout exceeded? */
+		/* child is alive and well, timeout exceeded? */
 		if (children[idx].timeout != 0
 		    && time(NULL) > children[idx].timeout)
 		  {
