@@ -1,4 +1,4 @@
-.TH SHMUX 8 "$Date: 2004-09-14 00:58:38 $"
+.TH SHMUX 8 "$Date: 2005-06-03 03:14:06 $"
 .DA November 7, 2003
 .SH NAME
 shmux - Shell Multiplexor
@@ -167,13 +167,13 @@ with the \fB-o\fP option.  The output of the program will always be shown
 to the user.  Exit codes other than 0 indicate that the \fIcommand\fP
 failed for the particular target.
 .IP "\fB-o \fIdir\fP"
-If specified, the directory must already exist and \fBshmux\fP will place
-the output and (for normal terminations) the exit code of the executed
-commands in files under this directory.  For each target, the files will be
-named after the target name so as to make it easy to identify.  The files
-must not already exist, so it is recommended that the directory be emtpy.
-This also means that each target must be unique.  The directory will be
-created if it does not exist.
+If specified, \fBshmux\fP will place the output and (for normal
+terminations) the exit code of the executed commands in files under this
+directory.  For each target, the files will be named after the target name
+so as to make it easy to identify.  The files must not already exist, so it
+is recommended that the directory be empty.  This also means that each
+target must be unique.  The directory will be created if it does not
+already exist.
 .IP "\fB-p\fP"
 Ping targets to verify they are alive before doing anything.  The target
 names must be unique or bad things will happen.
