@@ -1,4 +1,9 @@
-$Id: CHANGES,v 1.16 2004-12-16 01:19:10 kalt Exp $
+$Id: CHANGES,v 1.17 2006-05-23 01:56:34 kalt Exp $
+
+Changes since 1.0b6 [2004/12/15]:
+
+- Improved timeout enforcement using process groups (suggested by Jos Backus).
+- Improved handling of "impossible" waitpid() failures.
 
 Changes since 1.0b5 [2004/09/20]:
 
