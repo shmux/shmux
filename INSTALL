@@ -1,5 +1,12 @@
 -- shmux NEWS
 
+Version 1.0b7 significantly changed the way signals and timeouts and handled.
+In particular:
+
+o It is no longer possible to put a running shmux in the background
+o signals are sent to all of a child's descendants, not just the child itself
+o shmux waits for all of the children's descendants to terminate
+
 Version 0.9a introduced the following usage changes:
 
 o The old -q option is now -Q
@@ -49,4 +56,4 @@ Consider documentation errors as bugs, and report them as such.  If you
 develop anything pertaining to `shmux' or have suggestions, share them
 by writing to `shmux@taranis.org'.
 
--- $Id: INSTALL,v 1.12 2004-07-06 23:20:27 kalt Exp $
+-- $Id: INSTALL,v 1.13 2006-05-23 01:56:09 kalt Exp $

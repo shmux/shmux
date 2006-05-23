@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2002, 2003, 2004 Christophe Kalt
+** Copyright (C) 2002, 2003, 2004, 2005, 2006 Christophe Kalt
 **
 ** This file is part of shmux,
 ** see the LICENSE file for details on your rights.
@@ -20,7 +20,7 @@
 #include "exec.h"
 #include "term.h"
 
-static char const rcsid[] = "@(#)$Id: exec.c,v 1.9 2004-07-08 00:07:47 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: exec.c,v 1.10 2006-05-23 01:56:11 kalt Exp $";
 
 pid_t
 exec(fd0, fd1, fd2, target, argv, timeout)
@@ -136,6 +136,17 @@ char *target, **argv;
 	sigaction(SIGTSTP, &sa, NULL);
 	sigaction(SIGCONT, &sa, NULL);
 	sigaction(SIGWINCH, &sa, NULL);
+
+        /* Start a new process group to allow mass-signaling by the parent */
+        if (setpgid(0, 0) < 0)
+          {
+            sprintf(error, "SHMUCK!\nsetpgid(0, 0): %s\n",
+                    strerror(errno));
+            /* The parent knows what to make of this */
+            kill(getpid(), SIGTSTP);
+            write(err[1], error, strlen(error)+1);
+            _exit(0);
+          }
 
 	/* For simplicity later on */
 	if (fd2 == NULL)

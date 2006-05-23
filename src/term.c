@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2002, 2003, 2004 Christophe Kalt
+** Copyright (C) 2002, 2003, 2004, 2005, 2006 Christophe Kalt
 **
 ** This file is part of shmux,
 ** see the LICENSE file for details on your rights.
@@ -23,7 +23,7 @@
 
 #include "term.h"
 
-static char const rcsid[] = "@(#)$Id: term.c,v 1.22 2004-07-08 00:07:47 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: term.c,v 1.23 2006-05-23 01:56:11 kalt Exp $";
 
 extern char *myname;
 
@@ -61,19 +61,16 @@ int sig;
 	    /* Calling eprint from here isn't so smart.. */
 	    eprint("tcsetattr() failed: %s", strerror(errno));
       }
-    if (sig == SIGINT || sig == SIGQUIT || sig == SIGABRT || sig == SIGTERM
-	|| sig == SIGTSTP)
+    if (sig == SIGINT || sig == SIGQUIT || sig == SIGABRT || sig == SIGTERM)
       {
 	/* restore original tty settings */
 	if (ttyin >= 0 && tcsetattr(ttyin, TCSANOW, &origt) < 0)
 	    /* Calling eprint from here isn't so smart.. */
 	    eprint("tcsetattr() failed: %s", strerror(errno));
-	if (sig != SIGTSTP)
-	    /* Resend the signal to ourselves */
-	    kill(getpid(), sig);
-	else
-	    kill(getpid(), SIGSTOP);
+        /* Resend the signal to ourselves */
+        kill(getpid(), sig);
       }
+    /* Nothing done for SIGTSTP, except ignoring it. */
 }
 
 /*

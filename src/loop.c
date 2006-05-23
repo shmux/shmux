@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2002, 2003, 2004, 2005 Christophe Kalt
+** Copyright (C) 2002, 2003, 2004, 2005, 2006 Christophe Kalt
 **
 ** This file is part of shmux,
 ** see the LICENSE file for details on your rights.
@@ -29,7 +29,7 @@
 #include "target.h"
 #include "term.h"
 
-static char const rcsid[] = "@(#)$Id: loop.c,v 1.50 2005-05-29 18:58:53 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: loop.c,v 1.51 2006-05-23 01:56:11 kalt Exp $";
 
 extern char *myname;
 
@@ -41,12 +41,13 @@ struct child
     int		analyzer;	/* analyzer? */
     int		output;		/* output mode */
     int		execstate;	/* exec() status: 0=ok, 1=failed? 2=failed */
-    time_t	timeout;	/* time of exec() call */
+    time_t	timeout;	/* timeout expiration time */
     int		timedout;	/* 0=no, 1=SIGTERM sent, 2=SIGKILL sent */
     char	*obuf, *ebuf;	/* stdout/stderr truncated buffer */
     char	*ofname, *efname; /* stdout/stderr file names */
     int		ofile, efile;	/* stdout/stderr file fd */
     int		status;		/* waitpid(status) */
+    time_t	orphan;		/* orphan debug message rate limit */
 };
 
 static int got_sigint;
@@ -174,6 +175,7 @@ struct child *kid;
     kid->ofname = kid->efname = NULL;
     kid->ofile = kid->efile = -1;
     kid->status = -1;
+    kid->orphan = 0;
 
     status_spawned(1);
 }
@@ -615,7 +617,7 @@ struct child *children;
 		  uprint("Target %s has no active process.", target_getname());
 	      else
 		{
-		  if (kill(children[i].pid, sig) != 0)
+		  if (kill(-children[i].pid, sig) != 0)
 		      uprint("kill(%s, %d): %s", target_getname(), sig,
 			     strerror(errno));
 		  else
@@ -893,6 +895,14 @@ u_int ctimeout, utest;
 	  case 0:
 	      break;
 	  case 1:
+              dprint("Sending SIGINT to all children..");
+              idx = 0;
+              while (idx < max+1)
+                {
+                  if (children[idx].pid > 0)
+                      kill(-children[idx].pid, SIGINT);
+                  idx += 1;
+                }
 	      eprint("Waiting for existing children to abort..");
 	      got_sigint += 1;
 	      /* FALLTHRU */
@@ -1261,14 +1271,15 @@ u_int ctimeout, utest;
                         status = 0;
                       }
                   }
-                else
-                    dprint("waitpid(%d[%s]) = %d",
-                           children[idx].pid, what, wprc);
               }
 
-	    if (wprc <= 0)
+	    if (wprc <= 0 || children[idx].status >= 0)
 	      {
-		/* child is alive and well, timeout exceeded? */
+		/*
+                ** child is either alive and well
+                ** or dead but with open fds (probably alive grandchildren),
+                ** timeout exceeded?
+                */
 		if (children[idx].timeout != 0
 		    && time(NULL) > children[idx].timeout)
 		  {
@@ -1277,20 +1288,26 @@ u_int ctimeout, utest;
 		    if (children[idx].timedout == 0)
 		      {
 			iprint("Time out for %s (Sending SIGTERM)..", what);
-			kill(children[idx].pid, SIGTERM);
+			kill(-children[idx].pid, SIGTERM);
 			children[idx].timeout = time(NULL) + 5;
 		      }
 		    else
 		      {
 			iprint("Time out for %s (Sending SIGKILL)..", what);
-			kill(children[idx].pid, SIGKILL);
+			kill(-children[idx].pid, SIGKILL);
 			children[idx].timeout = 0;
 		      }
 		    children[idx].timedout += 1;
 		  }
 
-		idx += 1;
-		continue;
+                if (wprc <= 0)
+                  {
+                    /* Live children */
+                    idx += 1;
+                    continue;
+                  }
+
+                /* Already dead kids need to be looked at more thoroughly */
 	      }
 
 	    if (WIFSTOPPED(status) != 0)
@@ -1310,7 +1327,7 @@ u_int ctimeout, utest;
 		    dprint("%s (idx=%d) stopped on SIGTSTP, sending SIGCONT.",
 			   what, idx);
 		    children[idx].execstate = 1;
-		    kill(children[idx].pid, SIGCONT);
+		    kill(-children[idx].pid, SIGCONT);
 		  }
 		else
 		    eprint("%s for %s stopped: %s!?",
@@ -1327,8 +1344,16 @@ u_int ctimeout, utest;
 	      {
 		/* Let's finish reading from these before going on */
 		if (children[idx].status == -1)
+                  {
 		    dprint("%s (idx=%d) died but has open fd(s), saved status",
 			   what, idx);
+                    if (WTERMSIG(status) == SIGALRM)
+                      {
+                        /* Could be stray grand children */
+                        dprint("%s (idx=%d) died from SIGALRM, signaling process group", what, idx);
+                        kill(-children[idx].pid, SIGALRM);
+                      }
+                  }
 		children[idx].status = status;
 		idx += 1;
 		continue;
@@ -1347,6 +1372,22 @@ u_int ctimeout, utest;
 		    pfd[idx*3].fd = -1;
 		  }
 	      }
+
+            /*
+            ** Check for orphans whom we've lost contact with
+            */
+            if (kill(-children[idx].pid, 0) == 0)
+              {
+                /* Is waiting for these really wise/necessary? */
+                if (time(NULL) - children[idx].orphan > 15)
+                  {
+                    dprint("%s (idx=%d) has left orphan(s), waiting...",
+                           what, idx);
+                    children[idx].orphan = time(NULL);
+                  }
+                idx += 1;
+                continue;
+              }
 
 	    /*
 	    ** If user asked for a non-mixed output, now's a good time to
