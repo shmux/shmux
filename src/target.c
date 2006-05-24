@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2002, 2003, 2004 Christophe Kalt
+** Copyright (C) 2002, 2003, 2004, 2005, 2006 Christophe Kalt
 **
 ** This file is part of shmux,
 ** see the LICENSE file for details on your rights.
@@ -11,8 +11,9 @@
 #include "term.h"
 
 #include "status.h"
+#include "units.h"
 
-static char const rcsid[] = "@(#)$Id: target.c,v 1.20 2004-12-16 01:18:54 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: target.c,v 1.21 2006-05-24 01:09:31 kalt Exp $";
 
 extern char *myname;
 
@@ -30,6 +31,7 @@ struct target
 			*/    
     char status;
     char phase;
+    time_t when;
     int result;		/* command status: -2: signal, -1: timed out,
 			   		    0: unknown, 1: ok, 2: error */
 };
@@ -124,6 +126,7 @@ char *name;
       }
     targets[tmax].status = 0;
     targets[tmax].phase = 0;
+    targets[tmax].when = 0;
     targets[tmax].result = 0;
 
     return strlen(targets[tmax].name);
@@ -375,6 +378,7 @@ target_start(void)
     assert( targets[tcur].phase >= 0 && targets[tcur].phase < 4 );
 
     targets[tcur].phase = targets[tcur].phase + 1;
+    targets[tcur].when = time(NULL);
 }
 
 /*
@@ -526,7 +530,8 @@ int status;
 		  abort();
 	      }
 
-	    uprint(" [%*d]%s: %s", tlen, i, what, targets[i].name);
+	    uprint(" [%*d]%s: %s [%s]", tlen, i, what, targets[i].name,
+                   unit_rtime(time(NULL) - targets[i].when));
 	    any = 1;
 	  }
 	else if (targets[i].phase < 3

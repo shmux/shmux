@@ -1,13 +1,12 @@
-analyzer.o: analyzer.c os.h config.h analyzer.h target.h term.h \
- units.h Makefile
+analyzer.o: analyzer.c os.h config.h analyzer.h target.h term.h units.h Makefile
 byteset.o: byteset.c os.h config.h byteset.h Makefile
 exec.o: exec.c os.h config.h exec.h term.h Makefile
-loop.o: loop.c os.h config.h analyzer.h byteset.h exec.h loop.h \
- siglist.h status.h target.h term.h Makefile
+loop.o: loop.c os.h config.h analyzer.h byteset.h exec.h loop.h siglist.h \
+  status.h target.h term.h Makefile
 shmux.o: shmux.c os.h config.h version.h analyzer.h byteset.h loop.h \
- target.h term.h units.h Makefile
+  target.h term.h units.h Makefile
 siglist.o: siglist.c os.h config.h siglist.h signals.h Makefile
 status.o: status.c os.h config.h status.h target.h term.h Makefile
-target.o: target.c os.h config.h target.h term.h status.h Makefile
+target.o: target.c os.h config.h target.h term.h status.h units.h Makefile
 term.o: term.c os.h config.h term.h Makefile
 units.o: units.c os.h config.h units.h Makefile
