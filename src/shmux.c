@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2002, 2003, 2004 Christophe Kalt
+** Copyright (C) 2002, 2003, 2004, 2005, 2006 Christophe Kalt
 **
 ** This file is part of shmux,
 ** see the LICENSE file for details on your rights.
@@ -35,7 +35,7 @@
 #include "term.h"
 #include "units.h"
 
-static char const rcsid[] = "@(#)$Id: shmux.c,v 1.30 2004-09-07 01:54:38 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: shmux.c,v 1.31 2006-06-08 22:24:32 kalt Exp $";
 
 extern char *optarg;
 extern int optind, opterr;
@@ -83,6 +83,7 @@ int detailed;
     fprintf(stderr, "  -o <dir>      Send the output to files under the specified directory.\n");
     fprintf(stderr, "  -m            Don't mix target outputs.\n");
     fprintf(stderr, "  -b            Show bare output without target names.\n");
+    fprintf(stderr, "  -B            Batch mode.\n");
     fprintf(stderr, "  -s            Suppress progress status.\n");
     fprintf(stderr, "  -q            Suppress output of successful targets.\n");
     fprintf(stderr, "  -qq           Suppress target output.\n");
@@ -95,7 +96,7 @@ int
 main(int argc, char **argv)
 {
     int badopt, rc;
-    int opt_prefix, opt_status, opt_quiet, opt_internal, opt_debug;
+    int opt_prefix, opt_status, opt_interactive, opt_quiet, opt_internal, opt_debug;
     int opt_ctimeout, opt_outmode, opt_maxworkers, opt_vtest;
     u_int opt_test, opt_analyzer;
     char *opt_analyze, *opt_outanalysis, *opt_erranalysis;
@@ -106,7 +107,7 @@ main(int argc, char **argv)
 
     myname = basename(argv[0]);
 
-    opt_prefix = opt_status = 1;
+    opt_prefix = opt_status = opt_interactive = 1;
     opt_quiet = opt_internal = opt_debug = 0;
     opt_outmode = OUT_MIXED;
     if (getenv("SHMUX_MAX") != NULL)
@@ -136,7 +137,7 @@ main(int argc, char **argv)
       {
         int c;
 	
-        c = getopt(argc, argv, "a:A:bc:C:De:E:hmM:o:pP:qQr:sS:tT:vV");
+        c = getopt(argc, argv, "a:A:bBc:C:De:E:hmM:o:pP:qQr:sS:tT:vV");
 	
         /* Detect the end of the options. */
         if (c == -1)
@@ -155,6 +156,9 @@ main(int argc, char **argv)
 	      break;
 	  case 'b':
 	      opt_prefix = 0;
+	      break;
+	  case 'B':
+	      opt_interactive = 0;
 	      break;
 	  case 'c':
 	      opt_command = optarg;
@@ -322,7 +326,7 @@ main(int argc, char **argv)
       }
 
     /* Initialize terminal */
-    term_init(longest, opt_prefix, opt_status, opt_internal, opt_debug);
+    term_init(longest, opt_prefix, opt_status, opt_internal, opt_debug, opt_interactive);
 
     /* Loop through targets/commands */
     start = time(NULL);

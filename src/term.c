@@ -23,7 +23,7 @@
 
 #include "term.h"
 
-static char const rcsid[] = "@(#)$Id: term.c,v 1.23 2006-05-23 01:56:11 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: term.c,v 1.24 2006-06-08 22:24:32 kalt Exp $";
 
 extern char *myname;
 
@@ -40,7 +40,7 @@ static char status[512];
 static FILE *ttyout;
 
 static void shmux_signal(int);
-static void tty_init(void);
+static void tty_init(int);
 static int putchar2(int);
 static int putchar3(int);
 static void gprint(char *, char, char *, va_list);
@@ -78,8 +78,8 @@ int sig;
 **	Initialize terminal handling system.
 */
 void
-term_init(maxlen, prefix, progress, internal, debug)
-int maxlen, prefix, progress, internal, debug;
+term_init(maxlen, prefix, progress, internal, debug, interactive)
+int maxlen, prefix, progress, internal, debug, interactive;
 {
     static char termcap[2048], area[1024];
     char *term, *ptr;
@@ -95,11 +95,15 @@ int maxlen, prefix, progress, internal, debug;
     mypid = getpid();
 
     /* Input initialization */
+    ttyin = -1;
 
-    if (isatty(fileno(stdin)) == 1)
-	ttyin = fileno(stdin);
-    else
-	ttyin = open("/dev/tty", O_RDONLY, 0);
+    if (interactive != 0)
+      {
+	if (isatty(fileno(stdin)) == 1)
+	    ttyin = fileno(stdin);
+	else
+	    ttyin = open("/dev/tty", O_RDONLY, 0);
+      }
 
     /* Output initializations */
 
@@ -132,7 +136,7 @@ int maxlen, prefix, progress, internal, debug;
 	if (progress != 0 && ttyout != NULL)
 	    fprintf(stderr, "%*s: TERM variable is not set!\n",
 		    padding, myname);
-	tty_init();
+	tty_init(interactive);
 	return;
       }
     if (tgetent(termcap, term) < 1)
@@ -140,7 +144,7 @@ int maxlen, prefix, progress, internal, debug;
 	if (progress != 0 && ttyout != NULL)
 	    fprintf(stderr, "%*s: No TERMCAP entry for ``%s''.\n",
 		    padding, myname, term);
-	tty_init();
+	tty_init(interactive);
 	return;
       }
 
@@ -179,7 +183,7 @@ int maxlen, prefix, progress, internal, debug;
     if (CE == NULL && progress != 0 && ttyout != NULL)
 	fprintf(stderr, "%*s: Terminal ``%s'' is too dumb for the progress status bar! (no ce)\n", padding, myname, term);
 
-    tty_init();
+    tty_init(interactive);
 }
 
 /*
@@ -212,7 +216,8 @@ term_size(void)
 **	/dev/tty initialization
 */
 static void
-tty_init(void)
+tty_init(interactive)
+int interactive;
 {
     if (ttyin < 0)
       {
@@ -270,7 +275,7 @@ tty_init(void)
           }
       }
 
-    if (ttyin == -1)
+    if (interactive != 0 && ttyin == -1)
       {
         fprintf(ttyout,
                 "%*s: Input unavailable, interactive mode is disabled.\n",

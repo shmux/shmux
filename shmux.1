@@ -1,4 +1,4 @@
-.TH SHMUX 8 "$Date: 2006-05-24 01:12:38 $"
+.TH SHMUX 8 "$Date: 2006-06-08 22:24:31 $"
 .DA April 13, 2005
 .SH NAME
 shmux - Shell Multiplexor
@@ -12,7 +12,7 @@ shmux - Shell Multiplexor
 
 .B shmux
 [
-.B -bdmpqQstv
+.B -bBdmpqQstv
 ] [
 .B -C \fItimeout\fP
 ] [
@@ -187,6 +187,11 @@ separate.
 .IP "\fB-b\fP"
 Show the bare output from the executed commands instead of prefixing each
 line by the corresponding target name.
+.IP "\fB-B\fP"
+Enables batch mode which forcefully disables the interactive mode, ignoring
+input from an interactive terminal.  See also \fB-s\fP.
+.IP "\fB-s\fP"
+Suppress the progress status line.  See also \fB-B\fP.
 .IP "\fB-q\fP"
 Used once, this will suppress the output from successful targets (as
 defined by the use of options options \fB-e\fP, \fB-a\fP and \fB-A\fP.  If
@@ -200,8 +205,6 @@ targets.  This also changes the default spawn stategy to "all".  Using this
 option (once or twice) requires using \fB-o\fP.
 .IP "\fB-Q\fP"
 Suppress the final summary of results.
-.IP "\fB-s\fP"
-Suppress the progress status line.
 .IP "\fB-v\fP"
 Display internal status messages.
 .IP "\fB-D\fP"

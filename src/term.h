@@ -1,16 +1,16 @@
 /*
-** Copyright (C) 2002, 2003 Christophe Kalt
+** Copyright (C) 2002, 2003, 2004, 2005, 2006 Christophe Kalt
 **
 ** This file is part of shmux
 ** see the LICENSE file for details on your rights.
 **
-** $Id: term.h,v 1.6 2003-04-26 01:32:17 kalt Exp $
+** $Id: term.h,v 1.7 2006-06-08 22:24:32 kalt Exp $
 */
 
 #if !defined(_TERM_H_)
 # define _TERM_H_
 
-void term_init(int, int, int, int, int);
+void term_init(int, int, int, int, int, int);
 void term_size(void);
 int  tty_fd(void);
 void tty_restore(void);
