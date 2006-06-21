@@ -1,20 +1,27 @@
-$Id: CHANGES,v 1.17 2006-05-23 01:56:34 kalt Exp $
+$Id: CHANGES,v 1.18 2006-06-21 00:40:16 kalt Exp $
+
+Changes since 1.0b7 [2006/05/22]:
+
+- SHMUX_SSH*_OPTS are now parsed by shmux, allowing passing more complex
+  options strings.  (loosely based on code from Jos Backus.)
+- added -B option (courtesy of Jos Backus).
+- minor enhancement of "interactive mode" status reporting.
 
 Changes since 1.0b6 [2004/12/15]:
 
-- Improved timeout enforcement using process groups (suggested by Jos Backus).
-- Improved handling of "impossible" waitpid() failures.
+- improved timeout enforcement using process groups (suggested by Jos Backus).
+- improved handling of "impossible" waitpid() failures.
 
 Changes since 1.0b5 [2004/09/20]:
 
 - user@target now works with rsh.
-- Fixed miscellaneous assumptions/bugs related to fping.
+- fixed miscellaneous assumptions/bugs related to fping.
 - user@target is no longer incompatible with -p.
 
 Changes since 1.0b4 [2004/08/07]:
 
-- Use SHMUX_SPAWNMODE environmental variable, as per the manual page.
-- New SHMUX_MAX environmental variable (suggested by Jon Amundsen).
+- use SHMUX_SPAWNMODE environmental variable, as per the manual page.
+- new SHMUX_MAX environmental variable (suggested by Jon Amundsen).
 
 Changes since 1.0b3 [2004/07/06]:
 
