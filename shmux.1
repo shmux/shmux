@@ -1,4 +1,4 @@
-.TH SHMUX 8 "$Date: 2006-06-08 22:24:31 $"
+.TH SHMUX 8 "$Date: 2006-06-21 00:38:49 $"
 .DA April 13, 2005
 .SH NAME
 shmux - Shell Multiplexor
@@ -326,11 +326,13 @@ passed to "ssh", "ssh1" and "ssh2" (respectively).  The variable
 \fISHMUX_SSH_OPTS\fP is used for all methods, but superseded by the other
 specific variables.
 
-The supplied string is passed as one argument and is therefore not suitable
-to pass a complex serie of options.  However, it can be used to suppress
-the default, and or add options such as "-4", "-6", or even "-v".  It is
-recommended to avoid using these variables in favor of tuning the ssh
-configuration file(s).
+Multiple arguments may be supplied, using white-space characters to
+separate them from each other.  You can use single- and/or double-quotes to
+preserve white-spaces in an argument (but not backslashes).  Note that
+doubling  a single-quote inside a single-quoted string gives you a
+single-quote; likewise for double-quotes (though you  need  to  pay
+attention  to which  quotes  your  shell  is parsing and which quotes
+\fBshmux\fP is parsing).
 .IP SHMUX_SPAWNMODE
 Specifies the default spawn mode.  If the \fB-S\fP option is specified, it
 overrides this variable.

@@ -29,7 +29,7 @@
 #include "target.h"
 #include "term.h"
 
-static char const rcsid[] = "@(#)$Id: loop.c,v 1.51 2006-05-23 01:56:11 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: loop.c,v 1.52 2006-06-21 00:38:49 kalt Exp $";
 
 extern char *myname;
 
@@ -1154,10 +1154,10 @@ u_int ctimeout, utest;
 			  }
 		      }
 		    pfd[idx*3].fd = -1;
-		    target_getcmd(cargv, cmd);
 		    children[idx].pid = exec(NULL, &(pfd[idx*3+1].fd),
 					     &(pfd[idx*3+2].fd),
-					     target_getname(), cargv,
+					     target_getname(),
+                                             target_getcmd(cmd),
 					     ctimeout);
 		    if (children[idx].pid == -1)
 			  {
@@ -1203,11 +1203,11 @@ u_int ctimeout, utest;
 		    target_start();
 
 		    pfd[idx*3].fd = -1;
-		    target_getcmd(cargv, "echo SHMUX.");
 		    children[idx].pid = exec(NULL, &(pfd[idx*3+1].fd),
 					     &(pfd[idx*3+2].fd),
 					     target_getname(),
-					     cargv, abs(test));
+                                             target_getcmd("echo SHMUX."),
+					     abs(test));
 
 		    if (children[idx].pid == -1)
 		      {

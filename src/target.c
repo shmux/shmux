@@ -7,13 +7,15 @@
 
 #include "os.h"
 
+#include <ctype.h>
+
 #include "target.h"
 #include "term.h"
 
 #include "status.h"
 #include "units.h"
 
-static char const rcsid[] = "@(#)$Id: target.c,v 1.21 2006-05-24 01:09:31 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: target.c,v 1.22 2006-06-21 00:38:49 kalt Exp $";
 
 extern char *myname;
 
@@ -41,6 +43,8 @@ static int  type,	/* default type */
 	    tcur = 0,	/* "current" target "pointer" */
 	    tmax,	/* max target pointer */
 	    tsz = 0;	/* size of targets array */
+
+static int split_argv(const char *, int, char **);
 
 /*
 ** target_default
@@ -228,17 +232,135 @@ target_getnum(void)
 }
 
 /*
+** split_argv
+**      Parse string s into args pointers pointing to buf, allowing for
+**	single and double quoting.  Doubling a quote within a quoted string
+**	gives a quote.  Dangling quotes are silently closed.
+**
+**      maxargs limits the number of entries added to args so we don't
+**	overflow it as it is allocated in the caller.
+**      Returns:
+**      - the number of options found, or
+**      - 0 if s is NULL or empty, or
+**      - -1 if args was too small
+*/
+static int
+split_argv(opts, maxargs, args)
+const char *opts;
+int maxargs;
+char **args;
+{
+    static char *buf = NULL;
+    char *p, q;
+    int i;
+
+    assert( maxargs > 0 );
+
+    if (opts == NULL || *opts == '\0' )
+	return 0;
+
+#if defined(DEBUG)
+    printf("opts=[%s]\n", opts);
+#endif
+
+    if (buf != NULL)
+        free(buf);
+
+    buf = (char *) malloc(strlen(opts));
+    if (buf == NULL)
+      {
+        fprintf(stderr, "%s: malloc() failed: %s\n",
+                myname, strerror(errno));
+        exit(RC_ERROR);
+      }
+    p = buf;
+
+    /*
+    ** Use buf to store NUL delimited copy of opts,
+    ** filling up args as we go along.
+    */
+    
+    i = 0;
+    while (*opts)
+      {
+	/* ensure we don't overflow the target args array */
+	if (i >= maxargs)
+            return -1;
+
+	/* skip leading whitespace */
+	while (*opts != '\0' && isspace(*opts))
+	    opts += 1;
+
+	if (*opts == '\0')
+	    break; /* We're done. */
+
+	/* New argument */
+	args[i++] = p;
+
+        /* Copy current argument, until an unquoted whitespace is found */
+        q = '\0';
+        while (*opts != '\0' && (q != '\0' || !isspace(*opts)))
+          {
+            if (q != '\0')
+              {
+                /* We're within quotes... */
+                if (q == *opts)
+                    {
+                      /* Matching quote */
+                      opts += 1;
+                      if (q != *opts)
+                        {
+                          /* This is the end of the quoted string. */
+                          q = '\0';
+                          continue;
+                        }
+                      /* Doubled quote */
+                    }
+              }
+            else if (*opts == '"' || *opts == '\\')
+              {
+                /* Quotes */
+                q = *opts;
+                opts += 1;
+                continue;
+              }
+
+            *p++ = *opts++; /* Copy string.. */
+          }
+
+        /* End of current argument */
+        *p++ = '\0';
+      }
+
+    return i;
+}
+
+/*
 ** target_getcmd
 **	Return the current target command.
 */
-void
-target_getcmd(args, cmd)
-char **args, *cmd;
+char **
+target_getcmd(cmd)
+char *cmd;
 {
+    static char **args = NULL;
+    static int argsz = 32;
     static char user[32];
     char *at;
+    int nopts;
 
     assert( tcur >= 0 && tcur <= tmax );
+
+    if (args == NULL)
+      {
+        args = (char **) malloc(argsz * sizeof(char **));
+        if (args == NULL)
+          {
+            fprintf(stderr, "%s: malloc() failed: %s\n",
+                    myname, strerror(errno));
+            exit(RC_ERROR);
+          }
+      }
 
     switch (targets[tcur].type)
       {
@@ -249,7 +371,7 @@ char **args, *cmd;
 	  args[1] = "-c";
 	  args[2] = cmd;
 	  args[3] = NULL;
-	  return;
+	  return args;
       case 1:
 	  args[0] = getenv("SHMUX_RSH");
 	  if (args[0] == NULL)
@@ -280,25 +402,34 @@ char **args, *cmd;
               args[5] = cmd;
               args[6] = NULL;
             }
-	  return;
+	  return args;
       case 2:
 	  args[0] = getenv("SHMUX_SSH1");
 	  args[1] = "-1n";
-	  args[4] = getenv("SHMUX_SSH1_OPTS");
+	  nopts = split_argv(getenv("SHMUX_SSH1_OPTS"), argsz - 7, &args[4]);
 	  break;
       case 3:
 	  args[0] = getenv("SHMUX_SSH2");
 	  args[1] = "-2n";
-	  args[4] = getenv("SHMUX_SSH2_OPTS");
+	  nopts = split_argv(getenv("SHMUX_SSH2_OPTS"), argsz - 7, &args[4]);
 	  break;
       case 4:
 	  args[0] = NULL;
 	  args[1] = "-n";
-	  args[4] = NULL;
+	  nopts = 0;
 	  break;
       default:
 	  abort();
       }
+
+      if (nopts < 0)
+        {
+          /* args overflow, expand and try again */
+          argsz *= 2;
+          free(args);
+          args = NULL;
+          return target_getcmd(cmd);
+        }
 
     /* Only ssh left */
     if (args[0] == NULL)
@@ -307,36 +438,39 @@ char **args, *cmd;
 	args[0] = "ssh";
     args[2] = "-o";
     args[3] = "BatchMode=yes";
-    if (args[4] == NULL)
-	args[4] = getenv("SHMUX_SSH_OPTS");
-    if (args[4] == NULL)
+#if defined(DEBUG)
+    printf("nopts=%d\n", nopts);
+#endif
+    if (nopts == 0)
+      {
+        nopts = split_argv(getenv("SHMUX_SSH_OPTS"), argsz - 7, &args[4]);
+        if (nopts < 0)
+          {
+            /* args overflow, expand and try again */
+            argsz *= 2;
+            free(args);
+            args = NULL;
+            return target_getcmd(cmd);
+          }
+      }
+    if (nopts == 0)
       {
 	args[4] = "-x";
         args[5] = "-a";
+	nopts = 2;
       }
-    else
-        args[5] = NULL;
-    if (args[4][0] == '\0')
-      {
-        /* User supplied args[4], but empty */
-	args[4] = targets[tcur].name;
-	args[5] = cmd;
-	args[6] = NULL;
-      }
-    else if (args[5] == NULL)
-      {
-        /* User supplied args[4] */
-	args[5] = targets[tcur].name;
-	args[6] = cmd;
-	args[7] = NULL;
-      }
-    else
-      {
-        /* Default args[4] and args[5] */
-	args[6] = targets[tcur].name;
-	args[7] = cmd;
-	args[8] = NULL;
-      }
+    args[4 + nopts] = targets[tcur].name;
+    args[5 + nopts] = cmd;
+    args[6 + nopts] = NULL;
+
+#if defined(DEBUG)
+    int i;
+    for (i = 0; i < 6 + nopts; ++i) {
+	printf("%d: [%s]\n", i, args[i]);
+    }
+#endif
+
+    return args;
 }
 
 /*
