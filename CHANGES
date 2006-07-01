@@ -1,10 +1,10 @@
-$Id: CHANGES,v 1.18 2006-06-21 00:40:16 kalt Exp $
+$Id: CHANGES,v 1.19 2006-07-01 00:19:01 kalt Exp $
 
 Changes since 1.0b7 [2006/05/22]:
 
 - SHMUX_SSH*_OPTS are now parsed by shmux, allowing passing more complex
   options strings.  (loosely based on code from Jos Backus.)
-- added -B option (courtesy of Jos Backus).
+- added -B option (courtesy of Chase Phillips and Jos Backus).
 - minor enhancement of "interactive mode" status reporting.
 
 Changes since 1.0b6 [2004/12/15]:
