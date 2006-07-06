@@ -1,9 +1,9 @@
 #
-# $Id: configure.ac,v 1.10 2004-07-18 00:23:42 kalt Exp $
+# $Id: configure.ac,v 1.11 2006-07-06 22:33:40 kalt Exp $
 #
 AC_PREREQ(2.53)
 AC_INIT([Shell Multiplexor], [], [shmux-bugs@taranis.org], [shmux])
-AC_REVISION([$Id: configure.ac,v 1.10 2004-07-18 00:23:42 kalt Exp $])
+AC_REVISION([$Id: configure.ac,v 1.11 2006-07-06 22:33:40 kalt Exp $])
 AC_CONFIG_SRCDIR([src/os.h])
 AC_CONFIG_HEADER([src/config.h])
 
@@ -25,7 +25,7 @@ if test "x$with_pcre" != "xno"; then
 fi
 
 # Checks for libraries.
-AC_SEARCH_LIBS([tgetent], [termcap curses])
+AC_SEARCH_LIBS([tgetent], [termcap curses ncurses])
 AC_SEARCH_LIBS([basename], [gen])
 if test "x$with_pcre" != "xno"; then
    AC_SEARCH_LIBS([pcre_compile], [pcre], ,
