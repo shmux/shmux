@@ -29,7 +29,7 @@
 #include "target.h"
 #include "term.h"
 
-static char const rcsid[] = "@(#)$Id: loop.c,v 1.52 2006-06-21 00:38:49 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: loop.c,v 1.53 2006-07-06 22:33:14 kalt Exp $";
 
 extern char *myname;
 
@@ -1381,8 +1381,14 @@ u_int ctimeout, utest;
                 /* Is waiting for these really wise/necessary? */
                 if (time(NULL) - children[idx].orphan > 15)
                   {
-                    dprint("%s (idx=%d) has left orphan(s), waiting...",
-                           what, idx);
+                    if (children[idx].orphan == 0)
+                      {
+                        dprint("%s (idx=%d) has left orphan(s), saved status, waiting...", what, idx);
+                        children[idx].status = status;
+                      }
+                    else
+                        dprint("%s (idx=%d) has left orphan(s), waiting...",
+                               what, idx);
                     children[idx].orphan = time(NULL);
                   }
                 idx += 1;
