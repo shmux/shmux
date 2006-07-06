@@ -1,4 +1,9 @@
-$Id: CHANGES,v 1.19 2006-07-01 00:19:01 kalt Exp $
+$Id: CHANGES,v 1.20 2006-07-06 22:35:31 kalt Exp $
+
+Changes since 1.0b8 [2006/06/30]:
+
+- child exit status was not saved when waiting for its orphans.
+- look for termcap in ncurses library (reported by Stephan Hegel).
 
 Changes since 1.0b7 [2006/05/22]:
 
