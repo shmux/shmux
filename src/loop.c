@@ -29,7 +29,7 @@
 #include "target.h"
 #include "term.h"
 
-static char const rcsid[] = "@(#)$Id: loop.c,v 1.53 2006-07-06 22:33:14 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: loop.c,v 1.54 2006-07-27 18:18:07 kalt Exp $";
 
 extern char *myname;
 
@@ -365,7 +365,7 @@ struct child *kid;
 		    if (kid->ofile != -1)
 		      {
 			if (write((std == 1) ? kid->ofile : kid->efile,
-				  start, strlen(start)) == -1)
+				  *left, leftlen) == -1)
 			    /* Should we do a little more here? */
 			    eprint("Data lost for %s, write() failed: %s",
 				   name, strerror(errno));
@@ -394,7 +394,7 @@ struct child *kid;
 			       ((std == 1) ? MSG_STDOUTTRUNC : MSG_STDERRTRUNC),
 			       "%s", *left);
 		    free(*left);
-		    *left = NULL;
+		    *left = strdup(start);
 		  }
 		else
 		  {
