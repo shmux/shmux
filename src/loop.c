@@ -29,7 +29,7 @@
 #include "target.h"
 #include "term.h"
 
-static char const rcsid[] = "@(#)$Id: loop.c,v 1.55 2006-08-10 22:46:47 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: loop.c,v 1.56 2006-08-10 23:49:05 kalt Exp $";
 
 extern char *myname;
 
@@ -649,6 +649,14 @@ struct child *children;
 		}
 	    }
 	  break;
+      case 'v':
+          c = term_togglemsg();
+          uprint("Internal messages: %s", (c) ? "on" : "off");
+          break;
+      case 'D':
+          c = term_toggledbg();
+          uprint("Debug messages: %s", (c) ? "on" : "off");
+          break;
       default:
 	  uprint("Invalid Command");
 	  dprint("User input = %d", c);

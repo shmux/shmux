@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2002, 2003, 2004, 2005, 2006 Christophe Kalt
+** Copyright (C) 2002-2006 Christophe Kalt
 **
 ** This file is part of shmux,
 ** see the LICENSE file for details on your rights.
@@ -23,7 +23,7 @@
 
 #include "term.h"
 
-static char const rcsid[] = "@(#)$Id: term.c,v 1.24 2006-06-08 22:24:32 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: term.c,v 1.25 2006-08-10 23:49:05 kalt Exp $";
 
 extern char *myname;
 
@@ -237,7 +237,7 @@ int interactive;
 	ttyin = -1;
       }
     else if (tcgetpgrp(ttyin) != getpgrp())
-        ttyin = -1;
+        ttyin = -1; /* Running in the background */
     else
       {
         shmuxt = origt;
@@ -307,6 +307,26 @@ tty_restore(void)
     if (ttyin >= 0 && tcsetattr(ttyin, TCSANOW, &origt) < 0)
 	eprint("tcsetattr() failed: %s", strerror(errno));
     ttyin = -1;
+}
+
+/*
+** term_togglemsg
+**	Toggles verbose mode
+*/
+int
+term_togglemsg(void)
+{
+    internalmsgs = 1 - internalmsgs;
+}
+
+/*
+** term_debugmsg
+**	Toggles debug messages
+*/
+int
+term_toggledbg(void)
+{
+    debugmsgs = 1 - debugmsgs;
 }
 
 /*
