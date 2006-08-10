@@ -1,4 +1,4 @@
-.TH SHMUX 8 "$Date: 2006-06-21 00:38:49 $"
+.TH SHMUX 8 "$Date: 2006-08-10 22:46:47 $"
 .DA April 13, 2005
 .SH NAME
 shmux - Shell Multiplexor
@@ -12,7 +12,7 @@ shmux - Shell Multiplexor
 
 .B shmux
 [
-.B -bBdmpqQstv
+.B -bBdFmpqQstv
 ] [
 .B -C \fItimeout\fP
 ] [
@@ -99,7 +99,17 @@ children to run the \fIcommand\fP on targets.  If the \fImode\fP is set to
 "check", processes will be spawned as long as \fIcommand\fPs succeed.
 Finally, the default \fImode\fP, "one", is to spawn only one process at
 first, and wait for it to succeed, at which point \fBshmux\fP will switch
-to the "check" mode.
+to the "check" mode.  In the "one" or "check" modes, when the \fIcommand\fP
+fails on a target, \fBshmux\fP will stop spawning new processes.
+.IP "\fB-F\fP"
+When using either the "one" or "check" spawn modes (see \fB-S\fP),
+\fBshmux\fP will stop spawning new processes if the \fIcommand\fP fails on
+a target.  By default, \fBshmux\fP then waits for user input if available,
+but reverts to spawning processes if such input cannot be obtained (because
+the interactive mode is disabled, either via \fB-B\fP or lack of a
+terminal).  Using the \fB-F\fP option changes this behaviour to force
+\fBshmux\fP to quit once all existing processes have terminated after such
+a failure.
 .IP "\fB-e \fIlist\fP"
 Defines which \fIcommand\fP exit codes should be considered errors and
 reported as such.  The \fIlist\fP should be a comma separated list of
@@ -189,7 +199,7 @@ Show the bare output from the executed commands instead of prefixing each
 line by the corresponding target name.
 .IP "\fB-B\fP"
 Enables batch mode which forcefully disables the interactive mode, ignoring
-input from an interactive terminal.  See also \fB-s\fP.
+input from the terminal.  See also \fB-s\fP and \fB-F\fP.
 .IP "\fB-s\fP"
 Suppress the progress status line.  See also \fB-B\fP.
 .IP "\fB-q\fP"
@@ -256,9 +266,10 @@ report produced by \fBshmux\fP upon exiting.  This is not as accurate as it
 should be.
 
 .SH INTERACTIVE MODE
-When running, \fBshmux\fP offers a minimal "interactive mode":  it reads
-commands from the terminal and acts upon them accordingly.  The following
-commands are currently recognized:
+By default, \fBshmux\fP offers a minimal "interactive mode" while running:
+it reads commands from the terminal and acts upon them accordingly.  This
+can be disabled using the \fB-B\fP option.  The following commands are
+currently recognized:
 
 .IP "\fBq\fP"
 Prevent \fBshmux\fP from spawning any more children, wen for active
@@ -274,13 +285,16 @@ Initiate a pause, this prevents \fBshmux\fP from spawning any more children
 to do its work.  The following three commands may be used to resume work.
 .IP "1"
 This is equivalent to specifying "\fB-S\fP \fImore\fP" on the command line,
-but may be used anytime.
+but may be used at any time.
 .IP "return"
 This is equivalent to specifying "\fB-S\fP \fIcheck\fP" on the command line,
-but may be used anytime.
+but may be used at any time.
 .IP "+"
 This is equivalent to specifying "\fB-S\fP \fIall\fP" on the command line,
-but may be used anytime.
+but may be used at any time.
+.IP "F"
+This toggles the failure mode for the "one" and "check" spawn modes (see
+\fB-S\fP) between "pause" and "quit" (see \fB-F\fP).
 .IP "\fBp\fP"
 Display the list of pending targets.
 .IP "\fBr\fP"

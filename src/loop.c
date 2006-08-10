@@ -29,7 +29,7 @@
 #include "target.h"
 #include "term.h"
 
-static char const rcsid[] = "@(#)$Id: loop.c,v 1.54 2006-07-27 18:18:07 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: loop.c,v 1.55 2006-08-10 22:46:47 kalt Exp $";
 
 extern char *myname;
 
@@ -60,6 +60,7 @@ static int got_sigint;
 #define SPAWN_ONE   6
 #define SPAWN_MORE  7
 static int spawn_mode;
+static int failure_mode = SPAWN_MORE; /* Historical default */
 
 static void shmux_sigint(int);
 static void setup_fdlimit(int, int);
@@ -476,12 +477,14 @@ struct child *children;
       case 'h':
       case '?':
 	  uprint("Available commands:");
-	  uprint("      q - Quit");
+	  uprint("      q - Quit gracefully");
 	  uprint("      Q - Quit immediately");
 	  uprint("<space> - Pause (e.g. Do not spawn any more children)");
 	  uprint("      1 - Spawn one command, and pause if unsuccessful");
 	  uprint("<enter> - Keep spawning commands until one fails");
 	  uprint("      + - Always spawn more commands, even if some fail");
+	  uprint("      F - Toggle failure mode to \"%s\"",
+                 (failure_mode == SPAWN_PAUSE) ? "quit" : "pause");
 	  uprint("      S - Show current spawn strategy");
 	  uprint("      p - Show pending targets");
 	  uprint("      r - Show running targets");
@@ -507,14 +510,20 @@ struct child *children;
 	  break;
       case '1':
 	  if (spawn_mode != SPAWN_ONE)
-	      uprint("Will spawn one command... (And pause on error)");
+              if (failure_mode == SPAWN_PAUSE)
+                  uprint("Will spawn one command... (And pause on error)");
+              else
+                  uprint("Will spawn one command... (And quit on error)");
 	  if (spawn_mode != SPAWN_NONE)
 	      spawn_mode = SPAWN_ONE;
 	  break;
       case '\n':
       case '-':
 	  if (spawn_mode != SPAWN_CHECK)
-	      uprint("Resuming... (Will pause on error)");
+              if (failure_mode == SPAWN_PAUSE)
+                  uprint("Resuming... (Will pause on error)");
+              else
+                  uprint("Resuming... (Will quit on error)");
 	  spawn_mode = SPAWN_CHECK;
 	  break;
       case '+':
@@ -522,13 +531,28 @@ struct child *children;
 	      uprint("Will keep spawning commands... (Even if some fail)");
 	      spawn_mode = SPAWN_MORE;
 	  break;
+      case 'F':
+          if (failure_mode == SPAWN_PAUSE)
+            {
+              uprint("Failure mode is now \"quit\"");
+              failure_mode = SPAWN_QUIT;
+            }
+          else
+            {
+              uprint("Failure mode is now \"pause\"");
+              failure_mode = SPAWN_PAUSE;
+            }
+          break;
       case 'S':
 	  if (spawn_mode == SPAWN_QUIT)
 	      uprint("Will quit once current children complete...");
 	  else if (spawn_mode == SPAWN_PAUSE)
 	      uprint("Paused");
 	  else if (spawn_mode == SPAWN_CHECK)
-	      uprint("Will pause if a target fails...");
+              if (failure_mode == SPAWN_PAUSE)
+                  uprint("Will pause if a target fails...");
+              else
+                  uprint("Will gracefully quit if a target fails...");
 	  else if (spawn_mode == SPAWN_NONE || spawn_mode == SPAWN_ONE)
 	      uprint("Will spawn only one target until it succeeds...");
 	  else if (spawn_mode == SPAWN_MORE)
@@ -743,7 +767,7 @@ int result;
     else
       {
 	if (spawn_mode == SPAWN_NONE || spawn_mode == SPAWN_CHECK)
-	    spawn_mode = SPAWN_PAUSE;
+	    spawn_mode = failure_mode;
       }
     target_cmdstatus(result);
 }
@@ -755,9 +779,9 @@ int result;
 **	targets with a simple echo command, and finally running a command.
 */
 int
-loop(cmd, ctimeout, max, spawn, outmode, odir, utest, ping, test)
+loop(cmd, ctimeout, max, spawn, fail, outmode, odir, utest, ping, test)
 char *cmd, *spawn, *ping, *odir;
-int max, outmode, test;
+int max, fail, outmode, test;
 u_int ctimeout, utest;
 {
     struct child *children;
@@ -778,6 +802,13 @@ u_int ctimeout, utest;
 	fprintf(stderr, "%s: Invalid spawn strategy \"%s\"\n", myname, spawn);
 	return RC_ERROR;
       }
+    if ((spawn_mode == SPAWN_ONE || spawn_mode == SPAWN_CHECK)
+        && tty_fd() < 0 && fail == 0)
+        spawn_mode = SPAWN_MORE;
+    if (fail == 0)
+        failure_mode = SPAWN_PAUSE;
+    else
+        failure_mode = SPAWN_QUIT;
 
     /* review process fd limit */
     setup_fdlimit((odir == NULL) ? 3 : 5, max);
@@ -877,7 +908,8 @@ u_int ctimeout, utest;
 	else
 	  {
 	    pfd[0].events = 0;
-	    spawn_mode = SPAWN_MORE;
+            if (spawn_mode == SPAWN_PAUSE)
+                spawn_mode = failure_mode;
 	  }
 
 	/* Check for data to read/write */

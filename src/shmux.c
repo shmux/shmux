@@ -35,7 +35,7 @@
 #include "term.h"
 #include "units.h"
 
-static char const rcsid[] = "@(#)$Id: shmux.c,v 1.31 2006-06-08 22:24:32 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: shmux.c,v 1.32 2006-08-10 22:46:47 kalt Exp $";
 
 extern char *optarg;
 extern int optind, opterr;
@@ -75,6 +75,7 @@ int detailed;
     fprintf(stderr, "  -T <seconds>  Time to wait for test answer (Default: %d).\n", DEFAULT_TESTTIMEOUT);
     fprintf(stderr, "\n");
     fprintf(stderr, "  -S <mode>     Spawn strategy (Default: \"%s\")\n", DEFAULT_SPAWNMODE);
+    fprintf(stderr, "  -F            Gracefully quit rather than pause\n");
     fprintf(stderr, "  -e <range>    Exit codes to consider errors (Default: \"%s\")\n", DEFAULT_ERRORCODES);
     fprintf(stderr, "  -E <range>    Exit codes to always display (Default: \"%s\")\n", DEFAULT_ERRORCODES);
     fprintf(stderr, "  -a <type>     Analysis type (Default: %s)\n", DEFAULT_ANALYSIS);
@@ -97,7 +98,7 @@ main(int argc, char **argv)
 {
     int badopt, rc;
     int opt_prefix, opt_status, opt_interactive, opt_quiet, opt_internal, opt_debug;
-    int opt_ctimeout, opt_outmode, opt_maxworkers, opt_vtest;
+    int opt_ctimeout, opt_outmode, opt_maxworkers, opt_fail, opt_vtest;
     u_int opt_test, opt_analyzer;
     char *opt_analyze, *opt_outanalysis, *opt_erranalysis;
     char *opt_spawn, *opt_command, *opt_odir, *opt_ping, *opt_rcmd;
@@ -114,7 +115,7 @@ main(int argc, char **argv)
         opt_maxworkers = atoi(getenv("SHMUX_MAX"));
     else
         opt_maxworkers = DEFAULT_MAXWORKERS;
-    opt_ctimeout = opt_test = opt_vtest = 0;
+    opt_ctimeout = opt_fail = opt_test = opt_vtest = 0;
     opt_analyze = opt_outanalysis = opt_erranalysis = NULL;
     opt_command = opt_odir = opt_ping = NULL;
     opt_rcmd = getenv("SHMUX_RCMD");
@@ -137,7 +138,7 @@ main(int argc, char **argv)
       {
         int c;
 	
-        c = getopt(argc, argv, "a:A:bBc:C:De:E:hmM:o:pP:qQr:sS:tT:vV");
+        c = getopt(argc, argv, "a:A:bBc:C:De:E:FhmM:o:pP:qQr:sS:tT:vV");
 	
         /* Detect the end of the options. */
         if (c == -1)
@@ -175,6 +176,9 @@ main(int argc, char **argv)
 	  case 'E':
 	      byteset_init(BSET_SHOW, optarg);
 	      break;
+          case 'F':
+              opt_fail = 1;
+              break;
           case 'h':
               usage(1);
               exit(RC_OK);
@@ -330,7 +334,7 @@ main(int argc, char **argv)
 
     /* Loop through targets/commands */
     start = time(NULL);
-    rc = loop(opt_command, opt_ctimeout, opt_maxworkers, opt_spawn,
+    rc = loop(opt_command, opt_ctimeout, opt_maxworkers, opt_spawn, opt_fail,
 	      opt_outmode, opt_odir, opt_analyzer, opt_ping, opt_test);
 
     /* Summary of results unless asked to be quiet */
