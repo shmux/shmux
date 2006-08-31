@@ -1,0 +1,9 @@
+# VER: ./src/shmux -V | awk '{print $3}'
+PKG=KALTshmux
+NAME=shmux - Shell Multiplexor
+DESC=Shell Multiplexor
+BASEDIR=/usr/local
+CATEGORY=application
+CLASSES=none
+VENDOR=Christophe Kalt
+EMAIL=shmux@taranis.org
