@@ -35,7 +35,7 @@
 #include "term.h"
 #include "units.h"
 
-static char const rcsid[] = "@(#)$Id: shmux.c,v 1.32.2.1 2007-07-11 08:23:50 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: shmux.c,v 1.32.2.2 2007-07-11 08:25:26 kalt Exp $";
 
 extern char *optarg;
 extern int optind, opterr;
@@ -313,7 +313,11 @@ main(int argc, char **argv)
 	int length;
 
 	if (strcmp(argv[optind], "-") != 0)
+          {
 	    length = target_add(argv[optind++]);
+            if (length > longest)
+                longest = length;
+          }
 	else
 	  {
 	    char tname[256];
@@ -323,10 +327,10 @@ main(int argc, char **argv)
 	      {
 		tname[strlen(tname)-1] = '\0';
 		length = target_add(tname);
+                if (length > longest)
+                    longest = length;
 	      }
 	  }
-	if (length > longest)
-	    longest = length;
       }
     if (longest == 0)
       {
