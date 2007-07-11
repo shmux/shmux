@@ -19,7 +19,7 @@ system (and found in the PATH).  They are not required but allow using
 certain optional features of shmux.  See the man page for details.
 
 + fping: http://www.fping.com/
-+ ssh: http://www.fressh.org/, http://www.openssh.org/, ...
++ ssh: http://www.openssh.org/, ...
 
 Also, if you want Perl Compatible Regular Expression support, you'll need
 the PCRE library:
@@ -56,4 +56,4 @@ Consider documentation errors as bugs, and report them as such.  If you
 develop anything pertaining to `shmux' or have suggestions, share them
 by writing to `shmux@taranis.org'.
 
--- $Id: INSTALL,v 1.13 2006-05-23 01:56:09 kalt Exp $
+-- $Id: INSTALL,v 1.13.2.1 2007-07-11 08:16:01 kalt Exp $
