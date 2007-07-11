@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2002, 2003, 2004, 2005, 2006 Christophe Kalt
+** Copyright (C) 2002-2007 Christophe Kalt
 **
 ** This file is part of shmux,
 ** see the LICENSE file for details on your rights.
@@ -35,7 +35,7 @@
 #include "term.h"
 #include "units.h"
 
-static char const rcsid[] = "@(#)$Id: shmux.c,v 1.32 2006-08-10 22:46:47 kalt Exp $";
+static char const rcsid[] = "@(#)$Id: shmux.c,v 1.32.2.1 2007-07-11 08:23:50 kalt Exp $";
 
 extern char *optarg;
 extern int optind, opterr;
@@ -307,7 +307,7 @@ main(int argc, char **argv)
 	opt_test *= -1;
 
     /* Get list of targets */
-    longest = strlen(myname);
+    longest = 0;
     while (optind < argc)
       {
 	int length;
@@ -328,7 +328,14 @@ main(int argc, char **argv)
 	if (length > longest)
 	    longest = length;
       }
-
+    if (longest == 0)
+      {
+        fprintf(stderr, "%s: No host given.\n", myname);
+        exit(RC_ERROR);
+      }
+    else if (longest < strlen(myname))
+        longest = strlen(myname);
+            
     /* Initialize terminal */
     term_init(longest, opt_prefix, opt_status, opt_internal, opt_debug, opt_interactive);
 
