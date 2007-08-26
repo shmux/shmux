@@ -1,4 +1,9 @@
-$Id: CHANGES,v 1.22 2006-08-31 01:33:36 kalt Exp $
+$Id: CHANGES,v 1.22.2.1 2007-08-26 22:13:36 kalt Exp $
+
+Changes since 1.0 [2006/08/30]:
+
+- don't core dump if given host list is empty (reported by Brian King).
+- fixed host name length measurement when reading from stdin.
 
 No change since 1.0b10 [2006/08/10].
 
