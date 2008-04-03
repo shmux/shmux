@@ -53,14 +53,14 @@ Summary: 3 successes, 7 errors
 Error    : 1 2 4 6 7 8 10 " ]; then
     ok=`expr $ok + 1`
 fi
-test -d exitcode/CVS && mv exitcode/CVS .oink
+test -d exitcode/.svn && mv exitcode/.svn .oink
 diff -r exitcode odir > /dev/null
 if [ $? != 0 ]; then
-    test -d .oink && mv .oink exitcode/CVS
+    test -d .oink && mv .oink exitcode/.svn
     exit 0
 fi
 printf "\b\b\b$ok/2"
-test -d .oink && mv .oink exitcode/CVS
+test -d .oink && mv .oink exitcode/.svn
 
 rm -rf odir
 mkdir odir || exit 1
@@ -80,14 +80,14 @@ shmux! Child for 10 exited with status 10
 
 Summary: 3 successes, 7 errors
 Error    : 1 2 4 6 7 8 10 " ]; then
-    test -d exitcode/CVS && mv exitcode/CVS .oink
+    test -d exitcode/.svn && mv exitcode/.svn .oink
     diff -r exitcode odir > /dev/null
     if [ $? = 0 ]; then
         ok=`expr $ok + 1`
     fi
 fi
 printf "\b\b\b$ok/3"
-test -d .oink && mv .oink exitcode/CVS
+test -d .oink && mv .oink exitcode/.svn
 
 test $ok = 3 && exit 77
 exit 0
