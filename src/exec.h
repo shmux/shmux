@@ -4,7 +4,7 @@
 ** This file is part of shmux
 ** see the LICENSE file for details on your rights.
 **
-** $Id: exec.h,v 1.2 2002-07-07 03:57:37 kalt Exp $
+** $Id$
 */
 
 #if !defined(_EXEC_H_)

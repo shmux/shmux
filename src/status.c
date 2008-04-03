@@ -21,7 +21,7 @@
 #endif
 #define MAX(a, b) ((a > b) ? a : b)
 
-static char const rcsid[] = "@(#)$Id: status.c,v 1.9 2003-04-13 15:36:55 kalt Exp $";
+static char const rcsid[] = "@(#)$Id$";
 
 static int spawned, inphase[5];
 static time_t spawnedchg, changed[5];

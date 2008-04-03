@@ -35,7 +35,7 @@
 #include "term.h"
 #include "units.h"
 
-static char const rcsid[] = "@(#)$Id: shmux.c,v 1.32.2.2 2007-07-11 08:25:26 kalt Exp $";
+static char const rcsid[] = "@(#)$Id$";
 
 extern char *optarg;
 extern int optind, opterr;

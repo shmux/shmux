@@ -4,7 +4,7 @@
 ** This file is part of shmux
 ** see the LICENSE file for details on your rights.
 **
-** $Id: units.h,v 1.2 2006-05-24 01:08:57 kalt Exp $
+** $Id$
 */
 
 #if !defined(_UNITS_H_)

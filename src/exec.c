@@ -20,7 +20,7 @@
 #include "exec.h"
 #include "term.h"
 
-static char const rcsid[] = "@(#)$Id: exec.c,v 1.10 2006-05-23 01:56:11 kalt Exp $";
+static char const rcsid[] = "@(#)$Id$";
 
 pid_t
 exec(fd0, fd1, fd2, target, argv, timeout)

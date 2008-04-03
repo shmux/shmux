@@ -20,7 +20,7 @@
 #include "term.h"
 #include "units.h"
 
-static char const rcsid[] = "@(#)$Id: analyzer.c,v 1.16 2004-04-05 23:19:48 kalt Exp $";
+static char const rcsid[] = "@(#)$Id$";
 
 extern char *myname;
 

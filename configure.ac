@@ -1,9 +1,9 @@
 #
-# $Id: configure.ac,v 1.11 2006-07-06 22:33:40 kalt Exp $
+# $Id$
 #
 AC_PREREQ(2.53)
 AC_INIT([Shell Multiplexor], [], [shmux-bugs@taranis.org], [shmux])
-AC_REVISION([$Id: configure.ac,v 1.11 2006-07-06 22:33:40 kalt Exp $])
+AC_REVISION([$Id$])
 AC_CONFIG_SRCDIR([src/os.h])
 AC_CONFIG_HEADER([src/config.h])
 

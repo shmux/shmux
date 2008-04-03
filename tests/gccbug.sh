@@ -1,6 +1,6 @@
 #! /bin/sh
 #
-# $Id: gccbug.sh,v 1.1 2004-04-06 00:36:55 kalt Exp $
+# $Id$
 #- 1
 ## This simple test should be no problem, but detects an odd gcc bug seen
 ## with gcc 3.0.4 on Solaris 8 when shmux is compiled with -Ox (x>=2).

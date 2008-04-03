@@ -4,7 +4,7 @@
 ** This file is part of shmux
 ** see the LICENSE file for details on your rights.
 **
-** $Id: loop.h,v 1.13 2006-08-10 22:46:47 kalt Exp $
+** $Id$
 */
 
 #if !defined(_LOOP_H_)

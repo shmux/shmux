@@ -4,7 +4,7 @@
 ** This file is part of shmux
 ** see the LICENSE file for details on your rights.
 **
-** $Id: status.h,v 1.2 2003-03-19 02:15:36 kalt Exp $
+** $Id$
 */
 
 #if !defined(_STATUS_H_)

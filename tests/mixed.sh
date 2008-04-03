@@ -1,6 +1,6 @@
 #! /bin/sh
 #
-# $Id: mixed.sh,v 1.1 2004-04-06 00:36:55 kalt Exp $
+# $Id$
 #- 2
 ## Simple test for -m
 #

@@ -4,7 +4,7 @@
 ** This file is part of shmux
 ** see the LICENSE file for details on your rights.
 **
-** $Id: analyzer.h,v 1.2 2003-05-07 00:57:11 kalt Exp $
+** $Id$
 */
 
 #if !defined(_ANALYZER_H_)

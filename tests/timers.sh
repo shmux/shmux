@@ -1,6 +1,6 @@
 #! /bin/sh
 #
-# $Id: timers.sh,v 1.5 2006-05-23 01:56:13 kalt Exp $
+# $Id$
 #- 4
 ## This simple set exercises the implementation of timeouts
 #

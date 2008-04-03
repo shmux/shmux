@@ -4,7 +4,7 @@
 ** This file is part of shmux,
 ** see the LICENSE file for details on your rights.
 **
-** $Id: os.h,v 1.4 2003-11-08 01:17:27 kalt Exp $
+** $Id$
 */
 
 #if !defined(_OS_H_)

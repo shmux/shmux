@@ -1,6 +1,6 @@
 #! /bin/sh
 #
-# $Id: exitcode.sh,v 1.1 2004-04-06 00:36:55 kalt Exp $
+# $Id$
 #- 3
 ## This set of tests validates -e/-E usage with or without -q/-qq
 #

@@ -4,7 +4,7 @@
 ** This file is part of shmux
 ** see the LICENSE file for details on your rights.
 **
-** $Id: target.h,v 1.7 2006-06-21 00:38:49 kalt Exp $
+** $Id$
 */
 
 #if !defined(_TARGET_H_)

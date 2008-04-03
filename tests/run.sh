@@ -1,6 +1,6 @@
 #! /bin/sh
 #
-# $Id: run.sh,v 1.2 2004-07-20 00:13:09 kalt Exp $
+# $Id$
 #- 7
 ## This simple set exercises the "run" analyzer
 #

@@ -4,7 +4,7 @@
 ** This file is part of shmux
 ** see the LICENSE file for details on your rights.
 **
-** $Id: term.h,v 1.8 2006-08-10 23:49:05 kalt Exp $
+** $Id$
 */
 
 #if !defined(_TERM_H_)

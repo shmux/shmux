@@ -29,7 +29,7 @@
 #include "target.h"
 #include "term.h"
 
-static char const rcsid[] = "@(#)$Id: loop.c,v 1.56 2006-08-10 23:49:05 kalt Exp $";
+static char const rcsid[] = "@(#)$Id$";
 
 extern char *myname;
 

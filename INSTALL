@@ -56,4 +56,4 @@ Consider documentation errors as bugs, and report them as such.  If you
 develop anything pertaining to `shmux' or have suggestions, share them
 by writing to `shmux@taranis.org'.
 
--- $Id: INSTALL,v 1.13.2.1 2007-07-11 08:16:01 kalt Exp $
+-- $Id$

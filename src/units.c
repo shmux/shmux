@@ -11,7 +11,7 @@
 
 #include "units.h"
 
-static char const rcsid[] = "@(#)$Id: units.c,v 1.3 2006-05-24 01:08:57 kalt Exp $";
+static char const rcsid[] = "@(#)$Id$";
 
 extern char *myname;
 

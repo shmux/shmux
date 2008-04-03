@@ -4,7 +4,7 @@
 ** This file is part of shmux
 ** see the LICENSE file for details on your rights.
 **
-** $Id: byteset.h,v 1.1 2003-01-05 17:40:32 kalt Exp $
+** $Id$
 */
 
 #if !defined(_BYTESET_H_)

@@ -11,7 +11,7 @@
 
 #include "byteset.h"
 
-static char const rcsid[] = "@(#)$Id: byteset.c,v 1.6 2004-12-15 00:36:01 kalt Exp $";
+static char const rcsid[] = "@(#)$Id$";
 
 extern char *myname;
 

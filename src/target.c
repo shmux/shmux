@@ -15,7 +15,7 @@
 #include "status.h"
 #include "units.h"
 
-static char const rcsid[] = "@(#)$Id: target.c,v 1.22 2006-06-21 00:38:49 kalt Exp $";
+static char const rcsid[] = "@(#)$Id$";
 
 extern char *myname;
 

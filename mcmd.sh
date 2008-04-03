@@ -6,7 +6,7 @@
 # The following script cannot be used as-is, it is only provided as a sample
 # and starting point.  Look for XXX to see where changes are required.
 #
-# $Id: mcmd.sh,v 1.2 2003-05-08 01:31:30 kalt Exp $
+# $Id$
 #
 
 # XXX CMDOPTS should be replaced with any option one may want to pass to
