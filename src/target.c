@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2002, 2003, 2004, 2005, 2006 Christophe Kalt
+** Copyright (C) 2002-2008 Christophe Kalt
 **
 ** This file is part of shmux,
 ** see the LICENSE file for details on your rights.
@@ -614,7 +614,7 @@ int status;
 	    status == STATUS_ACTIVE  || status == STATUS_FAILED  ||
 	    status == STATUS_ERROR   || status == STATUS_SUCCESS );
 
-    tlen = sprintf(buf, "%u", tmax);
+    tlen = snprintf(buf, sizeof(buf), "%u", tmax);
     any = 0;
     i = 0;
     while (i <= tmax)

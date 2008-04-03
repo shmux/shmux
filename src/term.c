@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2002-2006 Christophe Kalt
+** Copyright (C) 2002-2008 Christophe Kalt
 **
 ** This file is part of shmux,
 ** see the LICENSE file for details on your rights.
@@ -361,7 +361,7 @@ sprint(char *format, ...)
 	tmp[CO-1] = '\0';
 	if (strcmp(tmp, status) == 0)
 	    return;
-	strcpy(status, tmp);
+	strlcpy(status, tmp, sizeof(status));
       }
 
     bold = 0;

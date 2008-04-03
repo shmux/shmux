@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2002, 2003 Christophe Kalt
+** Copyright (C) 2002-2008 Christophe Kalt
 **
 ** This file is part of shmux,
 ** see the LICENSE file for details on your rights.
@@ -101,7 +101,7 @@ status_update(void)
 	  }
       }
     else
-	sprintf(loadavg, "[%.1f, %.1f]", load[0], load[1]);
+	snprintf(loadavg, sizeof(loadavg), "[%.1f, %.1f]", load[0], load[1]);
 #else
     loadavg[0] = '\0';
 #endif
@@ -109,31 +109,31 @@ status_update(void)
     now = time(NULL);
 
     if (spawned == 0 && spawnedchg > 0 && (now - spawnedchg) > 1)
-	strcpy(active, "\a[PAUSED]\a");
+	strlcpy(active, "\a[PAUSED]\a", sizeof(active));
     else
-	sprintf(active, "%d Active", spawned);
+	snprintf(active, sizeof(active), "%d Active", spawned);
     if (inphase[1] >= 0)
-	sprintf(tmp[0], "%s%d Alive/",
+	snprintf(tmp[0], sizeof(tmp[0]), "%s%d Alive/",
 		(now - changed[1] < 2) ? "\a" : "", inphase[1]);
     else
 	tmp[0][0] = '\0';
 
     if (inphase[2] >= 0)
-	sprintf(tmp[1], "%s%d OK/",
+	snprintf(tmp[1], sizeof(tmp[1]), "%s%d OK/",
 		(now - changed[2] < 2) ? "\a" : "", inphase[2]);
     else
 	tmp[1][0] = '\0';
 
     if (inphase[4] >= 0)
       {
-	sprintf(tmp[2], "%s%d Run/",
+	snprintf(tmp[2], sizeof(tmp[2]), "%s%d Run/",
 		(now - changed[3] < 2) ? "\a" : "", inphase[3]);
-	sprintf(tmp[3], "%s%d Done",
+	snprintf(tmp[3], sizeof(tmp[3]), "%s%d Done",
 		(now - changed[4] < 2) ? "\a" : "", inphase[4]);
       }
     else
       {
-	sprintf(tmp[2], "%s%d Done",
+	snprintf(tmp[2], sizeof(tmp[2]), "%s%d Done",
 		(now - changed[3] < 2) ? "\a" : "", inphase[3]);
 	tmp[3][0] = '\0';
       }

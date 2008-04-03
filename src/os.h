@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2002, 2003 Christophe Kalt
+** Copyright (C) 2002-2008 Christophe Kalt
 **
 ** This file is part of shmux,
 ** see the LICENSE file for details on your rights.
@@ -28,6 +28,10 @@
 #include <limits.h>
 
 #include <string.h>
+
+#if !defined(HAVE_STRLCPY)
+# define strlcpy(x, y, z) strcpy(x, y)
+#endif
 
 /* shmux exit codes */
 #define RC_OK	 0

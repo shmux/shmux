@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2002, 2003, 2004, 2005, 2006 Christophe Kalt
+** Copyright (C) 2002-2008 Christophe Kalt
 **
 ** This file is part of shmux,
 ** see the LICENSE file for details on your rights.
@@ -38,14 +38,15 @@ char *target, **argv;
       {
 	static char *env = NULL;
 	char *new;
+	size_t new_s = strlen(target) + 14;
 
-	new = malloc(strlen(target) + 14);
+	new = malloc(new_s);
 	if (new == NULL)
 	  {
 	    eprint("malloc failed, cannot set SHMUX_TARGET to %s", target);
 	    return -1;
 	  }
-	sprintf(new, "SHMUX_TARGET=%s", target);
+	snprintf(new, new_s, "SHMUX_TARGET=%s", target);
 	if (putenv(new) == -1)
 	  {
 	    eprint("putenv(%s) failed: %s", new, strerror(errno));
@@ -140,7 +141,7 @@ char *target, **argv;
         /* Start a new process group to allow mass-signaling by the parent */
         if (setpgid(0, 0) < 0)
           {
-            sprintf(error, "SHMUCK!\nsetpgid(0, 0): %s\n",
+            snprintf(error, sizeof(error), "SHMUCK!\nsetpgid(0, 0): %s\n",
                     strerror(errno));
             /* The parent knows what to make of this */
             kill(getpid(), SIGTSTP);
@@ -172,7 +173,7 @@ char *target, **argv;
 	    in[0] = open(_PATH_DEVNULL, O_RDONLY, 0);
 	    if (in[0] == -1)
 	      {
-		sprintf(error, "SHMUCK!\nopen(%s): %s\n",
+		snprintf(error, sizeof(error), "SHMUCK!\nopen(%s): %s\n",
 			_PATH_DEVNULL, strerror(errno));
 		/* The parent knows what to make of this */
 		kill(getpid(), SIGTSTP);
@@ -181,7 +182,8 @@ char *target, **argv;
 	      }
 	    if (in[0] != 0)
 	      {
-		sprintf(error, "SHMUCK!\nopen(%s) returned %d\n",
+		snprintf(error, sizeof(error),
+			"SHMUCK!\nopen(%s) returned %d\n",
 			_PATH_DEVNULL, in[0]);
 		/* The parent knows what to make of this */
 		kill(getpid(), SIGTSTP);
@@ -204,7 +206,8 @@ char *target, **argv;
 	** to the parent.
 	*/
 	alarm(0);
-	sprintf(error, "SHMUCK!\nexecv(%s): %s\n", argv[0], strerror(errno));
+	snprintf(error, sizeof(error),
+		"SHMUCK!\nexecv(%s): %s\n", argv[0], strerror(errno));
 	kill(getpid(), SIGTSTP); /* The parent knows what to make of this */
 	write(2, error, strlen(error)+1);
 	_exit(0);

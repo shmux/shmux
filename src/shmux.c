@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2002-2007 Christophe Kalt
+** Copyright (C) 2002-2008 Christophe Kalt
 **
 ** This file is part of shmux,
 ** see the LICENSE file for details on your rights.
@@ -289,8 +289,9 @@ main(int argc, char **argv)
 	char *tmp;
 
 	tmp = getenv("TMPDIR");
-	sprintf(tdir, "%s/%s.%d.%ld", (tmp != NULL) ? tmp : _PATH_TMP,
-		myname, (int) getpid(), (long) time(NULL));
+	snprintf(tdir, sizeof(tdir),
+		"%s/%s.%d.%ld", (tmp != NULL) ? tmp : _PATH_TMP, myname,
+		(int) getpid(), (long) time(NULL));
 	opt_odir = tdir;
       }
 

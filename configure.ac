@@ -49,7 +49,7 @@ AC_CHECK_DECLS([sys_signame], , , [#include <signal.h>])
 #AC_FUNC_FORK
 #AC_FUNC_MALLOC
 #AC_FUNC_VPRINTF
-AC_CHECK_FUNCS([basename getloadavg])
+AC_CHECK_FUNCS([basename getloadavg strlcpy])
 
 AC_CONFIG_FILES([src/Makefile Makefile])
 AC_OUTPUT

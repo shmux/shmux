@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2002, 2003, 2004, 2005, 2006 Christophe Kalt
+** Copyright (C) 2002-2008 Christophe Kalt
 **
 ** This file is part of shmux,
 ** see the LICENSE file for details on your rights.
@@ -62,8 +62,8 @@ unit_rtime(u_int timeval)
     timestr[0] = '\0';
     if (timeval > 7*24*60*60)
       {
-	sprintf(timestr + strlen(timestr), "%uw",
-		(u_int) (timeval / (7*24*60*60)));
+	snprintf(timestr + strlen(timestr), sizeof(timestr) - strlen(timestr),
+		"%uw", (u_int) (timeval / (7*24*60*60)));
         width = 2;
       }
     else
@@ -71,27 +71,28 @@ unit_rtime(u_int timeval)
     timeval %= 7*24*60*60;
     if (timeval > 24*60*60)
       {
-	sprintf(timestr + strlen(timestr), "%ud",
-                (u_int) (timeval / (24*60*60)));
+	snprintf(timestr + strlen(timestr), sizeof(timestr) - strlen(timestr),
+		"%ud", (u_int) (timeval / (24*60*60)));
         width = 2;
       }
     timeval %= 24*60*60;
     if (timeval > 60*60)
       {
-	sprintf(timestr + strlen(timestr), "%.*uh",
-                width, (u_int) (timeval / (60*60)));
+	snprintf(timestr + strlen(timestr), sizeof(timestr) - strlen(timestr),
+		"%.*uh", width, (u_int) (timeval / (60*60)));
         width = 2;
       }
     timeval %= 60*60;
     if (timeval > 60)
       {
-	sprintf(timestr + strlen(timestr), "%.*um",
-                width, (u_int) (timeval / 60));
+	snprintf(timestr + strlen(timestr), sizeof(timestr) - strlen(timestr),
+		"%.*um", width, (u_int) (timeval / 60));
         width = 2;
       }
     timeval %= 60;
     if (timeval > 0)
-	sprintf(timestr + strlen(timestr), "%.*us", width, timeval);
+	snprintf(timestr + strlen(timestr), sizeof(timestr) - strlen(timestr),
+		"%.*us", width, timeval);
 
     return timestr;
 }

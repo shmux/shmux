@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2002, 2003, 2004, 2005, 2006 Christophe Kalt
+** Copyright (C) 2002-2008 Christophe Kalt
 **
 ** This file is part of shmux,
 ** see the LICENSE file for details on your rights.
@@ -277,7 +277,8 @@ struct child *kid;
 			    {
 			      str = (char *) malloc(strlen(*left)
 						    + strlen(start) + 1);
-			      sprintf(str, "%s%s", *left, start);
+			      snprintf(str, strlen(*left) + strlen(start) + 1,
+					"%s%s", *left, start);
 			    }
 
 			  if (analyzer_lnrun(analyzer,
@@ -403,9 +404,10 @@ struct child *kid;
 		    
 		    old = *left;
 		    *left = (char *) malloc(strlen(start) + leftlen + 1);
-		    strcpy(*left, old);
+		    strlcpy(*left, old, strlen(start) + leftlen + 1);
 		    free(old);
-		    strcpy((*left) + leftlen, start);
+		    strlcpy((*left) + leftlen, start,
+			sizeof((*left) + leftlen));
 		  }
 	      }
 	  }
@@ -1508,7 +1510,8 @@ u_int ctimeout, utest;
 			if (fd >= 0)
 			  {
 			    char buf[4];
-			    sprintf(buf, "%u", WEXITSTATUS(status));
+			    snprintf(buf, sizeof(buf), "%u",
+				WEXITSTATUS(status));
 			    write(fd, buf, strlen(buf));
 			    close(fd);
 			    free(fn);
