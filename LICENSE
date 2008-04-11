@@ -1,20 +1,20 @@
-Copyright (c) 2002-2007 Christophe Kalt. All rights reserved.
+Copyright (c) 2002-2008 Christophe Kalt. All rights reserved.
 
 The author accepts no responsibility for the use of this software and
 provides it on an ``as is'' basis without express or implied warranty.
 
-Redistribution and use, *without modification*, in source and binary forms
-are permitted provided that:
- (1) No more than a reasonable copying fee (as in whatever you can justify
-     on the basis of media cost, duplication charges) may be charged for
-     distribution of this software.
- (2) This notice is preserved in its entirety and due credit is given to the
-     author.
- (3) All advertising materials mentioning features or use of this software
-     must display the following acknowledgement:
-         This product includes software developed by Christophe Kalt.
- (4) The name of the author may not be used to endorse or promote products
-     derived from this software without specific prior written permission.
+Redistribution and use in source and binary forms, *without modification*,
+are permitted provided that the following conditions are met:
+1. Redistributions of source code must retain the above copyright
+   notice, this list of conditions and the following disclaimer.
+2. Redistributions in binary form must reproduce the above copyright
+   notice, this list of conditions and the following disclaimer in the
+   documentation and/or other materials provided with the distribution.
+3. All advertising materials mentioning features or use of this software
+   must display the following acknowledgement:
+     This product includes software developed by Christophe Kalt.
+4. The name of the author may not be used to endorse or promote products
+    derived from this software without specific prior written permission.
 
 THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
 IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
