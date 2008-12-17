@@ -981,12 +981,13 @@ u_int ctimeout, utest;
 		  }
 
 		/* Something is going on.. */
-		dprint("idx=%d[%s] fd=%d(%d) IN=%d OUT=%d ERR=%d HUP=%d",
+		dprint("idx=%d[%s] fd=%d(%d) IN=%d OUT=%d ERR=%d HUP=%d (%X)",
 		       idx, what, pfd[idx].fd, idx%3,
 		       (pfd[idx].revents & POLLIN) != 0,
 		       (pfd[idx].revents & POLLOUT) != 0,
 		       (pfd[idx].revents & POLLERR) != 0,
-		       (pfd[idx].revents & POLLHUP) != 0);
+		       (pfd[idx].revents & POLLHUP) != 0,
+                       pfd[idx].revents);
 
 		if (idx % 3 != 0 || idx == 0)
 		  {
