@@ -242,7 +242,11 @@ int interactive;
       {
         shmuxt = origt;
         shmuxt.c_lflag &= ~(ICANON|ECHO); /* no echo or canonical processing */
+#if !defined(BROKEN_POLL)
         shmuxt.c_cc[VMIN] = 1; /* no buffering */
+#else
+        shmuxt.c_cc[VMIN] = 0; /* no blocking */
+#endif
         shmuxt.c_cc[VTIME] = 0; /* no delaying */
         if (tcsetattr(ttyin, TCSANOW, &shmuxt) == 0)
           {

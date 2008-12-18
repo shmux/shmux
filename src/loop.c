@@ -914,7 +914,11 @@ u_int ctimeout, utest;
 	/* Check (or not) for input */
 	pfd[0].fd = tty_fd();
 	if (pfd[0].fd >= 0)
+#if !defined(BROKEN_POLL)
 	    pfd[0].events = POLLIN;
+#else
+            pfd[0].events = 0;
+#endif
 	else
 	  {
 	    pfd[0].events = 0;
@@ -930,6 +934,13 @@ u_int ctimeout, utest;
 	    spawn_mode = SPAWN_FATAL;
 	    break;
 	  }
+#if defined(BROKEN_POLL)
+        if (pfd[0].fd >= 0)
+          {
+            pfd[0].revents = POLLIN;
+            pollrc += 1;
+          }
+#endif
 
 	/* Abort? */
 	switch (got_sigint)
@@ -1014,6 +1025,7 @@ u_int ctimeout, utest;
 		      {
 			if (idx == 0)
 			  {
+#if !defined(BROKEN_POLL)
 			    if (sz == 0)
 				eprint("Unexpected empty read(/dev/tty) result");
 			    else
@@ -1021,6 +1033,13 @@ u_int ctimeout, utest;
 				       strerror(errno));
 			    if (sz == 0 || errno != EINTR)
 				tty_restore();
+#else
+			    if (sz != 0)
+				eprint("Unexpected read(/dev/tty) error for: %s",
+				       strerror(errno));
+			    if (errno != EINTR)
+				tty_restore();
+#endif
 			  }
 			else
 			  {
