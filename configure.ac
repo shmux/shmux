@@ -7,6 +7,8 @@ AC_REVISION([$Id$])
 AC_CONFIG_SRCDIR([src/os.h])
 AC_CONFIG_HEADER([src/config.h])
 
+AC_CANONICAL_TARGET
+
 # Checks for programs.
 AC_PROG_CC
 AC_PROG_INSTALL
