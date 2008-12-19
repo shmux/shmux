@@ -53,5 +53,10 @@ AC_CHECK_DECLS([sys_signame], , , [#include <signal.h>])
 #AC_FUNC_VPRINTF
 AC_CHECK_FUNCS([basename getloadavg strlcpy])
 
+AH_TEMPLATE([BROKEN_POLL], [Define if poll() can't handle /dev/tty file descriptors])
+case "$target_os" in
+     darwin*)     AC_DEFINE([BROKEN_POLL], [1]);;
+esac
+
 AC_CONFIG_FILES([src/Makefile Makefile])
 AC_OUTPUT
