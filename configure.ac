@@ -1,7 +1,7 @@
 #
 # $Id$
 #
-AC_PREREQ(2.53)
+AC_PREREQ(2.60)
 AC_INIT([Shell Multiplexor], [], [shmux-bugs@taranis.org], [shmux])
 AC_REVISION([$Id$])
 AC_CONFIG_SRCDIR([src/os.h])
