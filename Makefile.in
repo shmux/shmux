@@ -36,5 +36,5 @@ clean:
 
 distclean:
 	@(cd src && $(MAKE) distclean)
-	/bin/rm -f Makefile config.* configure.lineno
+	/bin/rm -f Makefile config.log config.status configure.lineno
 	/bin/rm -rf autom4te.cache
