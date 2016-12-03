@@ -28,7 +28,7 @@ if test "x$with_pcre" != "xno"; then
 fi
 
 # Checks for libraries.
-AC_SEARCH_LIBS([tgetent], [termcap curses ncurses])
+AC_SEARCH_LIBS([tgetent], [termcap curses ncurses], , AC_MSG_ERROR([terminal handling library missing]))
 AC_SEARCH_LIBS([basename], [gen])
 if test "x$with_pcre" != "xno"; then
    AC_SEARCH_LIBS([pcre_compile], [pcre], ,
