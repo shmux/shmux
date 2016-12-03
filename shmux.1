@@ -1,5 +1,5 @@
-.TH SHMUX 8 "$Date: 2007-07-11 08:09:36 $"
-.DA April 13, 2005
+.TH SHMUX 8 "2016-12-03"
+.DA December 3, 2016
 .SH NAME
 shmux - Shell Multiplexor
 .SH SYNOPSIS
@@ -390,11 +390,11 @@ before it could spawn any children.
 .IR pcre (3).
 
 .SH AVAILABILITY
-The latest official release of \fBshmux\fP is available on the web.
-The home page is http://web.taranis.org/shmux/
+The latest official release of \fBshmux\fP is available on GitHub at
+http://github.com/shmux.
 
 .SH AUTHOR
-Christophe Kalt <kalt@taranis.org>
+Christophe Kalt <ck@taranis.org>
 
 .SH BUGS
 All \fIrsh\fP and some \fIssh\fP implementations effectively achieve user
@@ -418,4 +418,5 @@ Some shells will ignore SIGALRM, others die upon its receipt (regardless of
 any trap).  Again, this will affect the simple timeout enforcement system
 used by \fBshmux\fP.
 
-Send bug reports to `shmux-bugs@taranis.org'.
+For bug reports, create an issue at https://github.com/shmux/shmux/issues,
+or send an email to shmux-bugs@taranis.org.

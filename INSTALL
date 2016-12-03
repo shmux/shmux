@@ -39,13 +39,10 @@ system calls.
 
 -- shmux contact
 
-If you want to be informed about important news about shmux, such as new
-releases, subscribe to the shmux-announce mailing list, either by sending a
-mail including the "subscribe" keyword to shmux-announce-request@taranis.org,
-or simply visit the following web page:
-        http://web.taranis.org/mailman/listinfo/shmux-announce
+shmux is now hosted on GitHub
 
-Send bug reports to `shmux-bugs@taranis.org'.  A bug report is an adequate
+For bug reports, create an issue at https://github.com/shmux/shmux/issues,
+or send an email to `shmux-bugs@taranis.org'.  A bug report is an adequate
 description of the environment (versions of this package, the OS, fping and
 ssh) and of the problem: your input, what you expected, what you got, and
 why you believe it to be wrong.  Diffs are welcome, but they only describe
@@ -55,5 +52,3 @@ Your feedback will help to make a better and more portable package.
 Consider documentation errors as bugs, and report them as such.  If you
 develop anything pertaining to `shmux' or have suggestions, share them
 by writing to `shmux@taranis.org'.
-
--- $Id$
