@@ -16,9 +16,9 @@ For more details, check out the
 [shmux(1)](http://web.taranis.org/shmux/man/shmux.1.html) manual page.
 The example shown below is also a good illustration of some of
 *shmux*'s capabilities and is dissected [frame by
-frame](http://web.taranis.org/shmux/example/) for your convenience.
+frame](https://github.com/shmux/shmux/wiki/Example) for your convenience.
 
-![Sample shmux output](http://web.taranis.org/shmux/shmux.gif)
+![Sample shmux output](https://github.com/shmux/shmux/wiki/shmux.gif)
 
 ## Features
 
