@@ -1,4 +1,6 @@
-$Id$
+Changes since 1.0.2 [2008-12-21]:
+
+- Default to using -oLogLevel=ERROR with ssh
 
 Changes since 1.0.1 [2006-08-30]:
 

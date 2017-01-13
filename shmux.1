@@ -1,5 +1,5 @@
-.TH SHMUX 8 "2016-12-03"
-.DA December 3, 2016
+.TH SHMUX 8 "2017-01-13"
+.DA January 13, 2017
 .SH NAME
 shmux - Shell Multiplexor
 .SH SYNOPSIS
@@ -340,9 +340,10 @@ Specify an alternative command to "ssh" to use for targets using the
 \fISHMUX_SSH\fP is used for all methods, but superseded by the other
 specific variables.
 .IP "SHMUX_SSH_OPTS, SHMUX_SSH1_OPTS, SHMUX_SSH2_OPTS"
-The variables may be used to specify replace the default "-xa" options
-passed to "ssh", "ssh1" and "ssh2" (respectively).  The variable
-\fISHMUX_SSH_OPTS\fP is used for all methods, but superseded by the other
+The variables may be used to specify replace the default "-xa
+-oLogLevel=ERROR" options passed to "ssh", "ssh1" and "ssh2"
+(respectively).  The variable \fISHMUX_SSH_OPTS\fP is used for all
+methods, but superseded by the other
 specific variables.
 
 Multiple arguments may be supplied, using white-space characters to

@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2002-2008 Christophe Kalt
+** Copyright (C) 2002-2017 Christophe Kalt
 **
 ** This file is part of shmux,
 ** see the LICENSE file for details on your rights.
@@ -30,7 +30,7 @@ struct target
 			**  2	test		test okay
 			**  3	cmd		cmd done, exit status okay
 			**  4   analyzer	all done
-			*/    
+			*/
     char status;
     char phase;
     time_t when;
@@ -279,7 +279,7 @@ char **args;
     ** Use buf to store NUL delimited copy of opts,
     ** filling up args as we go along.
     */
-    
+
     i = 0;
     while (*opts)
       {
@@ -457,7 +457,8 @@ char *cmd;
       {
 	args[4] = "-x";
         args[5] = "-a";
-	nopts = 2;
+        args[6] = "-oLogLevel=ERROR";
+	nopts = 3;
       }
     args[4 + nopts] = targets[tcur].name;
     args[5 + nopts] = cmd;
