@@ -15,6 +15,7 @@
 #include <sys/time.h>		/* FreeBSD wants this for the next one.. */
 #include <sys/resource.h>
 #include <poll.h>
+#include <time.h>
 
 #if !defined(WCOREDUMP)
 # define WCOREDUMP(x) 0
@@ -511,21 +512,23 @@ struct child *children;
 	  spawn_mode = SPAWN_PAUSE;
 	  break;
       case '1':
-	  if (spawn_mode != SPAWN_ONE)
+	  if (spawn_mode != SPAWN_ONE) {
               if (failure_mode == SPAWN_PAUSE)
                   uprint("Will spawn one command... (And pause on error)");
               else
                   uprint("Will spawn one command... (And quit on error)");
+    }
 	  if (spawn_mode != SPAWN_NONE)
 	      spawn_mode = SPAWN_ONE;
 	  break;
       case '\n':
       case '-':
-	  if (spawn_mode != SPAWN_CHECK)
+	  if (spawn_mode != SPAWN_CHECK) {
               if (failure_mode == SPAWN_PAUSE)
                   uprint("Resuming... (Will pause on error)");
               else
                   uprint("Resuming... (Will quit on error)");
+    }
 	  spawn_mode = SPAWN_CHECK;
 	  break;
       case '+':

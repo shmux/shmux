@@ -8,6 +8,7 @@
 #include "os.h"
 
 #include <ctype.h>
+#include <time.h>
 
 #include "target.h"
 #include "term.h"
