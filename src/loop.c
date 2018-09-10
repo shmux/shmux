@@ -1008,9 +1008,12 @@ u_int ctimeout, utest;
 		    */
 		    char buffer[8192];
 		    int sz;
+        int err = 0;
 
 		    sz = read(pfd[idx].fd, buffer, (idx == 0) ? 1 : 8191);
-		    dprint("idx=%d[%s] fd=%d(%d) read()=%d",
+        if (sz < 0)
+          err = errno;
+        dprint("idx=%d[%s] fd=%d(%d) read()=%d",
 			   idx, what, pfd[idx].fd, idx%3, sz);
 		    if (sz > 0)
 		      {
@@ -1030,15 +1033,17 @@ u_int ctimeout, utest;
 				eprint("Unexpected empty read(/dev/tty) result");
 			    else
 				eprint("Unexpected read(/dev/tty) error for: %s",
-				       strerror(errno));
-			    if (sz == 0 || errno != EINTR)
+				       strerror(err));
+			    if (sz == 0 || err != EINTR) {
 				tty_restore();
+          }
 #else
 			    if (sz != 0)
 				eprint("Unexpected read(/dev/tty) error for: %s",
-				       strerror(errno));
-			    if (errno != EINTR)
+				       strerror(err));
+			    if (err != 0 && err != EINTR) {
 				tty_restore();
+          }
 #endif
 			  }
 			else
