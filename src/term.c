@@ -269,7 +269,7 @@ int interactive;
             sigaction(SIGABRT, &sa, NULL);
             sigaction(SIGTERM, &sa, NULL);
                     
-            dprint("Input tty initialized (0x%X -> 0x%X)",
+            dprint("Input tty initialized (0x%lX -> 0x%lX)",
                    origt.c_lflag, shmuxt.c_lflag);
           }
         else
@@ -321,6 +321,7 @@ int
 term_togglemsg(void)
 {
     internalmsgs = 1 - internalmsgs;
+    return internalmsgs;
 }
 
 /*
@@ -331,6 +332,7 @@ int
 term_toggledbg(void)
 {
     debugmsgs = 1 - debugmsgs;
+    return debugmsgs;
 }
 
 /*
