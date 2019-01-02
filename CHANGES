@@ -1,6 +1,9 @@
 Changes since 1.0.2 [2008-12-21]:
 
-- Default to using -oLogLevel=ERROR with ssh
+- Fix clang warnings.
+- Fix BROKEN_POLL option on macOS.
+- Switch to generic BSD license.
+- Default to using -oLogLevel=ERROR with ssh.
 
 Changes since 1.0.1 [2006-08-30]:
 
