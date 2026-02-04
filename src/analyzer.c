@@ -323,7 +323,7 @@ struct condition **list;
 	{
 	  max *= 2;
 	  *list = (struct condition *) realloc(*list,
-					       max* sizeof(struct condition *));
+					       max* sizeof(struct condition));
 	  if (*list == NULL)
 	    {
 	      fprintf(stderr, "%s: realloc() failed: %s\n", myname,
