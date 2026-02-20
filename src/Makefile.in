@@ -10,7 +10,7 @@
 SHELL	=	/bin/sh
 CC	=	@CC@
 CPPFLAGS=	@CPPFLAGS@
-CFLAGS	=	@CFLAGS@ -Wno-old-style-definition
+CFLAGS	=	@CFLAGS@
 LDFLAGS	=	@LDFLAGS@
 LIBS	=	@LIBS@
 

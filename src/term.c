@@ -50,8 +50,7 @@ static void gprint(char *, char, char *, va_list);
 **	signal handler
 */
 static void
-shmux_signal(sig)
-int sig;
+shmux_signal(int sig)
 {
     if (sig == SIGWINCH || sig == SIGCONT)
 	got_sigwin += 1;
@@ -78,8 +77,7 @@ int sig;
 **	Initialize terminal handling system.
 */
 void
-term_init(maxlen, prefix, progress, internal, debug, interactive)
-int maxlen, prefix, progress, internal, debug, interactive;
+term_init(int maxlen, int prefix, int progress, int internal, int debug, int interactive)
 {
     static char termcap[2048], area[1024];
     char *term, *ptr;
@@ -216,8 +214,7 @@ term_size(void)
 **	/dev/tty initialization
 */
 static void
-tty_init(interactive)
-int interactive;
+tty_init(int interactive)
 {
     if (ttyin < 0)
       {
@@ -404,8 +401,7 @@ sprint(char *format, ...)
 **	Same as putchar, for stderr.
 */
 static int
-putchar2(c)
-int c;
+putchar2(int c)
 {
     return fputc(c, stderr);
 }
@@ -415,8 +411,7 @@ int c;
 **	Same as putchar, for tty (either stdout or stderr).
 */
 static int
-putchar3(c)
-int c;
+putchar3(int c)
 {
     return fputc(c, ttyout);
 }

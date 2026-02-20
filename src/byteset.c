@@ -22,9 +22,7 @@ static char sets[2][256];
 **	Initialize set[] from a range definition string
 */
 void
-byteset_init(set, definition)
-int set;
-char *definition;
+byteset_init(int set, char *definition)
 {
     char *str, *tok, *dash;
     int i, j;
@@ -80,8 +78,7 @@ char *definition;
 **	Is a byte included in the set?
 */
 int
-byteset_test(set, byte)
-int set, byte;
+byteset_test(int set, int byte)
 {
     assert( set == 0 || set == 1 );
     assert( byte >= 0 && byte <= 255 );

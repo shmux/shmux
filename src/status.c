@@ -31,8 +31,7 @@ static time_t spawnedchg, changed[5];
 **	Initialize things..
 */
 void
-status_init(pings, tests, analyzer)
-int pings, tests, analyzer;
+status_init(int pings, int tests, int analyzer)
 {
     spawned = 0;
     inphase[0] = inphase[1] = inphase[2] = inphase[3] = inphase[4] = 0;
@@ -50,8 +49,7 @@ int pings, tests, analyzer;
 **	Update the number of children rowming free.
 */
 void
-status_spawned(count)
-int count;
+status_spawned(int count)
 {
     spawned += count;
     spawnedchg = time(NULL);
@@ -62,8 +60,7 @@ int count;
 **	Update the number of target in a particular phase.
 */
 void
-status_phase(phase, count)
-int phase, count;
+status_phase(int phase, int count)
 {
     assert( phase >= -1 && phase < 5 );
     assert( inphase[0] != -1 );

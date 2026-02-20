@@ -16,8 +16,7 @@ static char const rcsid[] = "@(#)$Id$";
 extern char *myname;
 
 u_int
-unit_time(timestr)
-char *timestr;
+unit_time(char *timestr)
 { 
     char *unit;
 

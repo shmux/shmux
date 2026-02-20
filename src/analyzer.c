@@ -55,10 +55,7 @@ static void loadfile(int, char *, struct condition **list);
 **	Given an open file descriptor, mmap() the corresponding (regular) file
 */
 static void *
-mapfile(errto, fd, name, len)
-int errto, fd;
-char *name;
-size_t *len;
+mapfile(int errto, int fd, char *name, size_t *len)
 {
     struct stat sb;
     void *mm;
@@ -106,11 +103,7 @@ size_t *len;
 **	munmap() a previously mapped file
 */
 static void
-unmapfile(errto, name, mm, len)
-int errto;
-char *name;
-void *mm;
-size_t len;
+unmapfile(int errto, char *name, void *mm, size_t len)
 {
     if (len == 0)
 	return;
@@ -133,10 +126,7 @@ size_t len;
 **	Regular expression (regex_t) initialization
 */
 void
-compile_re(mline, reptr, str)
-int mline;
-void *reptr;
-char *str;
+compile_re(int mline, void *reptr, char *str)
 {
     regex_t *re;
     int errcode;
@@ -163,10 +153,7 @@ char *str;
 **	Perl Compatible Regular Expression (pcre) initialization
 */
 void
-compile_pcre(mline, pcreptr, str)
-int mline;
-void *pcreptr;
-char *str;
+compile_pcre(int mline, void *pcreptr, char *str)
 {
     pcre **re;
     const char *error;
@@ -189,11 +176,7 @@ char *str;
 **	Regular expression initialization routine
 */
 static void
-restr_init(re, comp, ok, str)
-void *re;
-void (*comp)(int, void *, char *);
-int *ok;
-char *str;
+restr_init(void *re, void (*comp)(int, void *, char *), int *ok, char *str)
 {
     char *fname, *rbuf;
     int fd;
@@ -255,10 +238,7 @@ char *str;
 **	Read a list of one line conditions from a file
 */
 static void
-loadfile(type, file, list)
-int type;
-char *file;
-struct condition **list;
+loadfile(int type, char *file, struct condition **list)
 {
     int fd, lineno, cond, max;
     size_t len;
@@ -382,8 +362,7 @@ struct condition **list;
 **	Initialization for the analyzer, called early on.
 */
 int
-analyzer_init(type, outdef, errdef)
-char *type, *outdef, *errdef;
+analyzer_init(char *type, char *outdef, char *errdef)
 {
     if (type == NULL)
 	return ANALYZE_NONE;
@@ -492,10 +471,7 @@ char *type, *outdef, *errdef;
 **	expressions.
 */
 int
-analyzer_run(type, ofd, oname, efd, ename)
-u_int type;
-int ofd, efd;
-char *oname, *ename;
+analyzer_run(u_int type, int ofd, char *oname, int efd, char *ename)
 {
     size_t olen, elen;
     void *output, *errput;
@@ -648,9 +624,7 @@ char *oname, *ename;
 **	specified regular expressions.
 */
 int
-analyzer_lnrun(type, what, str)
-u_int type, what;
-char *str;
+analyzer_lnrun(u_int type, u_int what, char *str)
 {
     struct condition *list;
     int r;

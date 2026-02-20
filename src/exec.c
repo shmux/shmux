@@ -25,10 +25,7 @@
 static char const rcsid[] = "@(#)$Id$";
 
 pid_t
-exec(fd0, fd1, fd2, target, argv, timeout, stagger)
-int *fd0, *fd1, *fd2, stagger;
-u_int timeout;
-char *target, **argv;
+exec(int *fd0, int *fd1, int *fd2, char *target, char **argv, u_int timeout, int stagger)
 {
     int in[2], out[2], err[2], millis;
     struct rlimit fdlimit;

@@ -52,8 +52,7 @@ static int split_argv(const char *, int, char **);
 **	Configure default method
 */
 void
-target_default(cmd)
-char *cmd;
+target_default(char *cmd)
 {
     if (strncmp("sh", cmd, 3) == 0)
 	type = 0;
@@ -77,8 +76,7 @@ char *cmd;
 **	add a target to the list
 */
 int
-target_add(name)
-char *name;
+target_add(char *name)
 {
     if (tsz == 0)
       {
@@ -152,8 +150,7 @@ target_getmax(void)
 **	Find a target by name, and set the current pointer.
 */
 int
-target_setbyname(name)
-char *name;
+target_setbyname(char *name)
 {
     assert( name != NULL );
 
@@ -170,8 +167,7 @@ char *name;
 **	Find a target by host name, and set the current pointer.
 */
 int
-target_setbyhname(name)
-char *name;
+target_setbyhname(char *name)
 {
     assert( name != NULL );
 
@@ -199,8 +195,7 @@ char *name;
 **	Find a target by number, and set the current pointer.
 */
 int
-target_setbynum(num)
-u_int num;
+target_setbynum(u_int num)
 {
     if (num > tmax)
 	return -1;
@@ -246,10 +241,7 @@ target_getnum(void)
 **      - -1 if args was too small
 */
 static int
-split_argv(opts, maxargs, args)
-const char *opts;
-int maxargs;
-char **args;
+split_argv(const char *opts, int maxargs, char **args)
 {
     static char *buf = NULL;
     char *p, q;
@@ -341,8 +333,7 @@ char **args;
 **	Return the current target command.
 */
 char **
-target_getcmd(cmd)
-char *cmd;
+target_getcmd(char *cmd)
 {
     static char **args = NULL;
     static int argsz = 32;
@@ -485,8 +476,7 @@ char *cmd;
 **	Return 0 if there is such a target, -1 otherwise
 */
 int
-target_next(phase)
-int phase;
+target_next(int phase)
 {
     assert( phase > 0 && phase < 5 );
 
@@ -522,8 +512,7 @@ target_start(void)
 **	Set the result of the current phase for the current target.
 */
 void
-target_result(ok)
-int ok;
+target_result(int ok)
 {
     assert( tcur >= 0 && tcur <= tmax );
     assert( targets[tcur].status >= -1 && targets[tcur].status < 4 );
@@ -552,8 +541,7 @@ int ok;
 **	Specialized target_result() routine to deal with ping/pong oddities.
 */
 int
-target_pong(name)
-char *name;
+target_pong(char *name)
 {
     tcur = -1;
     while (++tcur <= tmax)
@@ -591,8 +579,7 @@ char *name;
 **	Set the result of the command execution for the current target.
 */
 void
-target_cmdstatus(status)
-int status;
+target_cmdstatus(int status)
 {
     assert( tcur >= 0 && tcur <= tmax );
     assert( targets[tcur].phase == 3 || targets[tcur].phase == 4 );
@@ -606,8 +593,7 @@ int status;
 **	Report current status of all targets
 */
 void
-target_status(status)
-int status;
+target_status(int status)
 {
     int i, any, tlen;
     char buf[16];
@@ -688,8 +674,7 @@ int status;
 **	Show failures.
 */
 void
-target_results(seconds)
-int seconds;
+target_results(int seconds)
 {
     int i, first;
     int f, t, u, s, e;

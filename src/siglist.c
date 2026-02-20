@@ -17,8 +17,7 @@
 static char const rcsid[] = "@(#)$Id$";
 
 int
-getsignumbyname(name)
-char *name;
+getsignumbyname(char *name)
 {
     int i;
 

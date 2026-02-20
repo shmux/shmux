@@ -55,8 +55,7 @@ char *myname;
 static void usage(int);
 
 static void
-usage(detailed)
-int detailed;
+usage(int detailed)
 {
     fprintf(stderr, "Usage: %s [ options ] -c <command> [ - | <target1> [ <target2> ... ] ]\n", myname);
 /*    fprintf(stderr, "Usage: %s [ options ] -i [ <target1> [ <target2> ... ] ]\n", myname);*/
